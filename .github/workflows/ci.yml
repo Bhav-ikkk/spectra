@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [22]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm -r typecheck
+
+      - name: Lint
+        run: pnpm -r lint
+
+      - name: Test
+        run: pnpm -r test
+
+      - name: Build CLI
+        run: pnpm --filter @spectra/cli build
+
+      - name: Benchmark smoke test
+        run: pnpm benchmark:smoke
+        # Day-1 skeleton: this only validates Zod manifest/verdict schemas
+        # in packages/core and exits 0. No actual benchmark logic is
+        # written today.
+        #
+        # Phase 2 (Days 2-3): this becomes a real 3-clip smoke test that
+        # runs SAM decode + VLM evaluation on 3 clips and asserts verdicts
+        # match expected values within delta.
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: TruffleHog secret scan
+        uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --only-verified
+        # A real META_API_KEY will exist in this repo eventually.
+        # This job ensures it never lands in a commit.
