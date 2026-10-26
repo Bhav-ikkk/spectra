@@ -6,3 +6,6 @@ export * from './schemas/invariant.js';
 export * from './schemas/verdict.js';
 export * from './schemas/manifest.js';
 export * from './calibration.js';
+export * from './instrument-b.js';
+export * from './referee.js';
+export { computeSamVisibilityRatio, type SamVisibilityRatioResult } from '@spectra/sam-client';

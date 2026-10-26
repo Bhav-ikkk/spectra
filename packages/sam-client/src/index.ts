@@ -41,3 +41,5 @@ export function createSamConfig(config: SamClientConfig = {}): SamClientConfig {
     model: config.model || 'sam-3.1',
   };
 }
+
+export * from './instrument-a.js';

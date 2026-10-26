@@ -6,7 +6,7 @@ import {
   frameIndexOf,
   decodeMaskToRaster,
   type ResponsesEvent,
-} from '../../../sam-client/src/index.js';
+} from '@spectra/sam-client';
 
 export function recomputeStaticCalibration() {
   console.log('=== Recomputing Static Baseline Jitter (Offline — Zero API Calls) ===\n');
