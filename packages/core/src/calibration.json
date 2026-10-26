@@ -1,8 +1,8 @@
 {
-  "sigma_noise": 0.1486,
-  "delta": 0.2972,
-  "measured_at": "2026-10-26T17:59:46.658Z",
+  "sigma_noise": 0.0443,
+  "delta": 0.0886,
+  "measured_at": "2026-10-26T18:24:25.007Z",
   "run_id": "resp_6adf950e30101e5a4f36456b",
-  "sample_count": 10,
-  "citation": "Measured from live Spike 1 SAM 3.1 run resp_6adf950e30101e5a4f36456b on 2026-10-26T17:59:46.658Z (10 frames mask jitter, mean=2852.9px, stddev=424.01px)"
+  "sample_count": 6,
+  "citation": "Measured from Spike 1 run resp_6adf950e30101e5a4f36456b (quasi-static window t_0..t_5, 6 frames: [2567, 2469, 2510, 2639, 2796, 2595], mean=2596.0px, stddev=115.08px)"
 }

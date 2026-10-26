@@ -10,9 +10,9 @@ import {
 describe('Calibration & Noise-Floor (Rule 2 enforcement)', () => {
   it('loads valid measured calibration data from Spike 1', () => {
     const cal = getCalibration();
-    expect(cal.sigma_noise).toBe(0.1486);
-    expect(cal.delta).toBe(0.2972);
-    expect(cal.sample_count).toBe(10);
+    expect(cal.sigma_noise).toBe(0.0443);
+    expect(cal.delta).toBe(0.0886);
+    expect(cal.sample_count).toBe(6);
     expect(isCalibrated(cal)).toBe(true);
     expect(() => assertCalibrated(cal)).not.toThrow();
   });

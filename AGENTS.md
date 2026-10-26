@@ -70,3 +70,10 @@ This applies to all model IDs used in this project:
 
 If a model ID doesn't match what the API actually serves, document the correct
 ID and update all references in a single commit.
+
+## Rule 6 — Credit Protection & 8-Frame Cap
+
+Never invoke live Meta API endpoints during unit tests, CI, or code iteration
+without explicit user approval in chat. All benchmark video clips must be exactly
+8 frames at 4 FPS (2.0 seconds total at 1280x720) so SAM 3.1 token usage remains
+minimal.
