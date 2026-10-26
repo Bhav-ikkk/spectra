@@ -8,17 +8,27 @@ import {
 } from '../calibration.js';
 
 describe('Calibration & Noise-Floor (Rule 2 enforcement)', () => {
-  it('loads initial uncalibrated state with null values', () => {
+  it('loads valid measured calibration data from Spike 1', () => {
     const cal = getCalibration();
-    expect(cal.sigma_noise).toBeNull();
-    expect(cal.delta).toBeNull();
-    expect(cal.sample_count).toBe(0);
-    expect(isCalibrated(cal)).toBe(false);
+    expect(cal.sigma_noise).toBe(0.1486);
+    expect(cal.delta).toBe(0.2972);
+    expect(cal.sample_count).toBe(10);
+    expect(isCalibrated(cal)).toBe(true);
+    expect(() => assertCalibrated(cal)).not.toThrow();
   });
 
-  it('refuses to emit verdicts when uncalibrated (throws UncalibratedError)', () => {
-    expect(() => assertCalibrated()).toThrowError(UncalibratedError);
-    expect(() => assertCalibrated()).toThrowError(/Rule 2/);
+  it('refuses to emit verdicts when uncalibrated (throws UncalibratedError per Rule 2)', () => {
+    const uncalibratedFixture = {
+      sigma_noise: null,
+      delta: null,
+      measured_at: null,
+      run_id: null,
+      sample_count: 0,
+      citation: 'Uncalibrated',
+    };
+    expect(isCalibrated(uncalibratedFixture)).toBe(false);
+    expect(() => assertCalibrated(uncalibratedFixture)).toThrowError(UncalibratedError);
+    expect(() => assertCalibrated(uncalibratedFixture)).toThrowError(/Rule 2/);
   });
 
   it('calculates sigma_noise and delta = 2 * sigma_noise from repeated measurements', () => {

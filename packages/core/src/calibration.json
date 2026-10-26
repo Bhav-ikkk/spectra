@@ -1,8 +1,8 @@
 {
-  "sigma_noise": null,
-  "delta": null,
-  "measured_at": null,
-  "run_id": null,
-  "sample_count": 0,
-  "citation": "Uncalibrated - Spike 1 live measurement has not yet been executed"
+  "sigma_noise": 0.1486,
+  "delta": 0.2972,
+  "measured_at": "2026-10-26T17:59:46.658Z",
+  "run_id": "resp_6adf950e30101e5a4f36456b",
+  "sample_count": 10,
+  "citation": "Measured from live Spike 1 SAM 3.1 run resp_6adf950e30101e5a4f36456b on 2026-10-26T17:59:46.658Z (10 frames mask jitter, mean=2852.9px, stddev=424.01px)"
 }

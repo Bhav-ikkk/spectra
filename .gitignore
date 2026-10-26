@@ -29,8 +29,10 @@ Thumbs.db
 !.vscode/settings.json
 
 # Temporary / Scratch
+spikes/
 temp_skills/
 temp/
 tmp/
 *.tmp
+
 
