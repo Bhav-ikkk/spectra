@@ -1,0 +1,1 @@
+This file intentionally left empty. It ensures the benchmark/clips/ directory is tracked by git while the actual clip files (.webm) are gitignored.

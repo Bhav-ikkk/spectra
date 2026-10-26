@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Spectra Benchmark Manifest",
+  "description": "Schema for the benchmark manifest emitted by benchmark-gen",
+  "type": "object",
+  "required": ["version", "generatedAt", "clips"],
+  "properties": {
+    "version": { "type": "string", "const": "1.0" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "clips": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["clipId", "scenario", "variant", "expectedVerdicts", "sourceParams"],
+        "properties": {
+          "clipId": { "type": "string" },
+          "scenario": { "type": "string" },
+          "variant": {
+            "type": "string",
+            "enum": ["clean", "edge-case", "adversarial"]
+          },
+          "expectedVerdicts": {
+            "type": "object",
+            "properties": {
+              "samDecode": { "type": "string", "enum": ["pass", "fail", "inconclusive"] },
+              "vlmBlindSpot": { "type": "string", "enum": ["pass", "fail", "inconclusive"] },
+              "noiseFloor": { "type": "string", "enum": ["pass", "fail", "inconclusive"] },
+              "invariantViolation": { "type": "string", "enum": ["pass", "fail", "inconclusive"] }
+            }
+          },
+          "sourceParams": { "type": "object" }
+        }
+      }
+    }
+  }
+}
