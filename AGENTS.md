@@ -1,0 +1,72 @@
+# Spectra V3.0 — Agent Rules
+
+These rules are **non-negotiable**. Any agent (human or AI) working in this
+repository must follow them. Violations must be caught in code review.
+
+## Rule 1 — No Fabricated Data
+
+Never fabricate benchmark numbers, verdicts, or measurements. If something
+hasn't been run, say so — do not invent plausible-looking output.
+
+This includes:
+
+- Benchmark scores or pass/fail counts
+- Noise-floor or calibration values
+- API response payloads
+- Verdict explanations or confidence scores
+
+If a measurement hasn't been taken, the correct output is `null`, `"not yet
+measured"`, or an explicit error — never a made-up number.
+
+## Rule 2 — Noise-Floor Values Come From Measurements Only
+
+Noise-floor (sigma_noise) and disagreement threshold (delta) are only ever set
+from measured Spike 1 data — never hardcoded or guessed by an agent.
+
+If Spike 1 has not run:
+
+- sigma_noise = null
+- delta = null
+- Any code path that requires these values must refuse to emit verdicts
+
+## Rule 3 — Calibration Changes Must Cite Measurement Runs
+
+Any change to threshold/calibration values must cite the measurement run that
+justifies it, in the commit message and PR description.
+
+Format:
+
+```
+chore(calibration): update sigma_noise to 0.0234
+
+Measured from run 2026-10-28T14:32:00Z (10 clips × 5 reps)
+Median per-clip stddev: 0.0234
+Full log: benchmark/responses/calibration-run-20261028.json
+```
+
+## Rule 4 — Spike/Fallback Structure Is Deliberate
+
+The Day-1 spike/fallback structure (blueprint Section 3) is deliberate risk
+management, not technical debt — do not "simplify" it away under time pressure.
+
+Each spike exists because its dependency is unverified:
+
+- Spike 1: Does @meta-sam/parser resolve? Does the SAM 3.1 API respond?
+- Spike 2: Does muse-spark-1.3 handle our clip format?
+- Spike 3: Does muse exec support headless JSON mode?
+
+Removing a spike to "save time" converts a known risk into a surprise failure.
+
+## Rule 5 — Verify Model IDs Before Building
+
+Verify muse-voice-transcribe-1.0's exact model id against dev.meta.ai/docs and
+`GET https://api.meta.ai/v1/models` before building anything that depends on it.
+
+This applies to all model IDs used in this project:
+
+- muse-voice-transcribe-1.0 (voice → text)
+- muse-spark-1.3 (VLM evaluator + invariant compiler)
+- sam-3.1 (via POST https://api.meta.ai/v1/responses)
+
+If a model ID doesn't match what the API actually serves, document the correct
+ID and update all references in a single commit.
