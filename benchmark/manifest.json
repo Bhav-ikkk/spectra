@@ -1,0 +1,1311 @@
+{
+  "version": "1.0",
+  "generatedAt": "2026-10-26T18:46:58.287115+00:00",
+  "clips": [
+    {
+      "clipId": "canvas_000_v1",
+      "environment": "canvas",
+      "scenario": "canvas_analytics",
+      "variant": "clean",
+      "groundTruthOcclusion": 0.0,
+      "targetLabel": "Revenue Series Legend",
+      "targetBBox": {
+        "x": 820,
+        "y": 240,
+        "width": 220,
+        "height": 48
+      },
+      "t0FramePath": "benchmark/clips/canvas_000_v1_t0.png",
+      "tkFramePath": "benchmark/clips/canvas_000_v1_tk.png",
+      "videoPath": "benchmark/clips/canvas_000_v1.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "pass",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v1"
+      }
+    },
+    {
+      "clipId": "canvas_000_v2",
+      "environment": "canvas",
+      "scenario": "canvas_analytics",
+      "variant": "clean",
+      "groundTruthOcclusion": 0.0,
+      "targetLabel": "Revenue Series Legend",
+      "targetBBox": {
+        "x": 820,
+        "y": 240,
+        "width": 220,
+        "height": 48
+      },
+      "t0FramePath": "benchmark/clips/canvas_000_v2_t0.png",
+      "tkFramePath": "benchmark/clips/canvas_000_v2_tk.png",
+      "videoPath": "benchmark/clips/canvas_000_v2.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "pass",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v2"
+      }
+    },
+    {
+      "clipId": "canvas_005_v1",
+      "environment": "canvas",
+      "scenario": "canvas_analytics",
+      "variant": "edge-case",
+      "groundTruthOcclusion": 0.05,
+      "targetLabel": "Revenue Series Legend",
+      "targetBBox": {
+        "x": 820,
+        "y": 240,
+        "width": 220,
+        "height": 48
+      },
+      "t0FramePath": "benchmark/clips/canvas_005_v1_t0.png",
+      "tkFramePath": "benchmark/clips/canvas_005_v1_tk.png",
+      "videoPath": "benchmark/clips/canvas_005_v1.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "pass",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v1"
+      }
+    },
+    {
+      "clipId": "canvas_005_v2",
+      "environment": "canvas",
+      "scenario": "canvas_analytics",
+      "variant": "edge-case",
+      "groundTruthOcclusion": 0.05,
+      "targetLabel": "Revenue Series Legend",
+      "targetBBox": {
+        "x": 820,
+        "y": 240,
+        "width": 220,
+        "height": 48
+      },
+      "t0FramePath": "benchmark/clips/canvas_005_v2_t0.png",
+      "tkFramePath": "benchmark/clips/canvas_005_v2_tk.png",
+      "videoPath": "benchmark/clips/canvas_005_v2.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "pass",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v2"
+      }
+    },
+    {
+      "clipId": "canvas_010_v1",
+      "environment": "canvas",
+      "scenario": "canvas_analytics",
+      "variant": "edge-case",
+      "groundTruthOcclusion": 0.1,
+      "targetLabel": "Revenue Series Legend",
+      "targetBBox": {
+        "x": 820,
+        "y": 240,
+        "width": 220,
+        "height": 48
+      },
+      "t0FramePath": "benchmark/clips/canvas_010_v1_t0.png",
+      "tkFramePath": "benchmark/clips/canvas_010_v1_tk.png",
+      "videoPath": "benchmark/clips/canvas_010_v1.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "pass",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v1"
+      }
+    },
+    {
+      "clipId": "canvas_010_v2",
+      "environment": "canvas",
+      "scenario": "canvas_analytics",
+      "variant": "edge-case",
+      "groundTruthOcclusion": 0.1,
+      "targetLabel": "Revenue Series Legend",
+      "targetBBox": {
+        "x": 820,
+        "y": 240,
+        "width": 220,
+        "height": 48
+      },
+      "t0FramePath": "benchmark/clips/canvas_010_v2_t0.png",
+      "tkFramePath": "benchmark/clips/canvas_010_v2_tk.png",
+      "videoPath": "benchmark/clips/canvas_010_v2.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "pass",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v2"
+      }
+    },
+    {
+      "clipId": "canvas_015_v1",
+      "environment": "canvas",
+      "scenario": "canvas_analytics",
+      "variant": "edge-case",
+      "groundTruthOcclusion": 0.15,
+      "targetLabel": "Revenue Series Legend",
+      "targetBBox": {
+        "x": 820,
+        "y": 240,
+        "width": 220,
+        "height": 48
+      },
+      "t0FramePath": "benchmark/clips/canvas_015_v1_t0.png",
+      "tkFramePath": "benchmark/clips/canvas_015_v1_tk.png",
+      "videoPath": "benchmark/clips/canvas_015_v1.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "fail",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v1"
+      }
+    },
+    {
+      "clipId": "canvas_015_v2",
+      "environment": "canvas",
+      "scenario": "canvas_analytics",
+      "variant": "edge-case",
+      "groundTruthOcclusion": 0.15,
+      "targetLabel": "Revenue Series Legend",
+      "targetBBox": {
+        "x": 820,
+        "y": 240,
+        "width": 220,
+        "height": 48
+      },
+      "t0FramePath": "benchmark/clips/canvas_015_v2_t0.png",
+      "tkFramePath": "benchmark/clips/canvas_015_v2_tk.png",
+      "videoPath": "benchmark/clips/canvas_015_v2.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "fail",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v2"
+      }
+    },
+    {
+      "clipId": "canvas_025_v1",
+      "environment": "canvas",
+      "scenario": "canvas_analytics",
+      "variant": "adversarial",
+      "groundTruthOcclusion": 0.25,
+      "targetLabel": "Revenue Series Legend",
+      "targetBBox": {
+        "x": 820,
+        "y": 240,
+        "width": 220,
+        "height": 48
+      },
+      "t0FramePath": "benchmark/clips/canvas_025_v1_t0.png",
+      "tkFramePath": "benchmark/clips/canvas_025_v1_tk.png",
+      "videoPath": "benchmark/clips/canvas_025_v1.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "fail",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v1"
+      }
+    },
+    {
+      "clipId": "canvas_025_v2",
+      "environment": "canvas",
+      "scenario": "canvas_analytics",
+      "variant": "adversarial",
+      "groundTruthOcclusion": 0.25,
+      "targetLabel": "Revenue Series Legend",
+      "targetBBox": {
+        "x": 820,
+        "y": 240,
+        "width": 220,
+        "height": 48
+      },
+      "t0FramePath": "benchmark/clips/canvas_025_v2_t0.png",
+      "tkFramePath": "benchmark/clips/canvas_025_v2_tk.png",
+      "videoPath": "benchmark/clips/canvas_025_v2.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "fail",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v2"
+      }
+    },
+    {
+      "clipId": "canvas_040_v1",
+      "environment": "canvas",
+      "scenario": "canvas_analytics",
+      "variant": "adversarial",
+      "groundTruthOcclusion": 0.4,
+      "targetLabel": "Revenue Series Legend",
+      "targetBBox": {
+        "x": 820,
+        "y": 240,
+        "width": 220,
+        "height": 48
+      },
+      "t0FramePath": "benchmark/clips/canvas_040_v1_t0.png",
+      "tkFramePath": "benchmark/clips/canvas_040_v1_tk.png",
+      "videoPath": "benchmark/clips/canvas_040_v1.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "fail",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v1"
+      }
+    },
+    {
+      "clipId": "canvas_040_v2",
+      "environment": "canvas",
+      "scenario": "canvas_analytics",
+      "variant": "adversarial",
+      "groundTruthOcclusion": 0.4,
+      "targetLabel": "Revenue Series Legend",
+      "targetBBox": {
+        "x": 820,
+        "y": 240,
+        "width": 220,
+        "height": 48
+      },
+      "t0FramePath": "benchmark/clips/canvas_040_v2_t0.png",
+      "tkFramePath": "benchmark/clips/canvas_040_v2_tk.png",
+      "videoPath": "benchmark/clips/canvas_040_v2.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "fail",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v2"
+      }
+    },
+    {
+      "clipId": "canvas_060_v1",
+      "environment": "canvas",
+      "scenario": "canvas_analytics",
+      "variant": "adversarial",
+      "groundTruthOcclusion": 0.6,
+      "targetLabel": "Revenue Series Legend",
+      "targetBBox": {
+        "x": 820,
+        "y": 240,
+        "width": 220,
+        "height": 48
+      },
+      "t0FramePath": "benchmark/clips/canvas_060_v1_t0.png",
+      "tkFramePath": "benchmark/clips/canvas_060_v1_tk.png",
+      "videoPath": "benchmark/clips/canvas_060_v1.mp4",
+      "centerPixelCovered": true,
+      "expectedVerdicts": {
+        "samDecode": "fail",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v1"
+      }
+    },
+    {
+      "clipId": "canvas_060_v2",
+      "environment": "canvas",
+      "scenario": "canvas_analytics",
+      "variant": "adversarial",
+      "groundTruthOcclusion": 0.6,
+      "targetLabel": "Revenue Series Legend",
+      "targetBBox": {
+        "x": 820,
+        "y": 240,
+        "width": 220,
+        "height": 48
+      },
+      "t0FramePath": "benchmark/clips/canvas_060_v2_t0.png",
+      "tkFramePath": "benchmark/clips/canvas_060_v2_tk.png",
+      "videoPath": "benchmark/clips/canvas_060_v2.mp4",
+      "centerPixelCovered": true,
+      "expectedVerdicts": {
+        "samDecode": "fail",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v2"
+      }
+    },
+    {
+      "clipId": "canvas_clean_ctrl",
+      "environment": "canvas",
+      "scenario": "canvas_analytics",
+      "variant": "clean",
+      "groundTruthOcclusion": 0.0,
+      "targetLabel": "Revenue Series Legend",
+      "targetBBox": {
+        "x": 820,
+        "y": 240,
+        "width": 220,
+        "height": 48
+      },
+      "t0FramePath": "benchmark/clips/canvas_clean_ctrl_t0.png",
+      "tkFramePath": "benchmark/clips/canvas_clean_ctrl_tk.png",
+      "videoPath": "benchmark/clips/canvas_clean_ctrl.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "pass",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "control"
+      }
+    },
+    {
+      "clipId": "mobile_mp4_000_v1",
+      "environment": "mobile_mp4",
+      "scenario": "mobile_checkout",
+      "variant": "clean",
+      "groundTruthOcclusion": 0.0,
+      "targetLabel": "Pay $149.00",
+      "targetBBox": {
+        "x": 475,
+        "y": 610,
+        "width": 330,
+        "height": 52
+      },
+      "t0FramePath": "benchmark/clips/mobile_mp4_000_v1_t0.png",
+      "tkFramePath": "benchmark/clips/mobile_mp4_000_v1_tk.png",
+      "videoPath": "benchmark/clips/mobile_mp4_000_v1.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "pass",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v1"
+      }
+    },
+    {
+      "clipId": "mobile_mp4_000_v2",
+      "environment": "mobile_mp4",
+      "scenario": "mobile_checkout",
+      "variant": "clean",
+      "groundTruthOcclusion": 0.0,
+      "targetLabel": "Pay $149.00",
+      "targetBBox": {
+        "x": 475,
+        "y": 610,
+        "width": 330,
+        "height": 52
+      },
+      "t0FramePath": "benchmark/clips/mobile_mp4_000_v2_t0.png",
+      "tkFramePath": "benchmark/clips/mobile_mp4_000_v2_tk.png",
+      "videoPath": "benchmark/clips/mobile_mp4_000_v2.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "pass",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v2"
+      }
+    },
+    {
+      "clipId": "mobile_mp4_005_v1",
+      "environment": "mobile_mp4",
+      "scenario": "mobile_checkout",
+      "variant": "edge-case",
+      "groundTruthOcclusion": 0.05,
+      "targetLabel": "Pay $149.00",
+      "targetBBox": {
+        "x": 475,
+        "y": 610,
+        "width": 330,
+        "height": 52
+      },
+      "t0FramePath": "benchmark/clips/mobile_mp4_005_v1_t0.png",
+      "tkFramePath": "benchmark/clips/mobile_mp4_005_v1_tk.png",
+      "videoPath": "benchmark/clips/mobile_mp4_005_v1.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "pass",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v1"
+      }
+    },
+    {
+      "clipId": "mobile_mp4_005_v2",
+      "environment": "mobile_mp4",
+      "scenario": "mobile_checkout",
+      "variant": "edge-case",
+      "groundTruthOcclusion": 0.05,
+      "targetLabel": "Pay $149.00",
+      "targetBBox": {
+        "x": 475,
+        "y": 610,
+        "width": 330,
+        "height": 52
+      },
+      "t0FramePath": "benchmark/clips/mobile_mp4_005_v2_t0.png",
+      "tkFramePath": "benchmark/clips/mobile_mp4_005_v2_tk.png",
+      "videoPath": "benchmark/clips/mobile_mp4_005_v2.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "pass",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v2"
+      }
+    },
+    {
+      "clipId": "mobile_mp4_010_v1",
+      "environment": "mobile_mp4",
+      "scenario": "mobile_checkout",
+      "variant": "edge-case",
+      "groundTruthOcclusion": 0.1,
+      "targetLabel": "Pay $149.00",
+      "targetBBox": {
+        "x": 475,
+        "y": 610,
+        "width": 330,
+        "height": 52
+      },
+      "t0FramePath": "benchmark/clips/mobile_mp4_010_v1_t0.png",
+      "tkFramePath": "benchmark/clips/mobile_mp4_010_v1_tk.png",
+      "videoPath": "benchmark/clips/mobile_mp4_010_v1.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "pass",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v1"
+      }
+    },
+    {
+      "clipId": "mobile_mp4_010_v2",
+      "environment": "mobile_mp4",
+      "scenario": "mobile_checkout",
+      "variant": "edge-case",
+      "groundTruthOcclusion": 0.1,
+      "targetLabel": "Pay $149.00",
+      "targetBBox": {
+        "x": 475,
+        "y": 610,
+        "width": 330,
+        "height": 52
+      },
+      "t0FramePath": "benchmark/clips/mobile_mp4_010_v2_t0.png",
+      "tkFramePath": "benchmark/clips/mobile_mp4_010_v2_tk.png",
+      "videoPath": "benchmark/clips/mobile_mp4_010_v2.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "pass",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v2"
+      }
+    },
+    {
+      "clipId": "mobile_mp4_015_v1",
+      "environment": "mobile_mp4",
+      "scenario": "mobile_checkout",
+      "variant": "edge-case",
+      "groundTruthOcclusion": 0.15,
+      "targetLabel": "Pay $149.00",
+      "targetBBox": {
+        "x": 475,
+        "y": 610,
+        "width": 330,
+        "height": 52
+      },
+      "t0FramePath": "benchmark/clips/mobile_mp4_015_v1_t0.png",
+      "tkFramePath": "benchmark/clips/mobile_mp4_015_v1_tk.png",
+      "videoPath": "benchmark/clips/mobile_mp4_015_v1.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "fail",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v1"
+      }
+    },
+    {
+      "clipId": "mobile_mp4_015_v2",
+      "environment": "mobile_mp4",
+      "scenario": "mobile_checkout",
+      "variant": "edge-case",
+      "groundTruthOcclusion": 0.15,
+      "targetLabel": "Pay $149.00",
+      "targetBBox": {
+        "x": 475,
+        "y": 610,
+        "width": 330,
+        "height": 52
+      },
+      "t0FramePath": "benchmark/clips/mobile_mp4_015_v2_t0.png",
+      "tkFramePath": "benchmark/clips/mobile_mp4_015_v2_tk.png",
+      "videoPath": "benchmark/clips/mobile_mp4_015_v2.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "fail",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v2"
+      }
+    },
+    {
+      "clipId": "mobile_mp4_025_v1",
+      "environment": "mobile_mp4",
+      "scenario": "mobile_checkout",
+      "variant": "adversarial",
+      "groundTruthOcclusion": 0.25,
+      "targetLabel": "Pay $149.00",
+      "targetBBox": {
+        "x": 475,
+        "y": 610,
+        "width": 330,
+        "height": 52
+      },
+      "t0FramePath": "benchmark/clips/mobile_mp4_025_v1_t0.png",
+      "tkFramePath": "benchmark/clips/mobile_mp4_025_v1_tk.png",
+      "videoPath": "benchmark/clips/mobile_mp4_025_v1.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "fail",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v1"
+      }
+    },
+    {
+      "clipId": "mobile_mp4_025_v2",
+      "environment": "mobile_mp4",
+      "scenario": "mobile_checkout",
+      "variant": "adversarial",
+      "groundTruthOcclusion": 0.25,
+      "targetLabel": "Pay $149.00",
+      "targetBBox": {
+        "x": 475,
+        "y": 610,
+        "width": 330,
+        "height": 52
+      },
+      "t0FramePath": "benchmark/clips/mobile_mp4_025_v2_t0.png",
+      "tkFramePath": "benchmark/clips/mobile_mp4_025_v2_tk.png",
+      "videoPath": "benchmark/clips/mobile_mp4_025_v2.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "fail",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v2"
+      }
+    },
+    {
+      "clipId": "mobile_mp4_040_v1",
+      "environment": "mobile_mp4",
+      "scenario": "mobile_checkout",
+      "variant": "adversarial",
+      "groundTruthOcclusion": 0.4,
+      "targetLabel": "Pay $149.00",
+      "targetBBox": {
+        "x": 475,
+        "y": 610,
+        "width": 330,
+        "height": 52
+      },
+      "t0FramePath": "benchmark/clips/mobile_mp4_040_v1_t0.png",
+      "tkFramePath": "benchmark/clips/mobile_mp4_040_v1_tk.png",
+      "videoPath": "benchmark/clips/mobile_mp4_040_v1.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "fail",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v1"
+      }
+    },
+    {
+      "clipId": "mobile_mp4_040_v2",
+      "environment": "mobile_mp4",
+      "scenario": "mobile_checkout",
+      "variant": "adversarial",
+      "groundTruthOcclusion": 0.4,
+      "targetLabel": "Pay $149.00",
+      "targetBBox": {
+        "x": 475,
+        "y": 610,
+        "width": 330,
+        "height": 52
+      },
+      "t0FramePath": "benchmark/clips/mobile_mp4_040_v2_t0.png",
+      "tkFramePath": "benchmark/clips/mobile_mp4_040_v2_tk.png",
+      "videoPath": "benchmark/clips/mobile_mp4_040_v2.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "fail",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v2"
+      }
+    },
+    {
+      "clipId": "mobile_mp4_060_v1",
+      "environment": "mobile_mp4",
+      "scenario": "mobile_checkout",
+      "variant": "adversarial",
+      "groundTruthOcclusion": 0.6,
+      "targetLabel": "Pay $149.00",
+      "targetBBox": {
+        "x": 475,
+        "y": 610,
+        "width": 330,
+        "height": 52
+      },
+      "t0FramePath": "benchmark/clips/mobile_mp4_060_v1_t0.png",
+      "tkFramePath": "benchmark/clips/mobile_mp4_060_v1_tk.png",
+      "videoPath": "benchmark/clips/mobile_mp4_060_v1.mp4",
+      "centerPixelCovered": true,
+      "expectedVerdicts": {
+        "samDecode": "fail",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v1"
+      }
+    },
+    {
+      "clipId": "mobile_mp4_060_v2",
+      "environment": "mobile_mp4",
+      "scenario": "mobile_checkout",
+      "variant": "adversarial",
+      "groundTruthOcclusion": 0.6,
+      "targetLabel": "Pay $149.00",
+      "targetBBox": {
+        "x": 475,
+        "y": 610,
+        "width": 330,
+        "height": 52
+      },
+      "t0FramePath": "benchmark/clips/mobile_mp4_060_v2_t0.png",
+      "tkFramePath": "benchmark/clips/mobile_mp4_060_v2_tk.png",
+      "videoPath": "benchmark/clips/mobile_mp4_060_v2.mp4",
+      "centerPixelCovered": true,
+      "expectedVerdicts": {
+        "samDecode": "fail",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v2"
+      }
+    },
+    {
+      "clipId": "mobile_mp4_clean_ctrl",
+      "environment": "mobile_mp4",
+      "scenario": "mobile_checkout",
+      "variant": "clean",
+      "groundTruthOcclusion": 0.0,
+      "targetLabel": "Pay $149.00",
+      "targetBBox": {
+        "x": 475,
+        "y": 610,
+        "width": 330,
+        "height": 52
+      },
+      "t0FramePath": "benchmark/clips/mobile_mp4_clean_ctrl_t0.png",
+      "tkFramePath": "benchmark/clips/mobile_mp4_clean_ctrl_tk.png",
+      "videoPath": "benchmark/clips/mobile_mp4_clean_ctrl.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "pass",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "control"
+      }
+    },
+    {
+      "clipId": "dom_catch_000_v1",
+      "environment": "dom_catch",
+      "scenario": "dom_drawer_catch",
+      "variant": "clean",
+      "groundTruthOcclusion": 0.0,
+      "targetLabel": "Complete Checkout",
+      "targetBBox": {
+        "x": 910,
+        "y": 600,
+        "width": 340,
+        "height": 50
+      },
+      "t0FramePath": "benchmark/clips/dom_catch_000_v1_t0.png",
+      "tkFramePath": "benchmark/clips/dom_catch_000_v1_tk.png",
+      "videoPath": "benchmark/clips/dom_catch_000_v1.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "pass",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v1"
+      }
+    },
+    {
+      "clipId": "dom_catch_000_v2",
+      "environment": "dom_catch",
+      "scenario": "dom_drawer_catch",
+      "variant": "clean",
+      "groundTruthOcclusion": 0.0,
+      "targetLabel": "Complete Checkout",
+      "targetBBox": {
+        "x": 910,
+        "y": 600,
+        "width": 340,
+        "height": 50
+      },
+      "t0FramePath": "benchmark/clips/dom_catch_000_v2_t0.png",
+      "tkFramePath": "benchmark/clips/dom_catch_000_v2_tk.png",
+      "videoPath": "benchmark/clips/dom_catch_000_v2.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "pass",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v2"
+      }
+    },
+    {
+      "clipId": "dom_catch_005_v1",
+      "environment": "dom_catch",
+      "scenario": "dom_drawer_catch",
+      "variant": "edge-case",
+      "groundTruthOcclusion": 0.05,
+      "targetLabel": "Complete Checkout",
+      "targetBBox": {
+        "x": 910,
+        "y": 600,
+        "width": 340,
+        "height": 50
+      },
+      "t0FramePath": "benchmark/clips/dom_catch_005_v1_t0.png",
+      "tkFramePath": "benchmark/clips/dom_catch_005_v1_tk.png",
+      "videoPath": "benchmark/clips/dom_catch_005_v1.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "pass",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v1"
+      }
+    },
+    {
+      "clipId": "dom_catch_005_v2",
+      "environment": "dom_catch",
+      "scenario": "dom_drawer_catch",
+      "variant": "edge-case",
+      "groundTruthOcclusion": 0.05,
+      "targetLabel": "Complete Checkout",
+      "targetBBox": {
+        "x": 910,
+        "y": 600,
+        "width": 340,
+        "height": 50
+      },
+      "t0FramePath": "benchmark/clips/dom_catch_005_v2_t0.png",
+      "tkFramePath": "benchmark/clips/dom_catch_005_v2_tk.png",
+      "videoPath": "benchmark/clips/dom_catch_005_v2.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "pass",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v2"
+      }
+    },
+    {
+      "clipId": "dom_catch_010_v1",
+      "environment": "dom_catch",
+      "scenario": "dom_drawer_catch",
+      "variant": "edge-case",
+      "groundTruthOcclusion": 0.1,
+      "targetLabel": "Complete Checkout",
+      "targetBBox": {
+        "x": 910,
+        "y": 600,
+        "width": 340,
+        "height": 50
+      },
+      "t0FramePath": "benchmark/clips/dom_catch_010_v1_t0.png",
+      "tkFramePath": "benchmark/clips/dom_catch_010_v1_tk.png",
+      "videoPath": "benchmark/clips/dom_catch_010_v1.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "pass",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v1"
+      }
+    },
+    {
+      "clipId": "dom_catch_010_v2",
+      "environment": "dom_catch",
+      "scenario": "dom_drawer_catch",
+      "variant": "edge-case",
+      "groundTruthOcclusion": 0.1,
+      "targetLabel": "Complete Checkout",
+      "targetBBox": {
+        "x": 910,
+        "y": 600,
+        "width": 340,
+        "height": 50
+      },
+      "t0FramePath": "benchmark/clips/dom_catch_010_v2_t0.png",
+      "tkFramePath": "benchmark/clips/dom_catch_010_v2_tk.png",
+      "videoPath": "benchmark/clips/dom_catch_010_v2.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "pass",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v2"
+      }
+    },
+    {
+      "clipId": "dom_catch_015_v1",
+      "environment": "dom_catch",
+      "scenario": "dom_drawer_catch",
+      "variant": "edge-case",
+      "groundTruthOcclusion": 0.15,
+      "targetLabel": "Complete Checkout",
+      "targetBBox": {
+        "x": 910,
+        "y": 600,
+        "width": 340,
+        "height": 50
+      },
+      "t0FramePath": "benchmark/clips/dom_catch_015_v1_t0.png",
+      "tkFramePath": "benchmark/clips/dom_catch_015_v1_tk.png",
+      "videoPath": "benchmark/clips/dom_catch_015_v1.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "fail",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v1"
+      }
+    },
+    {
+      "clipId": "dom_catch_015_v2",
+      "environment": "dom_catch",
+      "scenario": "dom_drawer_catch",
+      "variant": "edge-case",
+      "groundTruthOcclusion": 0.15,
+      "targetLabel": "Complete Checkout",
+      "targetBBox": {
+        "x": 910,
+        "y": 600,
+        "width": 340,
+        "height": 50
+      },
+      "t0FramePath": "benchmark/clips/dom_catch_015_v2_t0.png",
+      "tkFramePath": "benchmark/clips/dom_catch_015_v2_tk.png",
+      "videoPath": "benchmark/clips/dom_catch_015_v2.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "fail",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v2"
+      }
+    },
+    {
+      "clipId": "dom_catch_025_v1",
+      "environment": "dom_catch",
+      "scenario": "dom_drawer_catch",
+      "variant": "adversarial",
+      "groundTruthOcclusion": 0.25,
+      "targetLabel": "Complete Checkout",
+      "targetBBox": {
+        "x": 910,
+        "y": 600,
+        "width": 340,
+        "height": 50
+      },
+      "t0FramePath": "benchmark/clips/dom_catch_025_v1_t0.png",
+      "tkFramePath": "benchmark/clips/dom_catch_025_v1_tk.png",
+      "videoPath": "benchmark/clips/dom_catch_025_v1.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "fail",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v1"
+      }
+    },
+    {
+      "clipId": "dom_catch_025_v2",
+      "environment": "dom_catch",
+      "scenario": "dom_drawer_catch",
+      "variant": "adversarial",
+      "groundTruthOcclusion": 0.25,
+      "targetLabel": "Complete Checkout",
+      "targetBBox": {
+        "x": 910,
+        "y": 600,
+        "width": 340,
+        "height": 50
+      },
+      "t0FramePath": "benchmark/clips/dom_catch_025_v2_t0.png",
+      "tkFramePath": "benchmark/clips/dom_catch_025_v2_tk.png",
+      "videoPath": "benchmark/clips/dom_catch_025_v2.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "fail",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v2"
+      }
+    },
+    {
+      "clipId": "dom_catch_040_v1",
+      "environment": "dom_catch",
+      "scenario": "dom_drawer_catch",
+      "variant": "adversarial",
+      "groundTruthOcclusion": 0.4,
+      "targetLabel": "Complete Checkout",
+      "targetBBox": {
+        "x": 910,
+        "y": 600,
+        "width": 340,
+        "height": 50
+      },
+      "t0FramePath": "benchmark/clips/dom_catch_040_v1_t0.png",
+      "tkFramePath": "benchmark/clips/dom_catch_040_v1_tk.png",
+      "videoPath": "benchmark/clips/dom_catch_040_v1.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "fail",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v1"
+      }
+    },
+    {
+      "clipId": "dom_catch_040_v2",
+      "environment": "dom_catch",
+      "scenario": "dom_drawer_catch",
+      "variant": "adversarial",
+      "groundTruthOcclusion": 0.4,
+      "targetLabel": "Complete Checkout",
+      "targetBBox": {
+        "x": 910,
+        "y": 600,
+        "width": 340,
+        "height": 50
+      },
+      "t0FramePath": "benchmark/clips/dom_catch_040_v2_t0.png",
+      "tkFramePath": "benchmark/clips/dom_catch_040_v2_tk.png",
+      "videoPath": "benchmark/clips/dom_catch_040_v2.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "fail",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v2"
+      }
+    },
+    {
+      "clipId": "dom_catch_060_v1",
+      "environment": "dom_catch",
+      "scenario": "dom_drawer_catch",
+      "variant": "adversarial",
+      "groundTruthOcclusion": 0.6,
+      "targetLabel": "Complete Checkout",
+      "targetBBox": {
+        "x": 910,
+        "y": 600,
+        "width": 340,
+        "height": 50
+      },
+      "t0FramePath": "benchmark/clips/dom_catch_060_v1_t0.png",
+      "tkFramePath": "benchmark/clips/dom_catch_060_v1_tk.png",
+      "videoPath": "benchmark/clips/dom_catch_060_v1.mp4",
+      "centerPixelCovered": true,
+      "expectedVerdicts": {
+        "samDecode": "fail",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v1"
+      }
+    },
+    {
+      "clipId": "dom_catch_060_v2",
+      "environment": "dom_catch",
+      "scenario": "dom_drawer_catch",
+      "variant": "adversarial",
+      "groundTruthOcclusion": 0.6,
+      "targetLabel": "Complete Checkout",
+      "targetBBox": {
+        "x": 910,
+        "y": 600,
+        "width": 340,
+        "height": 50
+      },
+      "t0FramePath": "benchmark/clips/dom_catch_060_v2_t0.png",
+      "tkFramePath": "benchmark/clips/dom_catch_060_v2_tk.png",
+      "videoPath": "benchmark/clips/dom_catch_060_v2.mp4",
+      "centerPixelCovered": true,
+      "expectedVerdicts": {
+        "samDecode": "fail",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "v2"
+      }
+    },
+    {
+      "clipId": "dom_catch_clean_ctrl",
+      "environment": "dom_catch",
+      "scenario": "dom_drawer_catch",
+      "variant": "clean",
+      "groundTruthOcclusion": 0.0,
+      "targetLabel": "Complete Checkout",
+      "targetBBox": {
+        "x": 910,
+        "y": 600,
+        "width": 340,
+        "height": 50
+      },
+      "t0FramePath": "benchmark/clips/dom_catch_clean_ctrl_t0.png",
+      "tkFramePath": "benchmark/clips/dom_catch_clean_ctrl_tk.png",
+      "videoPath": "benchmark/clips/dom_catch_clean_ctrl.mp4",
+      "centerPixelCovered": false,
+      "expectedVerdicts": {
+        "samDecode": "pass",
+        "noiseFloor": "pass"
+      },
+      "sourceParams": {
+        "fps": 4.0,
+        "frameCount": 8,
+        "width": 1280,
+        "height": 720,
+        "variantType": "control"
+      }
+    }
+  ]
+}

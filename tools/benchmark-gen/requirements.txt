@@ -2,6 +2,6 @@
 # Isolated from the Node.js monorepo — this venv is never
 # touched by pnpm install.
 
-opencv-python>=4.10.0
-Pillow>=10.4.0
-moviepy>=1.0.3
+pillow>=10.0.0
+numpy>=1.24.0
+opencv-python-headless>=4.8.0
