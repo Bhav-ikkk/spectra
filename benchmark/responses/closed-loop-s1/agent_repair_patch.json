@@ -1,0 +1,40 @@
+{
+  "codePatch": "const tooltip = {\n  x: 660,\n  y: 230,\n  width: 140,\n  height: 60,\n};",
+  "patch": "const tooltip = {\n  x: 660,\n  y: 230,\n  width: 140,\n  height: 60,\n};",
+  "newFooterOverlapPx": 0,
+  "newOverlapPx": 0,
+  "explanation": "Shifted canvas tooltip X coordinate leftward from 980 to 660 to completely avoid the Revenue Series Legend bounding box.",
+  "rawResponse": {
+    "id": "chatcmpl-06ff1006884448f5a70f4226b17651ea",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "content": "{\n  \"codePatch\": \"const tooltip = {\\n  x: 660,\\n  y: 230,\\n  width: 140,\\n  height: 60,\\n};\",\n  \"newOverlapPx\": 0,\n  \"explanation\": \"Shifted canvas tooltip X coordinate leftward from 980 to 660 to completely avoid the Revenue Series Legend bounding box.\"\n}",
+          "role": "assistant",
+          "reasoning_content": "We need to provide JSON with codePatch, newOverlapPx, explanation. The user wants to generate canvas tooltip coordinate patch to eliminate 15% collision.\n\nWe must follow schema exactly. The example shows:\n{\n  \"codePatch\": \"const tooltip = {\\n  x: 660,\\n  y: 230,\\n  width: 140,\\n  height: 60,\\n};\",\n  \"newOverlapPx\": 0,\n  \"explanation\": \"Shifted canvas tooltip X coordinate leftward from 980 to 660 to completely avoid the Revenue Series Legend bounding box.\"\n}\n\nWe need to ensure tooltip does not overlap legend at [x=820, y=240, width=220, height=48] => x 820..1040, y 240..288.\n\nCurrent broken tooltip: x=980, y=230, width=140, height=60 => x 980..1120, y 230..290 => overlaps.\n\nWe need to shift to clear. Example suggests x=660, y=230, width=140, height=60 => x 660..800, y 230..290 => This is left of legend (800 < 820) so no overlap. But y still overlaps in Y dimension (230..290 vs 240..288) but X doesn't overlap, so 0 overlap.\n\nWe could also shift y. But x=660 works.\n\nWe must provide valid JSON. Ensure codePatch string has newline escapes.\n\nWe should provide minimal code patch and coordinate adjustment that shifts tooltip anchor to completely clear legend collision (0% overlap).\n\nWe should respond ONLY with valid JSON conforming to schema.\n\nWe must ensure newOverlapPx is 0.\n\nWe should not add extra fields.\n\nPotential nuance: The system wants us to comply with providing patch. This is allowed. It's not disallowed content. It's a canvas tooltip coordinate patch. This is benign.\n\nWe should output JSON exactly.\n\nMake sure to escape correctly.\n\nWe should provide codePatch as string with const tooltip = { ... };\n\nWe need to ensure JSON is valid.\n\nWe should not include any extra text outside JSON.\n\nWe should follow the instruction: Respond ONLY with JSON.\n\nWe should provide explanation.\n\nWe should ensure we don't violate policy. This is fine.\n\nWe should output:\n\n{\n  \"codePatch\": \"const tooltip = {\\n  x: 660,\\n  y: 230,\\n  width: 140,\\n  height: 60,\\n};\",\n  \"newOverlapPx\": 0,\n  \"explanation\": \"Shifted canvas tooltip X coordinate leftward from 980 to 660 to completely avoid the Revenue Series Legend bounding box.\"\n}\n\nWe could also propose alternative like x=680 etc. But 660 is safe. Let's ensure width 140, so x+width = 800 < 820, so no overlap. Good.\n\nWe could also shift y to 170 etc. But x shift is sufficient.\n\nWe should ensure we meet requirement: 0% overlap.\n\nWe should output JSON with double quotes.\n\nWe must not add trailing comma.\n\nWe should ensure we comply with developer instruction: Provide minimal code patch and coordinate adjustment that shifts tooltip anchor to completely clear legend collision (0% overlap) so legend remains 100% visible.\n\nWe are doing that.\n\nWe should not add any reasoning outside JSON.\n\nWe should output JSON only.\n\nPotential edge: The user wants us to generate patch. We are doing.\n\nWe should ensure we don't hallucinate.\n\nWe should output exactly JSON.\n\nWe should ensure codePatch string is correctly escaped.\n\nWe should provide final answer."
+        },
+        "finish_reason": "stop"
+      }
+    ],
+    "created": 1793108344,
+    "model": "meta-models/muse-spark-open-1026",
+    "object": "chat.completion",
+    "usage": {
+      "prompt_tokens": 474,
+      "completion_tokens": 828,
+      "total_tokens": 1302,
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      },
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": 621,
+        "audio_tokens": 0,
+        "reasoning_tokens": 737,
+        "rejected_prediction_tokens": 828
+      }
+    }
+  },
+  "model": "meta-models/muse-spark-open-1026"
+}

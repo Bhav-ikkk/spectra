@@ -300,14 +300,14 @@ describe('@spectra/cli - Production CLI Offline Tests ($0.00 Spend)', () => {
   });
 
   describe('spectra closed-loop-demo', () => {
-    it('runs closed-loop referee demo with human-readable table output', async () => {
+    it('runs closed-loop referee demo for scenario s3', async () => {
       const { io, getStdout } = createTestIo();
-      const res = await runCli(['closed-loop-demo'], io);
+      const res = await runCli(['closed-loop-demo', '--scenario', 's3'], io);
 
       expect(res.exitCode).toBe(0);
       const out = getStdout();
-      expect(out).toContain('SPECTRA CLOSED-LOOP REFEREE DEMO: SCENARIO S3 ("THE CATCH")');
-      expect(out).toContain('PHASE 1: TRADITIONAL DOM HIT-TEST BASELINE');
+      expect(out).toContain('SPECTRA CLOSED-LOOP REFEREE: SCENARIO S3');
+      expect(out).toContain('PHASE 1: TRADITIONAL DOM / QA BASELINE');
       expect(out).toContain('PASS (FALSE PASS)');
       expect(out).toContain('PHASE 2: PASS #1 — SPECTRA DUAL-INSTRUMENT REFEREE CATCH');
       expect(out).toContain('FAIL (REJECTED)');
@@ -318,18 +318,56 @@ describe('@spectra/cli - Production CLI Offline Tests ($0.00 Spend)', () => {
       expect(out).toContain('CLOSED-LOOP OUTCOME:  SUCCESS');
     });
 
+    it('runs closed-loop referee demo for scenario s1 (canvas)', async () => {
+      const { io, getStdout } = createTestIo();
+      const res = await runCli(['closed-loop-demo', '--scenario', 's1'], io);
+
+      expect(res.exitCode).toBe(0);
+      const out = getStdout();
+      expect(out).toContain(
+        'SPECTRA CLOSED-LOOP REFEREE: SCENARIO S1: HTML5 CANVAS CHART COLLISION',
+      );
+      expect(out).toContain('playwright_dom_node_count');
+      expect(out).toContain('FAIL (REJECTED)');
+      expect(out).toContain('PASS (VERIFIED)');
+      expect(out).toContain('CLOSED-LOOP OUTCOME:  SUCCESS');
+    });
+
+    it('runs closed-loop referee demo for scenario s2 (mobile_mp4)', async () => {
+      const { io, getStdout } = createTestIo();
+      const res = await runCli(['closed-loop-demo', '--scenario', 's2'], io);
+
+      expect(res.exitCode).toBe(0);
+      const out = getStdout();
+      expect(out).toContain(
+        'SPECTRA CLOSED-LOOP REFEREE: SCENARIO S2: MOBILE PROMO BOTTOM-SHEET OVERLAP',
+      );
+      expect(out).toContain('raw_video_stream_no_dom');
+      expect(out).toContain('FAIL (REJECTED)');
+      expect(out).toContain('PASS (VERIFIED)');
+      expect(out).toContain('CLOSED-LOOP OUTCOME:  SUCCESS');
+    });
+
+    it('runs all closed-loop scenarios by default and prints summary report', async () => {
+      const { io, getStdout } = createTestIo();
+      const res = await runCli(['closed-loop-demo'], io);
+
+      expect(res.exitCode).toBe(0);
+      const out = getStdout();
+      expect(out).toContain('SPECTRA CLOSED-LOOP ALL-SCENARIOS SUMMARY REPORT (S1, S2, S3)');
+      expect(out).toContain('ALL SCENARIOS VERIFIED (100% REPAIR-TO-PASS)');
+    });
+
     it('runs closed-loop referee demo with --json output', async () => {
       const { io, getStdout } = createTestIo();
       const res = await runCli(['closed-loop-demo', '--json'], io);
 
       expect(res.exitCode).toBe(0);
       const parsed = JSON.parse(getStdout());
-      expect(parsed.scenarioId).toBe('S3-the-catch');
-      expect(parsed.success).toBe(true);
-      expect(parsed.naiveBaseline.centerPixelCovered).toBe(false);
-      expect(parsed.pass1.combinedVerdict).toBe('fail');
-      expect(parsed.repair.newFooterOverlapPx).toBe(0);
-      expect(parsed.pass2.combinedVerdict).toBe('pass');
+      expect(parsed.allScenarios).toBeDefined();
+      expect(parsed.allScenarios.s1.success).toBe(true);
+      expect(parsed.allScenarios.s2.success).toBe(true);
+      expect(parsed.allScenarios.s3.success).toBe(true);
     });
   });
 });

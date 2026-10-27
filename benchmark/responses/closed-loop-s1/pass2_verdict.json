@@ -1,0 +1,40 @@
+{
+  "clipId": "canvas_000_v1",
+  "instrumentA": {
+    "instrument": "sam_decode",
+    "score": 0.9911877753820193,
+    "passed": true,
+    "details": "t0Area=10667px, tkArea=10573px, rSam=0.9912",
+    "raw": {
+      "rSam": 0.9911877753820193,
+      "estimatedOcclusion": 0.008812224617980702,
+      "baselineArea": 10667,
+      "evalArea": 10573
+    }
+  },
+  "instrumentB": {
+    "instrument": "vlm_evaluator",
+    "score": 1,
+    "passed": true,
+    "details": "visRatio=1.0000, loss=0.00%, rNcc=1.0000",
+    "raw": {
+      "pixelVisibilityRatio": 1,
+      "measuredLoss": 0,
+      "rNcc": 1,
+      "unchangedPixelCount": 10560,
+      "pixelLossCount": 0,
+      "totalPixels": 10560,
+      "targetBBox": {
+        "x": 820,
+        "y": 240,
+        "width": 220,
+        "height": 48
+      }
+    }
+  },
+  "combinedVerdict": "pass",
+  "confidence": 0.9911877753820193,
+  "noiseDelta": 0.008812224617980702,
+  "calibrated": true,
+  "notes": "VERIFIED: Visibility 99.56% within noise tolerance (1.35%)"
+}

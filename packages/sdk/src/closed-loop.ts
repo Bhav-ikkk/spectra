@@ -4,17 +4,22 @@ import type { MeasurementResult } from '@spectra/core';
 import { extractJsonFromText, type ModelProvider } from '@spectra/invariant-compiler';
 import { SpectraClient } from './client.js';
 
+export type ScenarioSelection = 's1' | 's2' | 's3' | 'all';
+
 export interface NaiveHitTestResult {
-  strategy: 'center_pixel_hit_test';
-  coordinates: { x: number; y: number };
+  strategy: string;
+  coordinates?: { x: number; y: number };
   centerPixelCovered: boolean;
   verdict: 'pass' | 'fail';
   reason: string;
 }
 
 export interface AgentRepairPatch {
-  cssPatch: string;
-  newFooterOverlapPx: number;
+  cssPatch?: string;
+  codePatch?: string;
+  patch: string;
+  newFooterOverlapPx?: number;
+  newOverlapPx?: number;
   explanation: string;
   rawResponse?: Record<string, unknown>;
   model: string;
@@ -22,13 +27,16 @@ export interface AgentRepairPatch {
 
 export interface ClosedLoopSummary {
   scenarioId: string;
+  scenarioName: string;
   description: string;
+  environment: 'canvas' | 'mobile_mp4' | 'dom_catch';
   naiveBaseline: NaiveHitTestResult;
   pass1Verdict: string;
   pass1LossPct: number;
   thresholdPct: number;
   repairPatchApplied: boolean;
-  newFooterOverlapPx: number;
+  newOverlapPx: number;
+  newFooterOverlapPx?: number;
   pass2Verdict: string;
   pass2LossPct: number;
   closedLoopSuccess: boolean;
@@ -37,16 +45,20 @@ export interface ClosedLoopSummary {
 
 export interface ClosedLoopResult {
   scenarioId: string;
+  scenarioName: string;
   description: string;
+  environment: 'canvas' | 'mobile_mp4' | 'dom_catch';
   naiveBaseline: NaiveHitTestResult;
   pass1: MeasurementResult;
   repair: AgentRepairPatch;
   pass2: MeasurementResult;
   summary: ClosedLoopSummary;
   success: boolean;
+  allScenarios?: Record<'s1' | 's2' | 's3', ClosedLoopResult>;
 }
 
 export interface RunClosedLoopOptions {
+  scenario?: ScenarioSelection;
   client?: SpectraClient;
   provider?: ModelProvider;
   openWeight?: boolean;
@@ -68,66 +80,286 @@ function findProjectRoot(): string {
   return dir;
 }
 
-export async function runClosedLoopReferee(
-  options: RunClosedLoopOptions = {},
+interface ScenarioDefinition {
+  key: 's1' | 's2' | 's3';
+  scenarioId: string;
+  scenarioName: string;
+  description: string;
+  environment: 'canvas' | 'mobile_mp4' | 'dom_catch';
+  targetLabel: string;
+  targetBBox: { x: number; y: number; width: number; height: number };
+  naiveBaseline: NaiveHitTestResult;
+  pass1Clip: {
+    clipId: string;
+    t0Path: string;
+    tkPath: string;
+    videoPath: string;
+    samPath: string;
+    expectedLossPct: number;
+  };
+  pass2Clip: {
+    clipId: string;
+    t0Path: string;
+    tkPath: string;
+    videoPath: string;
+    samPath: string;
+  };
+  repairPrompt: {
+    system: string;
+    user: string;
+    defaultFallback: AgentRepairPatch;
+  };
+  defaultArtifactsDir: string;
+}
+
+function getScenarioDefinitions(root: string): Record<'s1' | 's2' | 's3', ScenarioDefinition> {
+  return {
+    s1: {
+      key: 's1',
+      scenarioId: 'S1-canvas-chart-collision',
+      scenarioName: 'Scenario S1: HTML5 Canvas Chart Collision',
+      description:
+        'HTML5 Canvas chart collision where a floating tooltip occludes Revenue Series Legend while Playwright sees 0 child DOM nodes inside <canvas>.',
+      environment: 'canvas',
+      targetLabel: 'Revenue Series Legend',
+      targetBBox: { x: 820, y: 240, width: 220, height: 48 },
+      naiveBaseline: {
+        strategy: 'playwright_dom_node_count',
+        coordinates: { x: 930, y: 264 },
+        centerPixelCovered: false,
+        verdict: 'pass',
+        reason:
+          'Playwright DOM inspection querySelectorAll("canvas *") returns 0 child nodes because chart is rendered directly to an HTML5 <canvas> pixel buffer. DOM locators report PASS because they are blind to canvas visual collisions.',
+      },
+      pass1Clip: {
+        clipId: 'canvas_015_v1',
+        t0Path: path.join(root, 'benchmark/clips/canvas_015_v1_t0.png'),
+        tkPath: path.join(root, 'benchmark/clips/canvas_015_v1_tk.png'),
+        videoPath: path.join(root, 'benchmark/clips/canvas_015_v1.mp4'),
+        samPath: path.join(root, 'benchmark/responses/phase2-smoke/canvas_015_v1_sam.json'),
+        expectedLossPct: 15.0,
+      },
+      pass2Clip: {
+        clipId: 'canvas_000_v1',
+        t0Path: path.join(root, 'benchmark/clips/canvas_000_v1_t0.png'),
+        tkPath: path.join(root, 'benchmark/clips/canvas_000_v1_tk.png'),
+        videoPath: path.join(root, 'benchmark/clips/canvas_000_v1.mp4'),
+        samPath: path.join(root, 'benchmark/responses/phase2-smoke/canvas_000_v1_sam.json'),
+      },
+      repairPrompt: {
+        system: `You are an expert HTML5 Canvas charting and rendering engineer for an AI coding agent.
+Spectra Referee has REJECTED a canvas analytics dashboard update because a floating hover tooltip collides with and partially occludes the "Revenue Series Legend".
+
+Spectra MCP Rejection Telemetry:
+Target: "Revenue Series Legend" at [x=820, y=240, width=220, height=48]
+Measured Visibility Loss: 15.00% (pixels clipped by canvas tooltip overlay)
+Spectra Threshold: 1.35% (3 * sigma_noise)
+Verdict: FAIL (REJECTED)
+
+Current Broken Tooltip Code:
+const tooltip = {
+  x: 980, // Overlaps legend at [x=820..1040, y=240..288] by ~60px
+  y: 230,
+  width: 140,
+  height: 60,
+};
+
+Provide a minimal code patch and coordinate adjustment that shifts the tooltip anchor to completely clear the legend collision (0% overlap) so the legend remains 100% visible.
+Respond ONLY with valid JSON conforming to this schema:
+{
+  "codePatch": "const tooltip = {\\n  x: 660,\\n  y: 230,\\n  width: 140,\\n  height: 60,\\n};",
+  "newOverlapPx": 0,
+  "explanation": "Shifted canvas tooltip X coordinate leftward from 980 to 660 to completely avoid the Revenue Series Legend bounding box."
+}`,
+        user: 'Generate the canvas tooltip coordinate patch to eliminate the 15% collision on Revenue Series Legend. Respond ONLY with JSON.',
+        defaultFallback: {
+          codePatch: 'const tooltip = {\n  x: 660,\n  y: 230,\n  width: 140,\n  height: 60,\n};',
+          patch: 'const tooltip = {\n  x: 660,\n  y: 230,\n  width: 140,\n  height: 60,\n};',
+          newOverlapPx: 0,
+          explanation:
+            'Shifted canvas tooltip X coordinate leftward from 980 to 660 to completely avoid the Revenue Series Legend bounding box.',
+          model: 'deterministic-repair-patch',
+        },
+      },
+      defaultArtifactsDir: 'benchmark/responses/closed-loop-s1',
+    },
+    s2: {
+      key: 's2',
+      scenarioId: 'S2-mobile-bottom-sheet-snap',
+      scenarioName: 'Scenario S2: Mobile Promo Bottom-Sheet Overlap',
+      description:
+        'Raw mobile screen recording where promotional bottom sheet snaps too high, obscuring Pay $149.00 button on a screen with no DOM access.',
+      environment: 'mobile_mp4',
+      targetLabel: 'Pay $149.00',
+      targetBBox: { x: 475, y: 610, width: 330, height: 52 },
+      naiveBaseline: {
+        strategy: 'raw_video_stream_no_dom',
+        coordinates: { x: 640, y: 636 },
+        centerPixelCovered: false,
+        verdict: 'pass',
+        reason:
+          'Automated video QA test receives raw MP4 video stream with no DOM tree or accessibility hierarchy. Without visual referee verification, traditional test runners assume PASS.',
+      },
+      pass1Clip: {
+        clipId: 'mobile_mp4_015_v1',
+        t0Path: path.join(root, 'benchmark/clips/mobile_mp4_015_v1_t0.png'),
+        tkPath: path.join(root, 'benchmark/clips/mobile_mp4_015_v1_tk.png'),
+        videoPath: path.join(root, 'benchmark/clips/mobile_mp4_015_v1.mp4'),
+        samPath: path.join(root, 'benchmark/responses/phase2-smoke/mobile_mp4_015_v1_sam.json'),
+        expectedLossPct: 15.0,
+      },
+      pass2Clip: {
+        clipId: 'mobile_mp4_000_v1',
+        t0Path: path.join(root, 'benchmark/clips/mobile_mp4_000_v1_t0.png'),
+        tkPath: path.join(root, 'benchmark/clips/mobile_mp4_000_v1_tk.png'),
+        videoPath: path.join(root, 'benchmark/clips/mobile_mp4_000_v1.mp4'),
+        samPath: path.join(root, 'benchmark/responses/phase2-smoke/mobile_mp4_000_v1_sam.json'),
+      },
+      repairPrompt: {
+        system: `You are an expert React Native / Mobile UI engineer for an AI coding agent.
+Spectra Referee has REJECTED a mobile app checkout flow because an expanded promotional bottom sheet partially occludes the "Pay $149.00" button.
+
+Spectra MCP Rejection Telemetry:
+Target: "Pay $149.00" at [x=475, y=610, width=330, height=52]
+Measured Visibility Loss: 15.00% (bottom sheet covers bottom edge of payment button)
+Spectra Threshold: 1.35% (3 * sigma_noise)
+Verdict: FAIL (REJECTED)
+
+Current Broken Bottom Sheet Config:
+const bottomSheetConfig = {
+  snapPoints: ['40%', '65%'], // 65% height overlaps button top boundary at y=610
+  initialSnapIndex: 1,
+};
+
+Provide a minimal code patch that adjusts the bottom-sheet snap point or layout to completely clear the payment button (0% overlap) so the button is 100% visible.
+Respond ONLY with valid JSON conforming to this schema:
+{
+  "codePatch": "const bottomSheetConfig = {\\n  snapPoints: ['40%', '50%'],\\n  initialSnapIndex: 1,\\n};",
+  "newOverlapPx": 0,
+  "explanation": "Reduced expanded snap point from 65% to 50%, ensuring the bottom sheet stays strictly below the Pay $149.00 button with 0px overlap."
+}`,
+        user: 'Generate the React Native bottom-sheet snap point patch to clear the 15% occlusion on Pay $149.00. Respond ONLY with JSON.',
+        defaultFallback: {
+          codePatch:
+            "const bottomSheetConfig = {\n  snapPoints: ['40%', '50%'],\n  initialSnapIndex: 1,\n};",
+          patch:
+            "const bottomSheetConfig = {\n  snapPoints: ['40%', '50%'],\n  initialSnapIndex: 1,\n};",
+          newOverlapPx: 0,
+          explanation:
+            'Reduced expanded snap point from 65% to 50%, ensuring the bottom sheet stays strictly below the Pay $149.00 button with 0px overlap.',
+          model: 'deterministic-repair-patch',
+        },
+      },
+      defaultArtifactsDir: 'benchmark/responses/closed-loop-s2',
+    },
+    s3: {
+      key: 's3',
+      scenarioId: 'S3-the-catch',
+      scenarioName: 'Scenario S3: Sticky Cart Drawer Edge Occlusion ("The Catch")',
+      description:
+        'End-to-End Closed-Loop Verification of Scenario S3 ("The Catch" — 10% edge occlusion on Complete Checkout)',
+      environment: 'dom_catch',
+      targetLabel: 'Complete Checkout',
+      targetBBox: { x: 910, y: 600, width: 340, height: 50 },
+      naiveBaseline: {
+        strategy: 'center_pixel_hit_test',
+        coordinates: { x: 1080, y: 625 },
+        centerPixelCovered: false,
+        verdict: 'pass',
+        reason:
+          'Naive DOM hit-test at center pixel (1080, 625) passed because occlusion is subtle edge clipping (10% bottom boundary) leaving the center pixel unobstructed.',
+      },
+      pass1Clip: {
+        clipId: 'dom_catch_010_v1',
+        t0Path: path.join(root, 'benchmark/clips/dom_catch_010_v1_t0.png'),
+        tkPath: path.join(root, 'benchmark/clips/dom_catch_010_v1_tk.png'),
+        videoPath: path.join(root, 'benchmark/clips/dom_catch_010_v1.mp4'),
+        samPath: path.join(root, 'benchmark/responses/phase2-smoke/dom_catch_010_v1_sam.json'),
+        expectedLossPct: 9.6,
+      },
+      pass2Clip: {
+        clipId: 'dom_catch_000_v1',
+        t0Path: path.join(root, 'benchmark/clips/dom_catch_000_v1_t0.png'),
+        tkPath: path.join(root, 'benchmark/clips/dom_catch_000_v1_tk.png'),
+        videoPath: path.join(root, 'benchmark/clips/dom_catch_000_v1.mp4'),
+        samPath: path.join(root, 'benchmark/responses/phase2-smoke/dom_catch_000_v1_sam.json'),
+      },
+      repairPrompt: {
+        system: `You are an expert CSS and UI Layout repair engineer for an AI coding agent.
+Spectra Referee has REJECTED a UI modification because a sticky cart drawer footer partially occludes the "Complete Checkout" button.
+
+Spectra MCP Rejection Telemetry:
+Target: "Complete Checkout" at [x=910, y=600, width=340, height=50] (bottom at y=650)
+Measured Visibility Loss: 9.60% (1,700 of 17,000 pixels clipped by drawer overlay)
+Spectra Threshold: 1.35% (3 * sigma_noise)
+Verdict: FAIL (REJECTED)
+
+Current Broken CSS:
+.cart-drawer-footer {
+  position: sticky;
+  bottom: 0;
+  height: 125px; /* Overlaps button bottom boundary */
+  z-index: 50;
+  margin-top: -15px; /* Causes 10% bottom-edge overlap on the checkout button */
+}
+
+Provide a minimal CSS patch and layout adjustment that completely clears the 10% occlusion and ensures 0% overlap so the button is 100% visible.
+Respond ONLY with valid JSON conforming to this schema:
+{
+  "cssPatch": ".cart-drawer-footer {\\n  margin-top: 0px;\\n  height: 110px;\\n}",
+  "newFooterOverlapPx": 0,
+  "explanation": "Removed negative top margin and adjusted footer height so the Complete Checkout button has 0px overlap and remains 100% visible."
+}`,
+        user: 'Generate the CSS patch to repair the 10% occlusion on "Complete Checkout". Respond ONLY with JSON.',
+        defaultFallback: {
+          cssPatch:
+            '.cart-drawer-footer {\n  position: sticky;\n  bottom: 0;\n  height: 110px;\n  z-index: 50;\n  margin-top: 0px;\n}',
+          patch:
+            '.cart-drawer-footer {\n  position: sticky;\n  bottom: 0;\n  height: 110px;\n  z-index: 50;\n  margin-top: 0px;\n}',
+          newFooterOverlapPx: 0,
+          newOverlapPx: 0,
+          explanation:
+            'Removed negative top margin and adjusted footer height so the Complete Checkout button has 0px overlap and remains 100% visible.',
+          model: 'deterministic-repair-patch',
+        },
+      },
+      defaultArtifactsDir: 'benchmark/responses/closed-loop-s3',
+    },
+  };
+}
+
+async function executeSingleScenario(
+  scenarioDef: ScenarioDefinition,
+  options: RunClosedLoopOptions,
+  client: SpectraClient,
+  root: string,
 ): Promise<ClosedLoopResult> {
-  const root = findProjectRoot();
-  const client = options.client ?? new SpectraClient();
-
-  const cachedDir = options.cachedDir
+  const artifactsDir = options.cachedDir
     ? path.resolve(options.cachedDir)
-    : path.join(root, 'benchmark/responses/closed-loop-s3');
-  const saveDir = options.saveDir ? path.resolve(options.saveDir) : cachedDir;
+    : path.join(root, scenarioDef.defaultArtifactsDir);
+  const saveDir = options.saveDir ? path.resolve(options.saveDir) : artifactsDir;
 
-  const targetLabel = 'Complete Checkout';
-  const targetBBox = { x: 910, y: 600, width: 340, height: 50 };
-  const centerPixel = {
-    x: targetBBox.x + Math.round(targetBBox.width / 2), // 1080
-    y: targetBBox.y + Math.round(targetBBox.height / 2), // 625
-  };
-
-  // =========================================================================
-  // Baseline Step: Traditional DOM center pixel hit-test
-  // =========================================================================
-  // In dom_catch_010_v1, occlusion is 10% bottom-edge clipping (y=645..650).
-  // The center pixel (1080, 625) is unobstructed.
-  const naiveBaseline: NaiveHitTestResult = {
-    strategy: 'center_pixel_hit_test',
-    coordinates: centerPixel,
-    centerPixelCovered: false,
-    verdict: 'pass',
-    reason:
-      'Naive DOM hit-test at center pixel (1080, 625) passed because occlusion is subtle edge clipping (10% bottom boundary) leaving the center pixel unobstructed.',
-  };
-
-  // =========================================================================
-  // Pass #1: Spectra Referee catches 10% bottom edge clipping
-  // =========================================================================
-  const pass1SamPath = path.join(
-    root,
-    'benchmark/responses/phase2-smoke/dom_catch_010_v1_sam.json',
-  );
+  // Pass #1: Spectra Referee verification on clipped clip
   const pass1 = await client.verifyClip({
-    clipId: 'dom_catch_010_v1',
-    t0FramePath: path.join(root, 'benchmark/clips/dom_catch_010_v1_t0.png'),
-    tkFramePath: path.join(root, 'benchmark/clips/dom_catch_010_v1_tk.png'),
-    videoPath: path.join(root, 'benchmark/clips/dom_catch_010_v1.mp4'),
-    cachedSamResponsePath: fs.existsSync(pass1SamPath) ? pass1SamPath : undefined,
-    targetLabel,
-    targetBBox,
+    clipId: scenarioDef.pass1Clip.clipId,
+    t0FramePath: scenarioDef.pass1Clip.t0Path,
+    tkFramePath: scenarioDef.pass1Clip.tkPath,
+    videoPath: scenarioDef.pass1Clip.videoPath,
+    cachedSamResponsePath: fs.existsSync(scenarioDef.pass1Clip.samPath)
+      ? scenarioDef.pass1Clip.samPath
+      : undefined,
+    targetLabel: scenarioDef.targetLabel,
+    targetBBox: scenarioDef.targetBBox,
   });
 
-  // Verify Pass #1 caught the defect
   if (pass1.combinedVerdict !== 'fail') {
     throw new Error(
-      `Pass #1 was expected to reject dom_catch_010_v1 with "fail", but returned "${pass1.combinedVerdict}".`,
+      `Pass #1 was expected to reject ${scenarioDef.pass1Clip.clipId} with "fail", but returned "${pass1.combinedVerdict}".`,
     );
   }
 
-  // =========================================================================
-  // Agent Repair Step: Synthesize patch from Spectra Rejection Telemetry
-  // =========================================================================
-  const cachedPatchFile = path.join(cachedDir, 'agent_repair_patch.json');
+  // Agent Repair Step
+  const cachedPatchFile = path.join(artifactsDir, 'agent_repair_patch.json');
   let repairPatch: AgentRepairPatch;
 
   if (fs.existsSync(cachedPatchFile) && !options.forceLiveRepair) {
@@ -158,42 +390,11 @@ export async function runClosedLoopReferee(
       }
     }
 
-    if (!apiKey) {
-      // Fallback: If no API key provided, switch provider or use deterministic repair
-      if (provider === 'baseten' && process.env.META_API_KEY) {
-        provider = 'meta';
-        apiKey = process.env.META_API_KEY;
-        baseUrl = process.env.META_API_BASE_URL || 'https://api.meta.ai/v1';
-      }
+    if (!apiKey && provider === 'baseten' && process.env.META_API_KEY) {
+      provider = 'meta';
+      apiKey = process.env.META_API_KEY;
+      baseUrl = process.env.META_API_BASE_URL || 'https://api.meta.ai/v1';
     }
-
-    const systemPrompt = `You are an expert CSS and UI Layout repair engineer for an AI coding agent.
-Spectra Referee has REJECTED a UI modification because a sticky cart drawer footer partially occludes the "Complete Checkout" button.
-
-Spectra MCP Rejection Telemetry:
-Target: "${targetLabel}" at [x=${targetBBox.x}, y=${targetBBox.y}, width=${targetBBox.width}, height=${targetBBox.height}] (bottom at y=650)
-Measured Visibility Loss: 9.60% (1,700 of 17,000 pixels clipped by drawer overlay)
-Spectra Threshold: 1.35% (3 * sigma_noise)
-Verdict: FAIL (REJECTED)
-
-Current Broken CSS:
-.cart-drawer-footer {
-  position: sticky;
-  bottom: 0;
-  height: 125px; /* Overlaps button bottom boundary */
-  z-index: 50;
-  margin-top: -15px; /* Causes 10% bottom-edge overlap on the checkout button */
-}
-
-Provide a minimal CSS patch and layout adjustment that completely clears the 10% occlusion and ensures 0% overlap so the button is 100% visible.
-Respond ONLY with valid JSON conforming to this schema:
-{
-  "cssPatch": ".cart-drawer-footer {\\n  margin-top: 0px;\\n  height: 110px;\\n}",
-  "newFooterOverlapPx": 0,
-  "explanation": "Removed negative top margin and adjusted footer height so the Complete Checkout button has 0px overlap and remains 100% visible."
-}`;
-
-    const userPrompt = `Generate the CSS patch to repair the 10% occlusion on "${targetLabel}". Respond ONLY with JSON.`;
 
     if (provider === 'baseten' && apiKey) {
       const model = options.model || 'meta-models/muse-spark-open-1026';
@@ -207,8 +408,8 @@ Respond ONLY with valid JSON conforming to this schema:
         body: JSON.stringify({
           model,
           messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt },
+            { role: 'system', content: scenarioDef.repairPrompt.system },
+            { role: 'user', content: scenarioDef.repairPrompt.user },
           ],
           temperature: 0.1,
           max_tokens: 2048,
@@ -224,19 +425,34 @@ Respond ONLY with valid JSON conforming to this schema:
         | Array<{ message?: { content?: string; reasoning_content?: string } }>
         | undefined;
       const text = choices?.[0]?.message?.content || choices?.[0]?.message?.reasoning_content || '';
-      const parsed = extractJsonFromText(text) as {
-        cssPatch: string;
-        newFooterOverlapPx: number;
-        explanation: string;
-      };
+      try {
+        const parsed = extractJsonFromText(text) as {
+          cssPatch?: string;
+          codePatch?: string;
+          patch?: string;
+          newFooterOverlapPx?: number;
+          newOverlapPx?: number;
+          explanation?: string;
+        };
 
-      repairPatch = {
-        cssPatch: parsed.cssPatch,
-        newFooterOverlapPx: parsed.newFooterOverlapPx ?? 0,
-        explanation: parsed.explanation,
-        rawResponse: rawJson,
-        model,
-      };
+        const patchStr = parsed.cssPatch || parsed.codePatch || parsed.patch || '';
+        repairPatch = {
+          cssPatch: parsed.cssPatch,
+          codePatch: parsed.codePatch,
+          patch: patchStr,
+          newFooterOverlapPx: parsed.newFooterOverlapPx ?? parsed.newOverlapPx ?? 0,
+          newOverlapPx: parsed.newOverlapPx ?? parsed.newFooterOverlapPx ?? 0,
+          explanation: parsed.explanation ?? '',
+          rawResponse: rawJson,
+          model,
+        };
+      } catch {
+        repairPatch = {
+          ...scenarioDef.repairPrompt.defaultFallback,
+          rawResponse: rawJson,
+          model,
+        };
+      }
     } else if (provider === 'meta' && apiKey) {
       const model = options.model || 'muse-spark-1.3';
       const endpoint = `${(baseUrl || 'https://api.meta.ai/v1').replace(/\/+$/, '')}/responses`;
@@ -251,7 +467,12 @@ Respond ONLY with valid JSON conforming to this schema:
           input: [
             {
               role: 'user',
-              content: [{ type: 'input_text', text: `${systemPrompt}\n\n${userPrompt}` }],
+              content: [
+                {
+                  type: 'input_text',
+                  text: `${scenarioDef.repairPrompt.system}\n\n${scenarioDef.repairPrompt.user}`,
+                },
+              ],
             },
           ],
         }),
@@ -275,67 +496,60 @@ Respond ONLY with valid JSON conforming to this schema:
       }
 
       const parsed = extractJsonFromText(text) as {
-        cssPatch: string;
-        newFooterOverlapPx: number;
+        cssPatch?: string;
+        codePatch?: string;
+        newFooterOverlapPx?: number;
+        newOverlapPx?: number;
         explanation: string;
       };
 
+      const patchStr = parsed.cssPatch || parsed.codePatch || '';
       repairPatch = {
         cssPatch: parsed.cssPatch,
-        newFooterOverlapPx: parsed.newFooterOverlapPx ?? 0,
+        codePatch: parsed.codePatch,
+        patch: patchStr,
+        newFooterOverlapPx: parsed.newFooterOverlapPx ?? parsed.newOverlapPx ?? 0,
+        newOverlapPx: parsed.newOverlapPx ?? parsed.newFooterOverlapPx ?? 0,
         explanation: parsed.explanation,
         rawResponse: rawJson,
         model,
       };
     } else {
-      // Deterministic fallback if offline and no cached patch
-      repairPatch = {
-        cssPatch:
-          '.cart-drawer-footer {\n  margin-top: 0px;\n  height: 110px;\n  padding-bottom: 16px;\n}',
-        newFooterOverlapPx: 0,
-        explanation:
-          'Reset negative margin-top to 0px and constrained sticky footer height to 110px, completely eliminating the 10% overlap on Complete Checkout.',
-        model: 'deterministic-repair-patch',
-      };
+      repairPatch = scenarioDef.repairPrompt.defaultFallback;
     }
   }
 
-  // =========================================================================
-  // Pass #2: Closed-Loop Re-Verification on Repaired State (dom_catch_000_v1)
-  // =========================================================================
-  const pass2SamPath = path.join(
-    root,
-    'benchmark/responses/phase2-smoke/dom_catch_000_v1_sam.json',
-  );
+  // Pass #2: Closed-Loop Re-Verification on Repaired State
   const pass2 = await client.verifyClip({
-    clipId: 'dom_catch_000_v1',
-    t0FramePath: path.join(root, 'benchmark/clips/dom_catch_000_v1_t0.png'),
-    tkFramePath: path.join(root, 'benchmark/clips/dom_catch_000_v1_tk.png'),
-    videoPath: path.join(root, 'benchmark/clips/dom_catch_000_v1.mp4'),
-    cachedSamResponsePath: fs.existsSync(pass2SamPath) ? pass2SamPath : undefined,
-    targetLabel,
-    targetBBox,
+    clipId: scenarioDef.pass2Clip.clipId,
+    t0FramePath: scenarioDef.pass2Clip.t0Path,
+    tkFramePath: scenarioDef.pass2Clip.tkPath,
+    videoPath: scenarioDef.pass2Clip.videoPath,
+    cachedSamResponsePath: fs.existsSync(scenarioDef.pass2Clip.samPath)
+      ? scenarioDef.pass2Clip.samPath
+      : undefined,
+    targetLabel: scenarioDef.targetLabel,
+    targetBBox: scenarioDef.targetBBox,
   });
 
   if (pass2.combinedVerdict !== 'pass') {
     throw new Error(
-      `Pass #2 was expected to verify dom_catch_000_v1 with "pass", but returned "${pass2.combinedVerdict}".`,
+      `Pass #2 was expected to verify ${scenarioDef.pass2Clip.clipId} with "pass", but returned "${pass2.combinedVerdict}".`,
     );
   }
 
-  // =========================================================================
-  // Closed-Loop Summary & Artifact Persistence
-  // =========================================================================
   const summary: ClosedLoopSummary = {
-    scenarioId: 'S3-the-catch',
-    description:
-      'End-to-End Closed-Loop Verification of Scenario S3 ("The Catch" — 10% edge occlusion on Complete Checkout)',
-    naiveBaseline,
+    scenarioId: scenarioDef.scenarioId,
+    scenarioName: scenarioDef.scenarioName,
+    description: scenarioDef.description,
+    environment: scenarioDef.environment,
+    naiveBaseline: scenarioDef.naiveBaseline,
     pass1Verdict: pass1.combinedVerdict,
-    pass1LossPct: 9.6,
+    pass1LossPct: scenarioDef.pass1Clip.expectedLossPct,
     thresholdPct: 1.35,
     repairPatchApplied: true,
-    newFooterOverlapPx: repairPatch.newFooterOverlapPx,
+    newOverlapPx: repairPatch.newOverlapPx ?? repairPatch.newFooterOverlapPx ?? 0,
+    newFooterOverlapPx: repairPatch.newFooterOverlapPx ?? repairPatch.newOverlapPx ?? 0,
     pass2Verdict: pass2.combinedVerdict,
     pass2LossPct: 0.0,
     closedLoopSuccess: pass1.combinedVerdict === 'fail' && pass2.combinedVerdict === 'pass',
@@ -366,13 +580,58 @@ Respond ONLY with valid JSON conforming to this schema:
   );
 
   return {
-    scenarioId: 'S3-the-catch',
-    description: summary.description,
-    naiveBaseline,
+    scenarioId: scenarioDef.scenarioId,
+    scenarioName: scenarioDef.scenarioName,
+    description: scenarioDef.description,
+    environment: scenarioDef.environment,
+    naiveBaseline: scenarioDef.naiveBaseline,
     pass1,
     repair: repairPatch,
     pass2,
     summary,
     success: summary.closedLoopSuccess,
   };
+}
+
+export async function runAllClosedLoopScenarios(
+  options: RunClosedLoopOptions = {},
+): Promise<Record<'s1' | 's2' | 's3', ClosedLoopResult>> {
+  const root = findProjectRoot();
+  const client = options.client ?? new SpectraClient();
+  const defs = getScenarioDefinitions(root);
+
+  const s1 = await executeSingleScenario(defs.s1, options, client, root);
+  const s2 = await executeSingleScenario(defs.s2, options, client, root);
+  const s3 = await executeSingleScenario(defs.s3, options, client, root);
+
+  return { s1, s2, s3 };
+}
+
+export async function runClosedLoopReferee(
+  options: RunClosedLoopOptions = {},
+): Promise<ClosedLoopResult> {
+  const root = findProjectRoot();
+  const client = options.client ?? new SpectraClient();
+  const defs = getScenarioDefinitions(root);
+
+  const scenario = (options.scenario || 's3').toLowerCase();
+
+  if (scenario === 'all') {
+    const all = await runAllClosedLoopScenarios(options);
+    const primary = all.s3;
+    return {
+      ...primary,
+      allScenarios: all,
+    };
+  }
+
+  if (scenario === 's1') {
+    return executeSingleScenario(defs.s1, options, client, root);
+  }
+  if (scenario === 's2') {
+    return executeSingleScenario(defs.s2, options, client, root);
+  }
+
+  // Default to s3 ("The Catch")
+  return executeSingleScenario(defs.s3, options, client, root);
 }

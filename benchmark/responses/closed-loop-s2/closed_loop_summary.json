@@ -1,0 +1,26 @@
+{
+  "scenarioId": "S2-mobile-bottom-sheet-snap",
+  "scenarioName": "Scenario S2: Mobile Promo Bottom-Sheet Overlap",
+  "description": "Raw mobile screen recording where promotional bottom sheet snaps too high, obscuring Pay $149.00 button on a screen with no DOM access.",
+  "environment": "mobile_mp4",
+  "naiveBaseline": {
+    "strategy": "raw_video_stream_no_dom",
+    "coordinates": {
+      "x": 640,
+      "y": 636
+    },
+    "centerPixelCovered": false,
+    "verdict": "pass",
+    "reason": "Automated video QA test receives raw MP4 video stream with no DOM tree or accessibility hierarchy. Without visual referee verification, traditional test runners assume PASS."
+  },
+  "pass1Verdict": "fail",
+  "pass1LossPct": 15,
+  "thresholdPct": 1.35,
+  "repairPatchApplied": true,
+  "newOverlapPx": 0,
+  "newFooterOverlapPx": 0,
+  "pass2Verdict": "pass",
+  "pass2LossPct": 0,
+  "closedLoopSuccess": true,
+  "timestamp": "2026-10-27T13:46:45.549Z"
+}

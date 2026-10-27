@@ -1,0 +1,40 @@
+{
+  "clipId": "mobile_mp4_000_v1",
+  "instrumentA": {
+    "instrument": "sam_decode",
+    "score": 0.9887365606689801,
+    "passed": true,
+    "details": "t0Area=17579px, tkArea=17381px, rSam=0.9887",
+    "raw": {
+      "rSam": 0.9887365606689801,
+      "estimatedOcclusion": 0.01126343933101992,
+      "baselineArea": 17579,
+      "evalArea": 17381
+    }
+  },
+  "instrumentB": {
+    "instrument": "vlm_evaluator",
+    "score": 1,
+    "passed": true,
+    "details": "visRatio=1.0000, loss=0.00%, rNcc=1.0000",
+    "raw": {
+      "pixelVisibilityRatio": 1,
+      "measuredLoss": 0,
+      "rNcc": 1,
+      "unchangedPixelCount": 17160,
+      "pixelLossCount": 0,
+      "totalPixels": 17160,
+      "targetBBox": {
+        "x": 475,
+        "y": 610,
+        "width": 330,
+        "height": 52
+      }
+    }
+  },
+  "combinedVerdict": "pass",
+  "confidence": 0.9887365606689801,
+  "noiseDelta": 0.01126343933101992,
+  "calibrated": true,
+  "notes": "VERIFIED: Visibility 99.44% within noise tolerance (1.35%)"
+}

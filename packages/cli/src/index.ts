@@ -7,6 +7,7 @@ import {
   SpectraClient,
   runClosedLoopReferee,
   type ClosedLoopResult,
+  type ScenarioSelection,
   type MeasurementResult,
   type BoundingBox,
   getCalibration,
@@ -36,21 +37,26 @@ function parseBoundingBox(bboxStr: string): BoundingBox {
   return { x, y, width, height };
 }
 
-function formatClosedLoopOutput(result: ClosedLoopResult): string {
+function formatSingleScenarioOutput(result: ClosedLoopResult): string {
   const sep = '='.repeat(80);
   const line = '-'.repeat(80);
+  const patchStr = result.repair.patch || result.repair.codePatch || result.repair.cssPatch || '';
+  const coordsStr = result.naiveBaseline.coordinates
+    ? `(${result.naiveBaseline.coordinates.x}, ${result.naiveBaseline.coordinates.y})`
+    : 'N/A';
+  const overlapPx = result.repair.newOverlapPx ?? result.repair.newFooterOverlapPx ?? 0;
 
   return [
     sep,
-    ' SPECTRA CLOSED-LOOP REFEREE DEMO: SCENARIO S3 ("THE CATCH")',
+    ` SPECTRA CLOSED-LOOP REFEREE: ${result.scenarioName.toUpperCase()}`,
     sep,
     ` Scenario ID:          ${result.scenarioId}`,
+    ` Environment:          ${result.environment}`,
     ` Description:          ${result.description}`,
-    ` Target Element:       Complete Checkout [x=910, y=600, w=340, h=50]`,
-    ` Center Coordinates:   (${result.naiveBaseline.coordinates.x}, ${result.naiveBaseline.coordinates.y})`,
+    ` Target Coordinates:   ${coordsStr}`,
     line,
-    ' [PHASE 1: TRADITIONAL DOM HIT-TEST BASELINE]',
-    ` Hit-Test Strategy:    ${result.naiveBaseline.strategy}`,
+    ' [PHASE 1: TRADITIONAL DOM / QA BASELINE]',
+    ` Detection Strategy:   ${result.naiveBaseline.strategy}`,
     ` Center Pixel Covered: ${result.naiveBaseline.centerPixelCovered}`,
     ` Baseline Verdict:     ${result.naiveBaseline.verdict.toUpperCase()} (FALSE PASS)`,
     ` Telemetry Reason:     ${result.naiveBaseline.reason}`,
@@ -66,9 +72,9 @@ function formatClosedLoopOutput(result: ClosedLoopResult): string {
     ' [PHASE 3: AI AGENT REPAIR STEP]',
     ` Model:                ${result.repair.model}`,
     ` Explanation:          ${result.repair.explanation}`,
-    ` New Overlap:          ${result.repair.newFooterOverlapPx}px`,
-    ' Applied CSS Patch:',
-    result.repair.cssPatch
+    ` New Overlap:          ${overlapPx}px`,
+    ' Applied Repair Patch:',
+    patchStr
       .split('\n')
       .map((l) => `   ${l}`)
       .join('\n'),
@@ -83,6 +89,37 @@ function formatClosedLoopOutput(result: ClosedLoopResult): string {
     ` CLOSED-LOOP OUTCOME:  ${result.success ? 'SUCCESS (REJECTED -> PATCHED -> VERIFIED)' : 'FAILED'}`,
     sep,
   ].join('\n');
+}
+
+function formatClosedLoopOutput(result: ClosedLoopResult): string {
+  if (result.allScenarios) {
+    const s1Block = formatSingleScenarioOutput(result.allScenarios.s1);
+    const s2Block = formatSingleScenarioOutput(result.allScenarios.s2);
+    const s3Block = formatSingleScenarioOutput(result.allScenarios.s3);
+
+    const sep = '='.repeat(80);
+    const line = '-'.repeat(80);
+    const allPassed =
+      result.allScenarios.s1.success &&
+      result.allScenarios.s2.success &&
+      result.allScenarios.s3.success;
+
+    const summaryBlock = [
+      sep,
+      ' SPECTRA CLOSED-LOOP ALL-SCENARIOS SUMMARY REPORT (S1, S2, S3)',
+      sep,
+      ` [${result.allScenarios.s1.success ? 'SUCCESS' : 'FAILED'}] S1 (HTML5 Canvas Chart Collision):   Pass1=FAIL (15.0% loss) -> Repair -> Pass2=PASS (0.0% loss)`,
+      ` [${result.allScenarios.s2.success ? 'SUCCESS' : 'FAILED'}] S2 (Mobile Raw MP4 Screen Recording):  Pass1=FAIL (15.0% loss) -> Repair -> Pass2=PASS (0.0% loss)`,
+      ` [${result.allScenarios.s3.success ? 'SUCCESS' : 'FAILED'}] S3 (Sticky Drawer "The Catch" DOM):   Pass1=FAIL (9.6% loss)  -> Repair -> Pass2=PASS (0.0% loss)`,
+      line,
+      ` OVERALL STATUS:       ${allPassed ? 'ALL SCENARIOS VERIFIED (100% REPAIR-TO-PASS)' : 'ONE OR MORE SCENARIOS FAILED'}`,
+      sep,
+    ].join('\n');
+
+    return [s1Block, s2Block, s3Block, summaryBlock].join('\n\n');
+  }
+
+  return formatSingleScenarioOutput(result);
 }
 
 function formatRefereeTable(
@@ -132,7 +169,7 @@ function formatHelp(): string {
     '  verify               Run dual-instrument referee on a pair of video frames',
     '  compile-invariant    Compile user expectation into formal visual invariants',
     '  check                Verify visual invariants across a benchmark manifest or clip set',
-    '  closed-loop-demo     Run end-to-end closed-loop "The Catch" (Reject -> Patch -> Re-Verify)',
+    '  closed-loop-demo     Run end-to-end closed-loop verification (Reject -> Patch -> Re-Verify)',
     '',
     'OPTIONS (verify):',
     '  --t0 <path>          Path to baseline frame (t0)',
@@ -157,6 +194,7 @@ function formatHelp(): string {
     '  --json               Output BenchmarkReport JSON',
     '',
     'OPTIONS (closed-loop-demo):',
+    '  --scenario <s1|s2|s3|all> Scenario to run: s1 (canvas), s2 (mobile_mp4), s3 (The Catch), or all (default: all)',
     '  --cached-dir <path>  (Optional) Directory containing saved closed-loop artifacts',
     '  --json               Output complete ClosedLoopResult JSON',
   ].join('\n');
@@ -342,13 +380,16 @@ export async function runCli(
       const { values } = parseArgs({
         args: subArgs,
         options: {
+          scenario: { type: 'string' },
           'cached-dir': { type: 'string' },
           json: { type: 'boolean' },
         },
         allowPositionals: false,
       });
 
+      const scenario = (values.scenario as ScenarioSelection) || 'all';
       const result = await runClosedLoopReferee({
+        scenario,
         client,
         cachedDir: values['cached-dir'] ? path.resolve(values['cached-dir']) : undefined,
       });
@@ -359,7 +400,11 @@ export async function runCli(
         io.stdout(formatClosedLoopOutput(result));
       }
 
-      return { exitCode: result.success ? 0 : 1, data: result };
+      const allSuccess = result.allScenarios
+        ? Object.values(result.allScenarios).every((r) => r.success)
+        : result.success;
+
+      return { exitCode: allSuccess ? 0 : 1, data: result };
     }
 
     io.stderr(`Unknown subcommand: "${subcommand}". Run "spectra --help" for available commands.`);

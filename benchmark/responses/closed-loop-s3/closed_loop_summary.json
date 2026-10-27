@@ -1,6 +1,8 @@
 {
   "scenarioId": "S3-the-catch",
+  "scenarioName": "Scenario S3: Sticky Cart Drawer Edge Occlusion (\"The Catch\")",
   "description": "End-to-End Closed-Loop Verification of Scenario S3 (\"The Catch\" — 10% edge occlusion on Complete Checkout)",
+  "environment": "dom_catch",
   "naiveBaseline": {
     "strategy": "center_pixel_hit_test",
     "coordinates": {
@@ -15,9 +17,10 @@
   "pass1LossPct": 9.6,
   "thresholdPct": 1.35,
   "repairPatchApplied": true,
+  "newOverlapPx": 0,
   "newFooterOverlapPx": 0,
   "pass2Verdict": "pass",
   "pass2LossPct": 0,
   "closedLoopSuccess": true,
-  "timestamp": "2026-10-27T13:22:27.753Z"
+  "timestamp": "2026-10-27T13:46:45.811Z"
 }

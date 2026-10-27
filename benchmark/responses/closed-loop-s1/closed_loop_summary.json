@@ -1,0 +1,26 @@
+{
+  "scenarioId": "S1-canvas-chart-collision",
+  "scenarioName": "Scenario S1: HTML5 Canvas Chart Collision",
+  "description": "HTML5 Canvas chart collision where a floating tooltip occludes Revenue Series Legend while Playwright sees 0 child DOM nodes inside <canvas>.",
+  "environment": "canvas",
+  "naiveBaseline": {
+    "strategy": "playwright_dom_node_count",
+    "coordinates": {
+      "x": 930,
+      "y": 264
+    },
+    "centerPixelCovered": false,
+    "verdict": "pass",
+    "reason": "Playwright DOM inspection querySelectorAll(\"canvas *\") returns 0 child nodes because chart is rendered directly to an HTML5 <canvas> pixel buffer. DOM locators report PASS because they are blind to canvas visual collisions."
+  },
+  "pass1Verdict": "fail",
+  "pass1LossPct": 15,
+  "thresholdPct": 1.35,
+  "repairPatchApplied": true,
+  "newOverlapPx": 0,
+  "newFooterOverlapPx": 0,
+  "pass2Verdict": "pass",
+  "pass2LossPct": 0,
+  "closedLoopSuccess": true,
+  "timestamp": "2026-10-27T13:46:45.273Z"
+}

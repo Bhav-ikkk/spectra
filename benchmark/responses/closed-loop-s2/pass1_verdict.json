@@ -1,0 +1,40 @@
+{
+  "clipId": "mobile_mp4_015_v1",
+  "instrumentA": {
+    "instrument": "sam_decode",
+    "score": 0.846350759428864,
+    "passed": false,
+    "details": "t0Area=17579px, tkArea=14878px, rSam=0.8464",
+    "raw": {
+      "rSam": 0.846350759428864,
+      "estimatedOcclusion": 0.15364924057113605,
+      "baselineArea": 17579,
+      "evalArea": 14878
+    }
+  },
+  "instrumentB": {
+    "instrument": "vlm_evaluator",
+    "score": 0.85,
+    "passed": false,
+    "details": "visRatio=0.8500, loss=15.00%, rNcc=0.5065",
+    "raw": {
+      "pixelVisibilityRatio": 0.85,
+      "measuredLoss": 0.15,
+      "rNcc": 0.5064689942366902,
+      "unchangedPixelCount": 14586,
+      "pixelLossCount": 2574,
+      "totalPixels": 17160,
+      "targetBBox": {
+        "x": 475,
+        "y": 610,
+        "width": 330,
+        "height": 52
+      }
+    }
+  },
+  "combinedVerdict": "fail",
+  "confidence": 0.996350759428864,
+  "noiseDelta": 0.0036492405711360254,
+  "calibrated": true,
+  "notes": "REJECTED: Visibility loss 15.18% exceeds threshold 1.35% (2574/17160 px loss) at [x=475, y=610, w=330, h=52]"
+}
