@@ -1,0 +1,22 @@
+{
+  "name": "@spectra/sdk",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run --passWithNoTests",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@spectra/core": "workspace:*",
+    "@spectra/sam-client": "workspace:*",
+    "@spectra/invariant-compiler": "workspace:*"
+  }
+}

@@ -1,4 +1,6 @@
 // @spectra/mcp-server — spectra-mcp stdio server
-// Built in Phase 3 (Day 4)
 // Tools: spectra.verify, spectra.check, spectra.calibrate
-export {};
+// Consumes @spectra/sdk as the single unified engine
+
+export { SpectraClient, type SpectraClientConfig } from '@spectra/sdk';
+export * from '@spectra/sdk';

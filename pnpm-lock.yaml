@@ -33,7 +33,11 @@ importers:
         specifier: ~2.1.4
         version: 2.1.9(@types/node@26.6.5)
 
-  packages/cli: {}
+  packages/cli:
+    dependencies:
+      '@spectra/sdk':
+        specifier: workspace:*
+        version: link:../sdk
 
   packages/core:
     dependencies:
@@ -51,9 +55,20 @@ importers:
         specifier: ^6.0.5
         version: 6.0.5
 
-  packages/invariant-compiler: {}
+  packages/invariant-compiler:
+    dependencies:
+      '@spectra/core':
+        specifier: workspace:*
+        version: link:../core
+      zod:
+        specifier: ~3.23.8
+        version: 3.23.8
 
-  packages/mcp-server: {}
+  packages/mcp-server:
+    dependencies:
+      '@spectra/sdk':
+        specifier: workspace:*
+        version: link:../sdk
 
   packages/sam-client:
     dependencies:
@@ -61,7 +76,23 @@ importers:
         specifier: ^0.1.0
         version: 0.1.0
 
-  packages/workbench: {}
+  packages/sdk:
+    dependencies:
+      '@spectra/core':
+        specifier: workspace:*
+        version: link:../core
+      '@spectra/invariant-compiler':
+        specifier: workspace:*
+        version: link:../invariant-compiler
+      '@spectra/sam-client':
+        specifier: workspace:*
+        version: link:../sam-client
+
+  packages/workbench:
+    dependencies:
+      '@spectra/sdk':
+        specifier: workspace:*
+        version: link:../sdk
 
 packages:
 
