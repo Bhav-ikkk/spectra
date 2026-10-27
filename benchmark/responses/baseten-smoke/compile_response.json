@@ -1,0 +1,32 @@
+{
+  "id": "chatcmpl-695d3723dbdf41f29243d7c7f400d61f",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "content": "{\n  \"$schema\": \"https://spectra.dev/schemas/invariants/v1.json\",\n  \"version\": \"1.0\",\n  \"invariants\": [\n    {\n      \"id\": \"complete-checkout-button-visible\",\n      \"description\": \"Complete Checkout Button must remain visible and never be covered when the cart drawer is open\",\n      \"type\": \"visual\",\n      \"severity\": \"error\",\n      \"matcher\": {\n        \"strategy\": \"semantic\",\n        \"target\": \"Complete Checkout Button\",\n        \"expected\": true\n      }\n    },\n    {\n      \"id\": \"revenue-series-legend-visible\",\n      \"description\": \"Revenue series legend must stay visible when the cart drawer is open\",\n      \"type\": \"visual\",\n      \"severity\": \"error\",\n      \"matcher\": {\n        \"strategy\": \"semantic\",\n        \"target\": \"Revenue Series Legend\",\n        \"expected\": true\n      }\n    }\n  ]\n}",
+        "role": "assistant",
+        "reasoning_content": "We need to translate transcript into formal visual and behavioral invariants.\n\nRules: output strict JSON conforming to schema.\n\nWe have two invariants:\n- complete checkout button must never be covered\n- revenue series legend must stay visible\n\nWe need to create invariants array with two entries.\n\nEach invariant:\nid: kebab-case-identifier\ndescription: Clear human-readable statement\ntype: visual\nseverity: error\nmatcher: strategy semantic, target Element name or label, expected true\n\nWe need to ensure JSON valid.\n\nWe should produce:\n\n{\n  \"$schema\": \"https://spectra.dev/schemas/invariants/v1.json\",\n  \"version\": \"1.0\",\n  \"invariants\": [\n    {\n      \"id\": \"complete-checkout-button-visible\",\n      \"description\": \"Complete Checkout Button must remain visible and not covered when cart drawer is open\",\n      \"type\": \"visual\",\n      \"severity\": \"error\",\n      \"matcher\": {\n        \"strategy\": \"semantic\",\n        \"target\": \"Complete Checkout Button\",\n        \"expected\": true\n      }\n    },\n    {\n      \"id\": \"revenue-series-legend-visible\",\n      \"description\": \"Revenue series legend must stay visible when cart drawer is open\",\n      \"type\": \"visual\",\n      \"severity\": \"error\",\n      \"matcher\": {\n        \"strategy\": \"semantic\",\n        \"target\": \"Revenue Series Legend\",\n        \"expected\": true\n      }\n    }\n  ]\n}\n\nNeed to ensure id is kebab-case, non-empty.\n\nShould we include behavioral? The transcript says visual invariants. Both are visual.\n\nMake sure output ONLY JSON block. No prepend.\n\nWe must follow schema exactly.\n\nPotential nuance: The matcher expected true means visible.\n\nWe should ensure correct JSON formatting.\n\nWe must not add extra fields.\n\nWe should output strict JSON.\n\nWe need to consider if we need to add more invariants? The transcript: \"When the cart drawer opens, the complete checkout button must never be covered, and the revenue series legend must stay visible.\"\n\nThat's two invariants.\n\nWe should ensure description is clear.\n\nWe should output version 1.0.\n\nWe should ensure $schema correct.\n\nWe should not add commentary.\n\nWe must output ONLY JSON block.\n\nWe should ensure no trailing commas.\n\nWe should ensure proper escaping.\n\nWe should produce final answer.\n\nWe need to think about reasoning strength 512 - irrelevant.\n\nWe must ensure we comply with instruction to output strict JSON.\n\nWe should not add extra text.\n\nWe should ensure we use double quotes.\n\nWe should ensure we use correct indentation? Not required but nice.\n\nWe should ensure we don't hallucinate.\n\nWe should produce final JSON.\n\nPotential edge: The user expectation transcript mentions \"cart drawer opens\" - should we encode that as condition? But schema doesn't have condition field. So we just encode invariants as visible.\n\nWe could add description mentioning condition.\n\nWe should do that.\n\nWe should ensure id is kebab-case: \"complete-checkout-button-visible\" and \"revenue-series-legend-visible\"\n\nWe should ensure type is \"visual\" and severity \"error\"\n\nWe should ensure matcher strategy semantic.\n\nWe should ensure target is Element name.\n\nWe should ensure expected true.\n\nWe should output.\n\nWe must not add extra invariants.\n\nWe should ensure JSON is valid.\n\nWe should output final."
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "created": 1793105961,
+  "model": "meta-models/muse-spark-open-1026",
+  "object": "chat.completion",
+  "usage": {
+    "prompt_tokens": 388,
+    "completion_tokens": 868,
+    "total_tokens": 1256,
+    "prompt_tokens_details": {
+      "audio_tokens": 0,
+      "cached_tokens": 0
+    },
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": 672,
+      "audio_tokens": 0,
+      "reasoning_tokens": 665,
+      "rejected_prediction_tokens": 700
+    }
+  }
+}

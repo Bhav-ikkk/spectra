@@ -101,4 +101,23 @@ describe('@spectra/sdk - SpectraClient Offline Unit Tests', () => {
     expect(report.calibration.sigma_noise).toBe(0.0045);
     expect(report.calibration.delta).toBe(0.041);
   });
+
+  it('runs evaluateWithVlmJudge offline using cached Baseten fixture', async () => {
+    const basetenJudgePath = path.join(
+      root,
+      'benchmark/responses/baseten-smoke/vlm_judge_response.json',
+    );
+    const framePath = path.join(root, 'benchmark/clips/dom_catch_010_v1_tk.png');
+
+    const result = await client.evaluateWithVlmJudge(framePath, 'Complete Checkout Button', {
+      provider: 'baseten',
+      cachedResponsePath: basetenJudgePath,
+    });
+
+    expect(result.provider).toBe('baseten');
+    expect(result.model).toBe('meta-models/muse-spark-open-1026');
+    expect(result.target).toBe('Complete Checkout Button');
+    expect(result.clipped).toBe(false);
+    expect(result.confidence).toBe(0.99);
+  });
 });

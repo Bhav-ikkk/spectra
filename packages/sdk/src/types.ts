@@ -1,4 +1,7 @@
 import type { BoundingBox, MeasurementResult, Verdict } from '@spectra/core';
+import type { ModelProvider, VlmJudgeOptions, VlmJudgeResult } from '@spectra/invariant-compiler';
+
+export type { ModelProvider, VlmJudgeOptions, VlmJudgeResult };
 
 export interface VerifyClipOptions {
   clipId?: string;
@@ -17,6 +20,11 @@ export interface CompileVoiceOptions {
   outputPath?: string;
   voiceTranscriptId?: string;
   cachedDir?: string;
+  provider?: ModelProvider;
+  openWeight?: boolean;
+  apiKey?: string;
+  baseUrl?: string;
+  model?: string;
 }
 
 export interface CheckInvariantsOptions {

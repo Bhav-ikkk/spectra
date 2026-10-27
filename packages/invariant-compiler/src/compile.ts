@@ -1,6 +1,10 @@
 import { InvariantsDocumentSchema, type InvariantsDocument } from '@spectra/core';
 
+export type ModelProvider = 'meta' | 'baseten';
+
 export interface CompileOptions {
+  provider?: ModelProvider;
+  openWeight?: boolean;
   apiKey?: string;
   baseUrl?: string;
   model?: string;
@@ -44,14 +48,53 @@ export async function compileTranscriptToInvariants(
   transcript: string,
   options: CompileOptions = {},
 ): Promise<CompileResult> {
-  const apiKey =
-    options.apiKey || (typeof process !== 'undefined' ? process.env?.META_API_KEY : undefined);
-  if (!apiKey) {
-    throw new Error('META_API_KEY is required to compile invariants.');
+  // Determine provider:
+  // Default to "baseten" when BASETEN_API_KEY is set and open-weight mode is requested, or "meta" for muse-spark-1.3
+  let provider: ModelProvider;
+  if (options.provider) {
+    provider = options.provider;
+  } else if (
+    options.openWeight ||
+    options.model?.includes('open') ||
+    options.baseUrl?.includes('baseten')
+  ) {
+    provider = 'baseten';
+  } else if (
+    typeof process !== 'undefined' &&
+    process.env?.BASETEN_API_KEY &&
+    !process.env?.META_API_KEY
+  ) {
+    provider = 'baseten';
+  } else {
+    provider = 'meta';
   }
 
-  const baseUrl = options.baseUrl || 'https://api.meta.ai/v1';
-  const model = options.model || 'muse-spark-1.3';
+  const isBaseten = provider === 'baseten';
+
+  const apiKey = isBaseten
+    ? options.apiKey || (typeof process !== 'undefined' ? process.env?.BASETEN_API_KEY : undefined)
+    : options.apiKey || (typeof process !== 'undefined' ? process.env?.META_API_KEY : undefined);
+
+  if (!apiKey) {
+    throw new Error(
+      isBaseten
+        ? 'BASETEN_API_KEY is required for Baseten invariant compilation.'
+        : 'META_API_KEY is required to compile invariants.',
+    );
+  }
+
+  const baseUrl = isBaseten
+    ? options.baseUrl ||
+      (typeof process !== 'undefined' ? process.env?.BASETEN_BASE_URL : undefined) ||
+      'https://inference.baseten.co/v1'
+    : options.baseUrl ||
+      (typeof process !== 'undefined' ? process.env?.META_API_BASE_URL : undefined) ||
+      'https://api.meta.ai/v1';
+
+  const model = isBaseten
+    ? options.model || 'meta-models/muse-spark-open-1026'
+    : options.model || 'muse-spark-1.3';
+
   const compiledAt = options.nowIso || new Date().toISOString();
 
   const systemInstruction = `You are the Spectra Visual Invariant Compiler.
@@ -82,43 +125,81 @@ Rules:
 
   const userPrompt = `Transcript to compile:\n"${transcript}"`;
 
-  const endpoint = `${baseUrl}/responses`;
-  const res = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model,
-      input: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'input_text',
-              text: `${systemInstruction}\n\n${userPrompt}`,
-            },
-          ],
-        },
-      ],
-    }),
-  });
-
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(`Meta Responses API error (${res.status}): ${errorText}`);
-  }
-
-  const rawJson = (await res.json()) as Record<string, unknown>;
+  let rawJson: Record<string, unknown>;
   let outputText = '';
-  const outputArr = rawJson.output as Array<{ content?: Array<{ text?: string }> }> | undefined;
-  if (Array.isArray(outputArr)) {
-    for (const item of outputArr) {
-      if (Array.isArray(item.content)) {
-        for (const c of item.content) {
-          if (c.text) {
-            outputText += (outputText ? '\n' : '') + c.text;
+
+  if (isBaseten) {
+    const endpoint = `${baseUrl.replace(/\/+$/, '')}/chat/completions`;
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: 'system',
+            content: systemInstruction,
+          },
+          {
+            role: 'user',
+            content: userPrompt,
+          },
+        ],
+        temperature: 0.1,
+      }),
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Baseten Chat Completions API error (${res.status}): ${errorText}`);
+    }
+
+    rawJson = (await res.json()) as Record<string, unknown>;
+    const choices = rawJson.choices as Array<{ message?: { content?: string } }> | undefined;
+    if (Array.isArray(choices) && choices.length > 0 && choices[0].message?.content) {
+      outputText = choices[0].message.content;
+    }
+  } else {
+    const endpoint = `${baseUrl.replace(/\/+$/, '')}/responses`;
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        input: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'input_text',
+                text: `${systemInstruction}\n\n${userPrompt}`,
+              },
+            ],
+          },
+        ],
+      }),
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Meta Responses API error (${res.status}): ${errorText}`);
+    }
+
+    rawJson = (await res.json()) as Record<string, unknown>;
+    const outputArr = rawJson.output as Array<{ content?: Array<{ text?: string }> }> | undefined;
+    if (Array.isArray(outputArr)) {
+      for (const item of outputArr) {
+        if (Array.isArray(item.content)) {
+          for (const c of item.content) {
+            if (c.text) {
+              outputText += (outputText ? '\n' : '') + c.text;
+            }
           }
         }
       }

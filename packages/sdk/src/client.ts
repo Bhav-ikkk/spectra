@@ -26,25 +26,49 @@ import {
 import {
   transcribeAudioFile,
   compileTranscriptToInvariants,
+  evaluateWithVlmJudge,
   extractJsonFromText,
+  type ModelProvider,
+  type VlmJudgeOptions,
+  type VlmJudgeResult,
 } from '@spectra/invariant-compiler';
 import type { VerifyClipOptions, CompileVoiceOptions, CheckInvariantsOptions } from './types.js';
 
 export interface SpectraClientConfig {
   apiKey?: string;
   baseUrl?: string;
+  basetenApiKey?: string;
+  basetenBaseUrl?: string;
+  provider?: ModelProvider;
+  openWeight?: boolean;
   calibration?: CalibrationData;
 }
 
 export class SpectraClient {
   private readonly apiKey?: string;
   private readonly baseUrl: string;
+  private readonly basetenApiKey?: string;
+  private readonly basetenBaseUrl: string;
+  private readonly provider?: ModelProvider;
+  private readonly openWeight?: boolean;
   private readonly calibration: CalibrationData;
 
   constructor(config: SpectraClientConfig = {}) {
     this.apiKey =
       config.apiKey || (typeof process !== 'undefined' ? process.env?.META_API_KEY : undefined);
-    this.baseUrl = config.baseUrl || 'https://api.meta.ai/v1';
+    this.baseUrl =
+      config.baseUrl ||
+      (typeof process !== 'undefined' ? process.env?.META_API_BASE_URL : undefined) ||
+      'https://api.meta.ai/v1';
+    this.basetenApiKey =
+      config.basetenApiKey ||
+      (typeof process !== 'undefined' ? process.env?.BASETEN_API_KEY : undefined);
+    this.basetenBaseUrl =
+      config.basetenBaseUrl ||
+      (typeof process !== 'undefined' ? process.env?.BASETEN_BASE_URL : undefined) ||
+      'https://inference.baseten.co/v1';
+    this.provider = config.provider;
+    this.openWeight = config.openWeight;
     this.calibration = config.calibration ?? getCalibration();
     assertCalibrated(this.calibration);
   }
@@ -330,9 +354,22 @@ export class SpectraClient {
       throw new Error('Either audioPath, transcriptText, or cachedDir must be provided.');
     }
 
+    const resolvedProvider = options.provider ?? this.provider;
+    const isBaseten =
+      resolvedProvider === 'baseten' ||
+      Boolean(options.openWeight ?? this.openWeight) ||
+      Boolean(options.model?.includes('open')) ||
+      Boolean(options.baseUrl?.includes('baseten'));
+
+    const resolvedApiKey = options.apiKey || (isBaseten ? this.basetenApiKey : this.apiKey);
+    const resolvedBaseUrl = options.baseUrl || (isBaseten ? this.basetenBaseUrl : this.baseUrl);
+
     const compileRes = await compileTranscriptToInvariants(transcript, {
-      apiKey: this.apiKey,
-      baseUrl: this.baseUrl,
+      provider: resolvedProvider,
+      openWeight: options.openWeight ?? this.openWeight,
+      apiKey: resolvedApiKey,
+      baseUrl: resolvedBaseUrl,
+      model: options.model,
       voiceTranscriptId: sessionId,
     });
 
@@ -347,6 +384,51 @@ export class SpectraClient {
     }
 
     return compileRes.document;
+  }
+
+  /**
+   * Evaluates UI element visibility using VLM Judge (Baseten muse-spark-open-1026 or Meta muse-spark-1.3)
+   */
+  async evaluateWithVlmJudge(
+    framePath: string,
+    targetLabel: string,
+    providerOrOptions?: ModelProvider | VlmJudgeOptions,
+  ): Promise<VlmJudgeResult> {
+    const opts: VlmJudgeOptions =
+      typeof providerOrOptions === 'string'
+        ? { provider: providerOrOptions }
+        : { ...providerOrOptions };
+
+    if (!opts.provider && this.provider) {
+      opts.provider = this.provider;
+    }
+    if (opts.openWeight === undefined && this.openWeight !== undefined) {
+      opts.openWeight = this.openWeight;
+    }
+
+    const isBaseten =
+      opts.provider === 'baseten' ||
+      Boolean(opts.openWeight) ||
+      Boolean(opts.model?.includes('open')) ||
+      Boolean(opts.baseUrl?.includes('baseten'));
+
+    if (!opts.apiKey) {
+      if (isBaseten && this.basetenApiKey) {
+        opts.apiKey = this.basetenApiKey;
+      } else if (!isBaseten && this.apiKey) {
+        opts.apiKey = this.apiKey;
+      }
+    }
+
+    if (!opts.baseUrl) {
+      if (isBaseten && this.basetenBaseUrl) {
+        opts.baseUrl = this.basetenBaseUrl;
+      } else if (!isBaseten && this.baseUrl) {
+        opts.baseUrl = this.baseUrl;
+      }
+    }
+
+    return evaluateWithVlmJudge(framePath, targetLabel, opts);
   }
 
   /**

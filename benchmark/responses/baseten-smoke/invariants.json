@@ -1,0 +1,38 @@
+{
+  "$schema": "https://spectra.dev/schemas/invariants/v1.json",
+  "version": "1.0",
+  "invariants": [
+    {
+      "id": "complete-checkout-button-visible",
+      "description": "Complete Checkout Button must remain visible and never be covered when the cart drawer is open",
+      "type": "visual",
+      "severity": "error",
+      "matcher": {
+        "strategy": "semantic",
+        "target": "Complete Checkout Button",
+        "expected": true
+      },
+      "source": {
+        "voice_transcript_id": "voyager/transcribe/6D0FEAC1E93944EB9F057C5DBE136055",
+        "compiled_by": "meta-models/muse-spark-open-1026",
+        "compiled_at": "2026-10-27T12:59:20.446Z"
+      }
+    },
+    {
+      "id": "revenue-series-legend-visible",
+      "description": "Revenue series legend must stay visible when the cart drawer is open",
+      "type": "visual",
+      "severity": "error",
+      "matcher": {
+        "strategy": "semantic",
+        "target": "Revenue Series Legend",
+        "expected": true
+      },
+      "source": {
+        "voice_transcript_id": "voyager/transcribe/6D0FEAC1E93944EB9F057C5DBE136055",
+        "compiled_by": "meta-models/muse-spark-open-1026",
+        "compiled_at": "2026-10-27T12:59:20.446Z"
+      }
+    }
+  ]
+}
