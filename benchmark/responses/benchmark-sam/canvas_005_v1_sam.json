@@ -1,0 +1,49 @@
+{
+  "top_logprobs": 0,
+  "temperature": 1,
+  "top_p": 1,
+  "service_tier": "auto",
+  "model": "sam-3.1",
+  "background": false,
+  "tools": [],
+  "tool_choice": "auto",
+  "truncation": "disabled",
+  "id": "resp_6ae0aee4bd6914500d3a4131",
+  "object": "response",
+  "status": "completed",
+  "created_at": 1793109731,
+  "completed_at": 1793109732,
+  "error": null,
+  "incomplete_details": null,
+  "output": [
+    {
+      "type": "message",
+      "id": "msg_c616df0e-1a82-4995-9c41-f2a584d04d8f",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "<0f>0<|box;x1=817;y1=240;x2=1040;y2=288;w=1280;h=720|><|mask;x=0;y=0;data=49,224,!!!!!KI7$rC7%`:3L&u2sn'y4)csu!OEDIwIivRP:j7lFKe[tCr!!|>\n<1f>0<|box;x1=819;y1=240;x2=1040;y2=288;w=1280;h=720|><|mask;x=0;y=0;data=49,222,!!!!!MJ@khMeawr'&_i[lu/c*L-Qz^u0p9[@3=`b1Xk5olkSCjnr8iV|>\n<2f>0<|box;x1=819;y1=240;x2=1040;y2=288;w=1280;h=720|><|mask;x=0;y=0;data=49,222,!!!!!MJA!W@j)'M4JfbB$:w_qxwVQdLy)yySS?vhzpyh.Oc5WB84{ov|>\n<3f>0<|box;x1=821;y1=240;x2=1040;y2=288;w=1280;h=720|><|mask;x=0;y=0;data=49,220,!!!!!IK)`-oZZaG5YT/%&OT2vj&QKk{3:GoYfN^*VNgGU%xhRV|>\n<4f>0<|box;x1=822;y1=240;x2=1040;y2=288;w=1280;h=720|><|mask;x=0;y=0;data=49,219,!!!!!PGvooo?OcrTgmNJbH=x@(OO`@KZ[2l[8%YYs2u8=*LkDlZ'JTB*!!!|>\n<5f>0<|box;x1=822;y1=240;x2=1040;y2=288;w=1280;h=720|><|mask;x=0;y=0;data=49,219,!!!!!NGvooYC@:/wn0h'+Pe](isJa]7U?!Q9Le5I_RLa@Zw?XD?OI@g]|>\n<6f>0<|box;x1=822;y1=240;x2=1040;y2=288;w=1280;h=720|><|mask;x=0;y=0;data=49,219,!!!!!MGvooYC@:/wn0h'jS/vYIZC.czj/SKzl!)k((k]U8n%jx4!h@=|>\n<7f>0<|box;x1=822;y1=240;x2=1040;y2=288;w=1280;h=720|><|mask;x=0;y=0;data=49,219,!!!!!LGbnN^mm_f1]D7Ue@pH?R(tRw{7/)_6I_1BPp/VscJ@HjA!!!|>\n",
+          "annotations": [],
+          "logprobs": []
+        }
+      ],
+      "status": "completed"
+    }
+  ],
+  "instructions": null,
+  "usage": {
+    "input_tokens": 0,
+    "input_tokens_details": {
+      "cached_tokens": 0
+    },
+    "output_tokens": 0,
+    "output_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "total_tokens": 0,
+    "video_frames_processed": 50
+  },
+  "parallel_tool_calls": true,
+  "store": true
+}

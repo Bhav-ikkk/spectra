@@ -1,0 +1,49 @@
+{
+  "top_logprobs": 0,
+  "temperature": 1,
+  "top_p": 1,
+  "service_tier": "auto",
+  "model": "sam-3.1",
+  "background": false,
+  "tools": [],
+  "tool_choice": "auto",
+  "truncation": "disabled",
+  "id": "resp_6ae0a840862b2341046c495f",
+  "object": "response",
+  "status": "completed",
+  "created_at": 1793108031,
+  "completed_at": 1793108032,
+  "error": null,
+  "incomplete_details": null,
+  "output": [
+    {
+      "type": "message",
+      "id": "msg_0834b62b-3d17-417c-bb4a-ad8450d471b8",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "<0f>0<|box;x1=817;y1=240;x2=1040;y2=288;w=1280;h=720|><|mask;x=0;y=0;data=49,224,!!!!!KI7$rC7%`:3L&u2sn'y4)csu!OEDIwIivRP:j7lFKe[tCr!!|>\n<1f>0<|box;x1=819;y1=240;x2=1040;y2=288;w=1280;h=720|><|mask;x=0;y=0;data=49,222,!!!!!PJ@khMeaz.qF]m5ls]VI8cn9O2[]kJp18H7{ePZa)Hx.K5IOMHJZ'_|>\n<2f>0<|box;x1=819;y1=240;x2=1040;y2=288;w=1280;h=720|><|mask;x=0;y=0;data=49,222,!!!!!MJA$(N3M[1I2)A`gQiBPCDKYy'3Au$xVsG]_(Rt/yRzUvWEb]u|>\n<3f>0<|box;x1=827;y1=240;x2=1040;y2=288;w=1280;h=720|><|mask;x=0;y=0;data=49,214,!!!!!OGvoCA?xc_D2_9GMxxmoQ/zzhWp*hi1LU+Nn5MI^S3=Ft#EpJhq!!|>\n<4f>0<|box;x1=842;y1=240;x2=1040;y2=288;w=1280;h=720|><|mask;x=0;y=0;data=49,199,!!!!!GHnKylRk+{wfI.gO?PUae`(.mQg/eIa!b&a7h9VZk!!|>\n<5f>0<|box;x1=849;y1=240;x2=1040;y2=288;w=1280;h=720|><|mask;x=0;y=0;data=49,192,!!!!!IHPI^[ULp*ZX_wQ6DPqT#]TJG?'04ZRkHhB#GL63]?G3E|>\n<6f>0<|box;x1=849;y1=240;x2=1040;y2=288;w=1280;h=720|><|mask;x=0;y=0;data=49,192,!!!!!JGatgBkIhG4q1e2M_&#2Y]1aB$#tU$cAb{AGSf9%Y35{&e|>\n<7f>0<|box;x1=849;y1=240;x2=1040;y2=288;w=1280;h=720|><|mask;x=0;y=0;data=49,192,!!!!!KGatr?utJUGX]0(fbIKE]lX!bfYLyPo[q)1l3(Yj&:d:Kn!!|>\n",
+          "annotations": [],
+          "logprobs": []
+        }
+      ],
+      "status": "completed"
+    }
+  ],
+  "instructions": null,
+  "usage": {
+    "input_tokens": 0,
+    "input_tokens_details": {
+      "cached_tokens": 0
+    },
+    "output_tokens": 0,
+    "output_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "total_tokens": 0,
+    "video_frames_processed": 50
+  },
+  "parallel_tool_calls": true,
+  "store": true
+}

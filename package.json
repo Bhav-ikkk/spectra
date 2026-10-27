@@ -12,7 +12,8 @@
     "test": "pnpm -r test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "benchmark:smoke": "tsx packages/core/src/scripts/benchmark-smoke.ts"
+    "benchmark:smoke": "tsx packages/core/src/scripts/benchmark-smoke.ts",
+    "benchmark:referee": "tsx packages/sdk/src/scripts/run-full-benchmark.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",

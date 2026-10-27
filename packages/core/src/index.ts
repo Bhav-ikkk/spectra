@@ -5,6 +5,7 @@
 export * from './schemas/invariant.js';
 export * from './schemas/verdict.js';
 export * from './schemas/manifest.js';
+export * from './schemas/benchmark-report.js';
 export * from './calibration.js';
 export * from './instrument-b.js';
 export * from './referee.js';

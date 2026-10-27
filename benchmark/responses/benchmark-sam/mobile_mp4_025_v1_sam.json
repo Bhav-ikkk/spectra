@@ -1,0 +1,49 @@
+{
+  "top_logprobs": 0,
+  "temperature": 1,
+  "top_p": 1,
+  "service_tier": "auto",
+  "model": "sam-3.1",
+  "background": false,
+  "tools": [],
+  "tool_choice": "auto",
+  "truncation": "disabled",
+  "id": "resp_6ae0afe7c5186a80dac843bb",
+  "object": "response",
+  "status": "completed",
+  "created_at": 1793109990,
+  "completed_at": 1793109991,
+  "error": null,
+  "incomplete_details": null,
+  "output": [
+    {
+      "type": "message",
+      "id": "msg_e03f9982-89dd-4ca9-834e-354459466820",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "<0f>0<|box;x1=473;y1=610;x2=806;y2=662;w=1280;h=720|><|mask;x=0;y=0;data=53,334,!!!!!@JBL#1Pa3p]jso2S)mD2Nufst6L+3PA!!!|>\n<1f>0<|box;x1=474;y1=610;x2=804;y2=662;w=1280;h=720|><|mask;x=0;y=0;data=53,331,!!!!!IK/P%bBt{alQ/LQ8K2rrTS0X8'vK_VZOYt`K+GP/QHcKL|>\n<2f>0<|box;x1=474;y1=610;x2=805;y2=662;w=1280;h=720|><|mask;x=0;y=0;data=53,332,!!!!!IK/P$nJK!5KFc:l92aAVY?w2Uth=M(KmnhwBmhz!kdc6D|>\n<3f>0<|box;x1=474;y1=610;x2=805;y2=658;w=1280;h=720|><|mask;x=0;y=0;data=49,332,!!!!!AK/PK9/Bd@w=ddlh*u^ING{3I$h3=Bc=J7&|>\n<4f>0<|box;x1=474;y1=610;x2=805;y2=652;w=1280;h=720|><|mask;x=0;y=0;data=43,332,!!!!!FK/PK9/6DO@nj.B-]@rPIc$zI0hoez-BhUpKAim'O|>\n<5f>0<|box;x1=474;y1=610;x2=805;y2=649;w=1280;h=720|><|mask;x=0;y=0;data=40,332,!!!!!@K/PK9/6DO@o8x5$x9*d-XdF]V@omXBNlP|>\n<6f>0<|box;x1=474;y1=610;x2=805;y2=649;w=1280;h=720|><|mask;x=0;y=0;data=40,332,!!!!!AK/PK9/6DO@o9EP*5Qfx)W1(p3XC.@3KY@H|>\n<7f>0<|box;x1=474;y1=610;x2=804;y2=649;w=1280;h=720|><|mask;x=0;y=0;data=40,331,!!!!!?K/PLTDX`kvbt=Cf??S.'2&V6abbE/b!!|>\n",
+          "annotations": [],
+          "logprobs": []
+        }
+      ],
+      "status": "completed"
+    }
+  ],
+  "instructions": null,
+  "usage": {
+    "input_tokens": 0,
+    "input_tokens_details": {
+      "cached_tokens": 0
+    },
+    "output_tokens": 0,
+    "output_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "total_tokens": 0,
+    "video_frames_processed": 50
+  },
+  "parallel_tool_calls": true,
+  "store": true
+}

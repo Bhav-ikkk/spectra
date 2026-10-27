@@ -1,0 +1,32 @@
+{
+  "id": "chatcmpl-7737b731cb8c4b638f9632d37165ea6c",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "content": "{\n  \"target\": \"Pay $149.00\",\n  \"clipped\": true,\n  \"confidence\": 0.96,\n  \"reasoning\": \"The blue 'Pay $149.00' CTA at the bottom of the screen is partially occluded along its bottom edge by the black 'Promo: 20% Applied to Order' overlay/drawer, clipping the button's lower border.\"\n}",
+        "role": "assistant",
+        "reasoning_content": "We need to determine if \"Pay $149.00\" is clipped, cut off, obscured, partially occluded.\n\nLooking at screenshot: phone centered. At bottom, there's a blue CTA button \"Pay $149.00\". But at very bottom, there's a black overlay? It says \"Promo: 20% Applied to Order\" with a handle. The blue button is partially obscured by that black promo bar? Let's see.\n\nThe blue button is at bottom of screen. The black bar with \"Promo: 20% Applied to Order\" is overlapping the bottom edge of the blue button. The blue button's bottom edge is cut off / occluded by that black drawer/overlay.\n\nSo clipped = true. Confidence high.\n\nWe need to output JSON with target \"Pay $149.00\", clipped true, confidence maybe 0.95, reasoning brief.\n\nCheck rules: Even subtle edge clippings (5-15% obscured by overlay, drawer, or modal boundary) count as clipped/occluded.\n\nYes, the bottom portion of the blue CTA is obscured by the promo banner.\n\nSo answer: clipped true.\n\nProvide JSON only.\n\nEnsure format exactly as requested.\n\n{\n  \"target\": \"Pay $149.00\",\n  \"clipped\": true,\n  \"confidence\": 0.95,\n  \"reasoning\": \"Brief explanation...\"\n}\n\nWe should give reasoning: The bottom edge of the blue Pay $149.00 button is partially obscured by the black promo overlay/drawer at the bottom of the screen.\n\nConfidence 0.95-0.98.\n\nMake sure no extra text.\n\n"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "created": 1793109963,
+  "model": "meta-models/muse-spark-open-1026",
+  "object": "chat.completion",
+  "usage": {
+    "prompt_tokens": 1614,
+    "completion_tokens": 425,
+    "total_tokens": 2039,
+    "prompt_tokens_details": {
+      "audio_tokens": 0,
+      "cached_tokens": 384
+    },
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": 307,
+      "audio_tokens": 0,
+      "reasoning_tokens": 331,
+      "rejected_prediction_tokens": 519
+    }
+  }
+}

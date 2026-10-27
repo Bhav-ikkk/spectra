@@ -1,0 +1,49 @@
+{
+  "top_logprobs": 0,
+  "temperature": 1,
+  "top_p": 1,
+  "service_tier": "auto",
+  "model": "sam-3.1",
+  "background": false,
+  "tools": [],
+  "tool_choice": "auto",
+  "truncation": "disabled",
+  "id": "resp_6ae0af2bc1b706282a8d46d0",
+  "object": "response",
+  "status": "completed",
+  "created_at": 1793109801,
+  "completed_at": 1793109803,
+  "error": null,
+  "incomplete_details": null,
+  "output": [
+    {
+      "type": "message",
+      "id": "msg_6df68b7a-5b7b-4c26-8104-02bc91fa498b",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "<0f>0<|box;x1=817;y1=240;x2=1040;y2=288;w=1280;h=720|><|mask;x=0;y=0;data=49,224,!!!!!KI7$rC7%`:3L&u2sn'y4)csu!OEDIwIivRP:j7lFKe[tCr!!|>\n<1f>0<|box;x1=819;y1=240;x2=1040;y2=288;w=1280;h=720|><|mask;x=0;y=0;data=49,222,!!!!!LJ@y75Ls5JINOHZK5JoZqCCxu*suei928kCZO-np!o$mHM!!!|>\n<2f>0<|box;x1=819;y1=240;x2=1040;y2=288;w=1280;h=720|><|mask;x=0;y=0;data=49,222,!!!!!MJA$(N3M[Z*a_]%GFwuQZrro'LTBGsjRDYCwH=z{*tY(U.rRvt|>\n<3f>0<|box;x1=871;y1=240;x2=1040;y2=288;w=1280;h=720|><|mask;x=0;y=0;data=49,170,!!!!!BJAwpyj3eD.3oHGq`v&CEIagoHhil.(7#CUU|>\n<4f>0<|box;x1=923;y1=240;x2=1040;y2=288;w=1280;h=720|><|mask;x=0;y=0;data=49,118,!!!!!=JAb3{W:OI+)dyFyr61_U-y@].+{?gX|>\n<5f>0<|box;x1=949;y1=240;x2=1040;y2=288;w=1280;h=720|><|mask;x=0;y=0;data=49,92,!!!!!:Id)$`!=zK%RKeDhWfRX`RQ^V?Q10j|>\n<6f>0<|box;x1=949;y1=240;x2=1040;y2=288;w=1280;h=720|><|mask;x=0;y=0;data=49,92,!!!!!:Id)$`!=zK%RKeDhWfSd[BK4sWY!bT|>\n<7f>0<|box;x1=949;y1=240;x2=1040;y2=288;w=1280;h=720|><|mask;x=0;y=0;data=49,92,!!!!!@Id)$`!85oqr=c=bW[#H[en88X`G.E=!!!|>\n",
+          "annotations": [],
+          "logprobs": []
+        }
+      ],
+      "status": "completed"
+    }
+  ],
+  "instructions": null,
+  "usage": {
+    "input_tokens": 0,
+    "input_tokens_details": {
+      "cached_tokens": 0
+    },
+    "output_tokens": 0,
+    "output_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "total_tokens": 0,
+    "video_frames_processed": 50
+  },
+  "parallel_tool_calls": true,
+  "store": true
+}

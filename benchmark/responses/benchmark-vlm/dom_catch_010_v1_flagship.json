@@ -1,0 +1,57 @@
+{
+  "top_logprobs": 0,
+  "temperature": 1,
+  "top_p": 1,
+  "service_tier": "auto",
+  "model": "muse-spark-1.3",
+  "reasoning": {
+    "effort": "high"
+  },
+  "background": false,
+  "tools": [],
+  "tool_choice": "auto",
+  "truncation": "disabled",
+  "id": "resp_6ae0af573f8c5c9103e047cb",
+  "object": "response",
+  "status": "completed",
+  "created_at": 1793109847,
+  "completed_at": 1793109847,
+  "error": null,
+  "incomplete_details": null,
+  "output": [
+    {
+      "type": "reasoning",
+      "id": "rs_6ae0af573f8c5c9103e047cb:rs_46668f12-13d1-4118-84e1-c9087eb7d795",
+      "summary": [],
+      "status": "completed"
+    },
+    {
+      "type": "message",
+      "id": "msg_ca5e2e9f-3321-4952-9afa-8b27bd2957b0",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "{\n  \"target\": \"Complete Checkout\",\n  \"clipped\": false,\n  \"confidence\": 0.98,\n  \"reasoning\": \"The green Complete Checkout button is fully visible in the cart panel with all text and borders intact, no overlay, drawer, or edge clipping.\"\n}",
+          "annotations": [],
+          "logprobs": []
+        }
+      ],
+      "status": "completed"
+    }
+  ],
+  "instructions": null,
+  "usage": {
+    "input_tokens": 1465,
+    "input_tokens_details": {
+      "cached_tokens": 0
+    },
+    "output_tokens": 484,
+    "output_tokens_details": {
+      "reasoning_tokens": 415
+    },
+    "total_tokens": 1949
+  },
+  "parallel_tool_calls": true,
+  "store": true
+}

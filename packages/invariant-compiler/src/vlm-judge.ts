@@ -80,6 +80,27 @@ function parseVlmJudgeOutput(
   };
 }
 
+function getEnvVar(key: string): string | undefined {
+  if (typeof process !== 'undefined' && process.env?.[key]) {
+    return process.env[key];
+  }
+  let dir = process.cwd();
+  while (!fs.existsSync(path.join(dir, 'pnpm-workspace.yaml'))) {
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  const envPath = path.join(dir, '.env');
+  if (fs.existsSync(envPath)) {
+    const content = fs.readFileSync(envPath, 'utf-8');
+    const match = content.match(new RegExp(`${key}=([^\\r\\n]+)`));
+    if (match?.[1]?.trim()) {
+      return match[1].trim();
+    }
+  }
+  return undefined;
+}
+
 export async function evaluateWithVlmJudge(
   framePath: string,
   targetLabel: string,
@@ -100,11 +121,7 @@ export async function evaluateWithVlmJudge(
     options.baseUrl?.includes('baseten')
   ) {
     provider = 'baseten';
-  } else if (
-    typeof process !== 'undefined' &&
-    process.env?.BASETEN_API_KEY &&
-    !process.env?.META_API_KEY
-  ) {
+  } else if (getEnvVar('BASETEN_API_KEY') && !getEnvVar('META_API_KEY')) {
     provider = 'baseten';
   } else {
     provider = 'meta';
@@ -173,15 +190,12 @@ Rules:
   const vlmJudgeUserPrompt = `Is the UI element "${targetLabel}" clipped, occluded, or fully visible in this screenshot? Respond ONLY with JSON.`;
 
   if (provider === 'baseten') {
-    const apiKey =
-      options.apiKey || (typeof process !== 'undefined' ? process.env?.BASETEN_API_KEY : undefined);
+    const apiKey = options.apiKey !== undefined ? options.apiKey : getEnvVar('BASETEN_API_KEY');
     if (!apiKey) {
       throw new Error('BASETEN_API_KEY is required for Baseten VLM evaluation.');
     }
     const baseUrl =
-      options.baseUrl ||
-      (typeof process !== 'undefined' ? process.env?.BASETEN_BASE_URL : undefined) ||
-      'https://inference.baseten.co/v1';
+      options.baseUrl || getEnvVar('BASETEN_BASE_URL') || 'https://inference.baseten.co/v1';
     const model = options.model || 'meta-models/muse-spark-open-1026';
 
     const endpoint = `${baseUrl.replace(/\/+$/, '')}/chat/completions`;
@@ -215,7 +229,7 @@ Rules:
           },
         ],
         temperature: options.temperature ?? 0.1,
-        max_tokens: 512,
+        max_tokens: 2048,
       }),
     });
 
@@ -226,22 +240,20 @@ Rules:
 
     const rawJson = (await res.json()) as Record<string, unknown>;
     let outputText = '';
-    const choices = rawJson.choices as Array<{ message?: { content?: string } }> | undefined;
-    if (Array.isArray(choices) && choices.length > 0 && choices[0].message?.content) {
-      outputText = choices[0].message.content;
+    const choices = rawJson.choices as
+      | Array<{ message?: { content?: string; reasoning_content?: string } }>
+      | undefined;
+    if (Array.isArray(choices) && choices.length > 0) {
+      outputText = choices[0].message?.content || choices[0].message?.reasoning_content || '';
     }
 
     return parseVlmJudgeOutput(outputText, targetLabel, rawJson, provider, model);
   } else {
-    const apiKey =
-      options.apiKey || (typeof process !== 'undefined' ? process.env?.META_API_KEY : undefined);
+    const apiKey = options.apiKey !== undefined ? options.apiKey : getEnvVar('META_API_KEY');
     if (!apiKey) {
       throw new Error('META_API_KEY is required for Meta VLM evaluation.');
     }
-    const baseUrl =
-      options.baseUrl ||
-      (typeof process !== 'undefined' ? process.env?.META_API_BASE_URL : undefined) ||
-      'https://api.meta.ai/v1';
+    const baseUrl = options.baseUrl || getEnvVar('META_API_BASE_URL') || 'https://api.meta.ai/v1';
     const model = options.model || 'muse-spark-1.3';
 
     const endpoint = `${baseUrl.replace(/\/+$/, '')}/responses`;

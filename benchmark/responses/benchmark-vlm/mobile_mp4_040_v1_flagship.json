@@ -1,0 +1,57 @@
+{
+  "top_logprobs": 0,
+  "temperature": 1,
+  "top_p": 1,
+  "service_tier": "auto",
+  "model": "muse-spark-1.3",
+  "reasoning": {
+    "effort": "high"
+  },
+  "background": false,
+  "tools": [],
+  "tool_choice": "auto",
+  "truncation": "disabled",
+  "id": "resp_6ae0aff411d6b81a2cc04ff4",
+  "object": "response",
+  "status": "completed",
+  "created_at": 1793110003,
+  "completed_at": 1793110004,
+  "error": null,
+  "incomplete_details": null,
+  "output": [
+    {
+      "type": "reasoning",
+      "id": "rs_6ae0aff411d6b81a2cc04ff4:rs_bcfe2027-99ec-48d6-9cbd-300616ee1aa6",
+      "summary": [],
+      "status": "completed"
+    },
+    {
+      "type": "message",
+      "id": "msg_59d5b13e-193f-4f81-a1ea-b5f07c44e7c2",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "{\n  \"target\": \"Pay $149.00\",\n  \"clipped\": true,\n  \"confidence\": 0.95,\n  \"reasoning\": \"Blue Pay CTA at bottom is partially overlapped by black promo drawer, bottom edge of button is obscured\"\n}",
+          "annotations": [],
+          "logprobs": []
+        }
+      ],
+      "status": "completed"
+    }
+  ],
+  "instructions": null,
+  "usage": {
+    "input_tokens": 1477,
+    "input_tokens_details": {
+      "cached_tokens": 0
+    },
+    "output_tokens": 838,
+    "output_tokens_details": {
+      "reasoning_tokens": 772
+    },
+    "total_tokens": 2315
+  },
+  "parallel_tool_calls": true,
+  "store": true
+}

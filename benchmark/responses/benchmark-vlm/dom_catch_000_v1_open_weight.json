@@ -1,0 +1,32 @@
+{
+  "id": "chatcmpl-a9ba386b2d8d419e83fe1f39ae31b275",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "content": "{\n  \"target\": \"Complete Checkout\",\n  \"clipped\": false,\n  \"confidence\": 0.99,\n  \"reasoning\": \"The green 'Complete Checkout' button at the bottom of the Your Cart panel is fully visible, intact, and unobstructed with no clipping or occlusion by edges or overlays.\"\n}",
+        "role": "assistant",
+        "reasoning_content": "We need to determine if \"Complete Checkout\" is clipped, cut off, obscured, partially occluded.\n\nIn screenshot, bottom right, there is a green button \"Complete Checkout\". It appears fully visible. No clipping. It's at bottom of cart panel. Fully visible.\n\nSo clipped false.\n\nConfidence high 0.99.\n\nNeed to output JSON with target Complete Checkout, clipped false, confidence, reasoning.\n\nReasoning: Brief explanation element is visible.\n\nMake sure JSON format exactly.\n\n{\n  \"target\": \"Complete Checkout\",\n  \"clipped\": false,\n  \"confidence\": 0.99,\n  \"reasoning\": \"The green 'Complete Checkout' button is fully visible at the bottom of the cart panel with no occlusion or edge clipping.\"\n}\n\nCheck rules: clipped true if any part occluded. Here false.\n\nProvide only JSON block.\n\nEnsure valid JSON.\n\nProbably need confidence 0.95-1.0.\n\nReturn."
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "created": 1793109804,
+  "model": "meta-models/muse-spark-open-1026",
+  "object": "chat.completion",
+  "usage": {
+    "prompt_tokens": 1602,
+    "completion_tokens": 269,
+    "total_tokens": 1871,
+    "prompt_tokens_details": {
+      "audio_tokens": 0,
+      "cached_tokens": 0
+    },
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": 190,
+      "audio_tokens": 0,
+      "reasoning_tokens": 190,
+      "rejected_prediction_tokens": 363
+    }
+  }
+}

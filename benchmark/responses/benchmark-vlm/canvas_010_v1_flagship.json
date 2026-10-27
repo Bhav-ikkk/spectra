@@ -1,0 +1,57 @@
+{
+  "top_logprobs": 0,
+  "temperature": 1,
+  "top_p": 1,
+  "service_tier": "auto",
+  "model": "muse-spark-1.3",
+  "reasoning": {
+    "effort": "high"
+  },
+  "background": false,
+  "tools": [],
+  "tool_choice": "auto",
+  "truncation": "disabled",
+  "id": "resp_6ae0aef00f70a0bf9e3e4de6",
+  "object": "response",
+  "status": "completed",
+  "created_at": 1793109744,
+  "completed_at": 1793109744,
+  "error": null,
+  "incomplete_details": null,
+  "output": [
+    {
+      "type": "reasoning",
+      "id": "rs_6ae0aef00f70a0bf9e3e4de6:rs_2344c58b-7424-4499-ab69-8328c9f07b19",
+      "summary": [],
+      "status": "completed"
+    },
+    {
+      "type": "message",
+      "id": "msg_b8b43b36-4097-4096-b125-fd30e975a9b4",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "{\n  \"target\": \"Revenue Series Legend\",\n  \"clipped\": false,\n  \"confidence\": 0.97,\n  \"reasoning\": \"The 'Revenue Series Legend' label and its containing legend box are fully visible in the upper chart area with no overlap, cutoff, or occlusion.\"\n}",
+          "annotations": [],
+          "logprobs": []
+        }
+      ],
+      "status": "completed"
+    }
+  ],
+  "instructions": null,
+  "usage": {
+    "input_tokens": 1469,
+    "input_tokens_details": {
+      "cached_tokens": 0
+    },
+    "output_tokens": 626,
+    "output_tokens_details": {
+      "reasoning_tokens": 555
+    },
+    "total_tokens": 2095
+  },
+  "parallel_tool_calls": true,
+  "store": true
+}

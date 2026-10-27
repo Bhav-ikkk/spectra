@@ -1,0 +1,57 @@
+{
+  "top_logprobs": 0,
+  "temperature": 1,
+  "top_p": 1,
+  "service_tier": "auto",
+  "model": "muse-spark-1.3",
+  "reasoning": {
+    "effort": "high"
+  },
+  "background": false,
+  "tools": [],
+  "tool_choice": "auto",
+  "truncation": "disabled",
+  "id": "resp_6ae0af9f26d9156d208a4ebc",
+  "object": "response",
+  "status": "completed",
+  "created_at": 1793109919,
+  "completed_at": 1793109919,
+  "error": null,
+  "incomplete_details": null,
+  "output": [
+    {
+      "type": "reasoning",
+      "id": "rs_6ae0af9f26d9156d208a4ebc:rs_14cc6c72-86a7-4ed5-9541-206deac8c513",
+      "summary": [],
+      "status": "completed"
+    },
+    {
+      "type": "message",
+      "id": "msg_a27bdf2f-a91e-4089-b6bd-04c3b24482b8",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "{\n  \"target\": \"Pay $149.00\",\n  \"clipped\": false,\n  \"confidence\": 0.99,\n  \"reasoning\": \"Blue CTA button at bottom of checkout screen is fully visible with complete text and borders, no occlusion or edge clipping\"\n}",
+          "annotations": [],
+          "logprobs": []
+        }
+      ],
+      "status": "completed"
+    }
+  ],
+  "instructions": null,
+  "usage": {
+    "input_tokens": 1477,
+    "input_tokens_details": {
+      "cached_tokens": 0
+    },
+    "output_tokens": 440,
+    "output_tokens_details": {
+      "reasoning_tokens": 373
+    },
+    "total_tokens": 1917
+  },
+  "parallel_tool_calls": true,
+  "store": true
+}

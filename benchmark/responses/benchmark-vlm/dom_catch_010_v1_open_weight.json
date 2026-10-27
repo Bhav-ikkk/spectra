@@ -1,0 +1,32 @@
+{
+  "id": "chatcmpl-4e131017f32f431faa78a1bd941f382e",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "content": "{\n  \"target\": \"Complete Checkout\",\n  \"clipped\": false,\n  \"confidence\": 0.99,\n  \"reasoning\": \"The green 'Complete Checkout' button at the bottom of the Your Cart panel is fully visible and intact, with no edge clipping, overlay, or occlusion obscuring any part of its text or borders.\"\n}",
+        "role": "assistant",
+        "reasoning_content": "We need to determine if \"Complete Checkout\" is clipped, cut off, obscured, partially occluded.\n\nIn screenshot, right side cart panel, bottom has green button \"Complete Checkout\". It appears fully visible. No clipping. The button is at bottom of cart. It's fully visible.\n\nWe need to output JSON with target Complete Checkout, clipped false, confidence high, reasoning.\n\nCheck rules: clipped true if ANY part occluded. Here it's fully visible.\n\nSo clipped: false.\n\nConfidence 0.99.\n\nReasoning: Brief explanation.\n\nWe must output ONLY JSON block.\n\nEnsure format exactly as requested.\n\n{\n  \"target\": \"Complete Checkout\",\n  \"clipped\": false,\n  \"confidence\": 0.99,\n  \"reasoning\": \"The green 'Complete Checkout' button at the bottom of the cart panel is fully visible, unobstructed, with all text and borders intact and not clipped by any edge or overlay.\"\n}\n\nMake sure boolean false not true.\n\nCheck confidence between 0.0 and 1.0.\n\nReturn that."
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "created": 1793109839,
+  "model": "meta-models/muse-spark-open-1026",
+  "object": "chat.completion",
+  "usage": {
+    "prompt_tokens": 1602,
+    "completion_tokens": 297,
+    "total_tokens": 1899,
+    "prompt_tokens_details": {
+      "audio_tokens": 0,
+      "cached_tokens": 384
+    },
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": 212,
+      "audio_tokens": 0,
+      "reasoning_tokens": 215,
+      "rejected_prediction_tokens": 383
+    }
+  }
+}
