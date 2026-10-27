@@ -1,8 +1,8 @@
 {
-  "sigma_noise": 0.011,
-  "delta": 0.022,
-  "measured_at": "2026-10-27T06:05:04.055Z",
+  "sigma_noise": 0.0045,
+  "delta": 0.041,
+  "measured_at": "2026-10-27T06:53:08.039Z",
   "run_id": "resp_6ae03ef78bd3db0853c642af",
   "sample_count": 6,
-  "citation": "Measured from SAM 3.1 run resp_6ae03ef78bd3db0853c642af on canvas_000_v1 (0% clean UI control clip, frames t_0..t_5 baseline jitter: [10667, 10543, 10566, 10552, 10565, 10545], mean ratio loss=0.0106, sigma_noise=0.011, delta=0.022)"
+  "citation": "Measured from SAM 3.1 run resp_6ae03ef78bd3db0853c642af on canvas_000_v1 (0% clean UI control, frames t_0..t_5: [10667, 10543, 10566, 10552, 10565, 10545], mean=10573.0px, sample stddev=47.06px, sigma_noise=0.0045) and 4 live phase2-smoke runs with empirical cross-instrument residuals [0.0088, 0.0080, 0.0036, 0.0205] yielding delta=0.041 (2x max residual)"
 }

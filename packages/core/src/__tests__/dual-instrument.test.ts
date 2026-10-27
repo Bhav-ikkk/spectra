@@ -142,8 +142,58 @@ describe('Dual-Instrument Measurement Engine (Offline $0.00 Spend)', () => {
       expect(verdict.reason).toContain('VERIFIED');
     });
 
+    it('verifies true sigma_noise = 0.0045 and threshold = 0.0135 (1.35%)', () => {
+      const verdict = evaluateDualInstrument({
+        rSam: 1.0,
+        rNcc: 1.0,
+        calibration: cal,
+      });
+
+      expect(verdict.calibration.sigma_noise).toBe(0.0045);
+      expect(verdict.calibration.delta).toBe(0.041);
+      expect(verdict.threshold).toBeCloseTo(0.0135, 4);
+      expect(verdict.disagreementThreshold).toBe(0.041);
+    });
+
+    it('returns "inconclusive" on decision boundary disagreement (one votes pass, one votes fail, gap > 2*sigma)', () => {
+      // Instrument A: 0.5% loss (rSam = 0.995 <= threshold 1.35% -> PASS)
+      // Instrument B: 2.5% loss (visRatio = 0.975 > threshold 1.35% -> FAIL)
+      // Gap: |0.995 - 0.975| = 0.020 > 2 * 0.0045 (0.0090)
+      const verdict = evaluateDualInstrument({
+        rSam: 0.995,
+        visRatio: 0.975,
+        rNcc: 0.975,
+        calibration: cal,
+      });
+
+      expect(verdict.verdict).toBe('inconclusive');
+      expect(verdict.reason).toContain('Instruments disagree across decision boundary');
+      expect(verdict.instrumentAgreementDelta).toBeCloseTo(0.02, 4);
+    });
+
+    it('returns "fail" (REJECTED) on high-occlusion agreement (SAM 58% loss, Pixel 60% loss)', () => {
+      // Instrument A: 58% loss (rSam = 0.42)
+      // Instrument B: 60% loss (visRatio = 0.40)
+      // Residual: |0.42 - 0.40| = 0.020 <= delta (0.041)
+      const verdict = evaluateDualInstrument({
+        clipId: 'high_occlusion_test',
+        rSam: 0.42,
+        visRatio: 0.4,
+        rNcc: 0.25,
+        targetBBox: { x: 100, y: 100, width: 200, height: 50 },
+        pixelLossCount: 6000,
+        totalPixels: 10000,
+        calibration: cal,
+      });
+
+      expect(verdict.verdict).toBe('fail');
+      expect(verdict.reason).toContain('REJECTED');
+      expect(verdict.visibilityLoss).toBeCloseTo(0.59, 2);
+      expect(verdict.instrumentAgreementDelta).toBeCloseTo(0.02, 4);
+    });
+
     it('returns "fail" (REJECTED) when visibility loss exceeds 3 * sigma_noise', () => {
-      // At 15% occlusion (loss = 0.15 > 0.1329)
+      // At 15% occlusion (loss = 0.15 > 0.0135)
       const verdict = evaluateDualInstrument({
         clipId: 'mobile_mp4_015_v1',
         rSam: 0.85,

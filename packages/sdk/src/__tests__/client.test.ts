@@ -98,6 +98,7 @@ describe('@spectra/sdk - SpectraClient Offline Unit Tests', () => {
 
     expect(report.results.length).toBeGreaterThanOrEqual(1);
     expect(report.results[0].combinedVerdict).toBe('pass');
-    expect(report.calibration.sigma_noise).toBe(0.011);
+    expect(report.calibration.sigma_noise).toBe(0.0045);
+    expect(report.calibration.delta).toBe(0.041);
   });
 });

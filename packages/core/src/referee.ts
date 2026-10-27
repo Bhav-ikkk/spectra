@@ -34,10 +34,13 @@ export interface DualInstrumentVerdict {
  * Dual-Instrument Referee Verdict Engine (Blueprint Pillar 1)
  *
  * 1. Calls assertCalibrated() first (enforces Rule 2).
- * 2. Checks instrument agreement: if |R_SAM - visRatio| > delta -> "inconclusive".
- * 3. Otherwise, computes visibility loss L = 1.0 - (R_SAM + visRatio) / 2.
- * 4. If L > 3 * sigma_noise -> "fail" (REJECTED) with measured visibility %, pixel loss, and bounding coordinates.
- * 5. If L <= 3 * sigma_noise -> "pass" (VERIFIED).
+ * 2. Checks gross instrument agreement: if |R_SAM - visRatio| > delta -> "inconclusive".
+ * 3. Checks directional agreement across decision boundary:
+ *    If one instrument measures loss > threshold and the other measures loss <= threshold
+ *    with |R_SAM - visRatio| > 2 * sigma_noise -> "inconclusive" ("Instruments disagree across decision boundary").
+ * 4. Otherwise, computes combined visibility loss L = 1.0 - (R_SAM + visRatio) / 2.
+ * 5. If L > 3 * sigma_noise -> "fail" (REJECTED) with measured visibility %, pixel loss, and bounding coordinates.
+ * 6. If L <= 3 * sigma_noise -> "pass" (VERIFIED).
  */
 export function evaluateDualInstrument(input: DualInstrumentInput): DualInstrumentVerdict {
   const cal = input.calibration ?? getCalibration();
@@ -62,25 +65,40 @@ export function evaluateDualInstrument(input: DualInstrumentInput): DualInstrume
     calibration: cal,
   };
 
-  // 1. Check instrument agreement
-  if (instrumentAgreementDelta > delta) {
-    const combinedVisibility = (input.rSam + visRatio) / 2;
-    return {
-      ...baseResult,
-      verdict: 'inconclusive',
-      reason: `Instrument disagreement (${(instrumentAgreementDelta * 100).toFixed(2)}%) exceeds delta (${(delta * 100).toFixed(2)}%)`,
-      visibilityLoss: 1.0 - combinedVisibility,
-      visibilityPercentage: Math.max(0.0, Math.min(100.0, combinedVisibility * 100)),
-      instrumentAgreementDelta,
-    };
-  }
-
-  // 2. Compute combined visibility loss L = 1.0 - (R_SAM + visRatio) / 2
   const combinedVisibility = (input.rSam + visRatio) / 2;
   const visibilityLoss = 1.0 - combinedVisibility;
   const visibilityPercentage = Math.max(0.0, Math.min(100.0, combinedVisibility * 100));
 
-  // 3. Compare with 3 * sigma_noise threshold
+  // 1. Check gross instrument agreement against empirical cross-instrument delta
+  if (instrumentAgreementDelta > delta) {
+    return {
+      ...baseResult,
+      verdict: 'inconclusive',
+      reason: `Instrument disagreement (${(instrumentAgreementDelta * 100).toFixed(2)}%) exceeds delta (${(delta * 100).toFixed(2)}%)`,
+      visibilityLoss,
+      visibilityPercentage,
+      instrumentAgreementDelta,
+    };
+  }
+
+  // 2. Check directional agreement across decision boundary
+  const lossA = 1.0 - input.rSam;
+  const lossB = 1.0 - visRatio;
+  const voteA = lossA > threshold;
+  const voteB = lossB > threshold;
+
+  if (voteA !== voteB && instrumentAgreementDelta > 2 * sigma) {
+    return {
+      ...baseResult,
+      verdict: 'inconclusive',
+      reason: `Instruments disagree across decision boundary (Instrument A: ${(lossA * 100).toFixed(2)}% loss, Instrument B: ${(lossB * 100).toFixed(2)}% loss; delta ${(instrumentAgreementDelta * 100).toFixed(2)}% > 2*sigma ${(2 * sigma * 100).toFixed(2)}%)`,
+      visibilityLoss,
+      visibilityPercentage,
+      instrumentAgreementDelta,
+    };
+  }
+
+  // 3. Compare combined visibility loss with 3 * sigma_noise threshold
   if (visibilityLoss > threshold) {
     const bboxDesc = input.targetBBox
       ? ` at [x=${input.targetBBox.x}, y=${input.targetBBox.y}, w=${input.targetBBox.width}, h=${input.targetBBox.height}]`
