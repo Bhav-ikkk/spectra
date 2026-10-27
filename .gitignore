@@ -6,9 +6,6 @@ node_modules/
 .env.*
 !.env.example
 
-# Benchmark large binaries
-benchmark/clips/*
-!benchmark/clips/.gitkeep
 
 # Python
 tools/benchmark-gen/__pycache__/
