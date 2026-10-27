@@ -5,6 +5,9 @@
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "spectra-mcp": "./dist/index.js"
+  },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
