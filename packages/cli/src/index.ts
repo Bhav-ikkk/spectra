@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import {
   SpectraClient,
+  runClosedLoopReferee,
+  type ClosedLoopResult,
   type MeasurementResult,
   type BoundingBox,
   getCalibration,
@@ -32,6 +34,55 @@ function parseBoundingBox(bboxStr: string): BoundingBox {
   }
   const [x, y, width, height] = parts;
   return { x, y, width, height };
+}
+
+function formatClosedLoopOutput(result: ClosedLoopResult): string {
+  const sep = '='.repeat(80);
+  const line = '-'.repeat(80);
+
+  return [
+    sep,
+    ' SPECTRA CLOSED-LOOP REFEREE DEMO: SCENARIO S3 ("THE CATCH")',
+    sep,
+    ` Scenario ID:          ${result.scenarioId}`,
+    ` Description:          ${result.description}`,
+    ` Target Element:       Complete Checkout [x=910, y=600, w=340, h=50]`,
+    ` Center Coordinates:   (${result.naiveBaseline.coordinates.x}, ${result.naiveBaseline.coordinates.y})`,
+    line,
+    ' [PHASE 1: TRADITIONAL DOM HIT-TEST BASELINE]',
+    ` Hit-Test Strategy:    ${result.naiveBaseline.strategy}`,
+    ` Center Pixel Covered: ${result.naiveBaseline.centerPixelCovered}`,
+    ` Baseline Verdict:     ${result.naiveBaseline.verdict.toUpperCase()} (FALSE PASS)`,
+    ` Telemetry Reason:     ${result.naiveBaseline.reason}`,
+    line,
+    ' [PHASE 2: PASS #1 — SPECTRA DUAL-INSTRUMENT REFEREE CATCH]',
+    ` Clip ID:              ${result.pass1.clipId}`,
+    ` Instrument A (SAM):   rSam = ${result.pass1.instrumentA.score.toFixed(4)} [${result.pass1.instrumentA.passed ? 'PASS' : 'FAIL'}]`,
+    ` Instrument B (Pix):   visRatio = ${result.pass1.instrumentB.score.toFixed(4)} [${result.pass1.instrumentB.passed ? 'PASS' : 'FAIL'}]`,
+    ` Agreement Delta:      ${((result.pass1.noiseDelta ?? 0) * 100).toFixed(2)}%`,
+    ` Spectra Verdict:      ${result.pass1.combinedVerdict.toUpperCase()} (REJECTED)`,
+    ` Telemetry Reason:     ${result.pass1.notes}`,
+    line,
+    ' [PHASE 3: AI AGENT REPAIR STEP]',
+    ` Model:                ${result.repair.model}`,
+    ` Explanation:          ${result.repair.explanation}`,
+    ` New Overlap:          ${result.repair.newFooterOverlapPx}px`,
+    ' Applied CSS Patch:',
+    result.repair.cssPatch
+      .split('\n')
+      .map((l) => `   ${l}`)
+      .join('\n'),
+    line,
+    ' [PHASE 4: PASS #2 — SPECTRA CLOSED-LOOP RE-VERIFICATION]',
+    ` Clip ID:              ${result.pass2.clipId}`,
+    ` Instrument A (SAM):   rSam = ${result.pass2.instrumentA.score.toFixed(4)} [${result.pass2.instrumentA.passed ? 'PASS' : 'FAIL'}]`,
+    ` Instrument B (Pix):   visRatio = ${result.pass2.instrumentB.score.toFixed(4)} [${result.pass2.instrumentB.passed ? 'PASS' : 'FAIL'}]`,
+    ` Spectra Verdict:      ${result.pass2.combinedVerdict.toUpperCase()} (VERIFIED)`,
+    ` Telemetry Reason:     ${result.pass2.notes}`,
+    sep,
+    ` CLOSED-LOOP OUTCOME:  ${result.success ? 'SUCCESS (REJECTED -> PATCHED -> VERIFIED)' : 'FAILED'}`,
+    sep,
+  ].join('\n');
 }
 
 function formatRefereeTable(
@@ -81,6 +132,7 @@ function formatHelp(): string {
     '  verify               Run dual-instrument referee on a pair of video frames',
     '  compile-invariant    Compile user expectation into formal visual invariants',
     '  check                Verify visual invariants across a benchmark manifest or clip set',
+    '  closed-loop-demo     Run end-to-end closed-loop "The Catch" (Reject -> Patch -> Re-Verify)',
     '',
     'OPTIONS (verify):',
     '  --t0 <path>          Path to baseline frame (t0)',
@@ -103,6 +155,10 @@ function formatHelp(): string {
     '  --manifest <path>    Path to benchmark manifest JSON',
     '  --cached-sam-dir <dir> (Optional) Directory containing cached SAM JSON responses',
     '  --json               Output BenchmarkReport JSON',
+    '',
+    'OPTIONS (closed-loop-demo):',
+    '  --cached-dir <path>  (Optional) Directory containing saved closed-loop artifacts',
+    '  --json               Output complete ClosedLoopResult JSON',
   ].join('\n');
 }
 
@@ -280,6 +336,30 @@ export async function runCli(
 
       const exitCode = failedCount > 0 ? 1 : inconclusiveCount > 0 ? 2 : 0;
       return { exitCode, data: report };
+    }
+
+    if (subcommand === 'closed-loop-demo') {
+      const { values } = parseArgs({
+        args: subArgs,
+        options: {
+          'cached-dir': { type: 'string' },
+          json: { type: 'boolean' },
+        },
+        allowPositionals: false,
+      });
+
+      const result = await runClosedLoopReferee({
+        client,
+        cachedDir: values['cached-dir'] ? path.resolve(values['cached-dir']) : undefined,
+      });
+
+      if (values.json) {
+        io.stdout(JSON.stringify(result, null, 2));
+      } else {
+        io.stdout(formatClosedLoopOutput(result));
+      }
+
+      return { exitCode: result.success ? 0 : 1, data: result };
     }
 
     io.stderr(`Unknown subcommand: "${subcommand}". Run "spectra --help" for available commands.`);

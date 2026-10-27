@@ -6,3 +6,4 @@ export * from '@spectra/sam-client';
 export * from '@spectra/invariant-compiler';
 export * from './client.js';
 export * from './types.js';
+export * from './closed-loop.js';

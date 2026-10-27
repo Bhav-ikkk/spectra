@@ -1,0 +1,23 @@
+{
+  "scenarioId": "S3-the-catch",
+  "description": "End-to-End Closed-Loop Verification of Scenario S3 (\"The Catch\" — 10% edge occlusion on Complete Checkout)",
+  "naiveBaseline": {
+    "strategy": "center_pixel_hit_test",
+    "coordinates": {
+      "x": 1080,
+      "y": 625
+    },
+    "centerPixelCovered": false,
+    "verdict": "pass",
+    "reason": "Naive DOM hit-test at center pixel (1080, 625) passed because occlusion is subtle edge clipping (10% bottom boundary) leaving the center pixel unobstructed."
+  },
+  "pass1Verdict": "fail",
+  "pass1LossPct": 9.6,
+  "thresholdPct": 1.35,
+  "repairPatchApplied": true,
+  "newFooterOverlapPx": 0,
+  "pass2Verdict": "pass",
+  "pass2LossPct": 0,
+  "closedLoopSuccess": true,
+  "timestamp": "2026-10-27T13:22:27.753Z"
+}

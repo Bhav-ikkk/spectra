@@ -1,0 +1,40 @@
+{
+  "clipId": "dom_catch_010_v1",
+  "instrumentA": {
+    "instrument": "sam_decode",
+    "score": 0.9080293658592983,
+    "passed": false,
+    "details": "t0Area=17299px, tkArea=15708px, rSam=0.9080",
+    "raw": {
+      "rSam": 0.9080293658592983,
+      "estimatedOcclusion": 0.09197063414070172,
+      "baselineArea": 17299,
+      "evalArea": 15708
+    }
+  },
+  "instrumentB": {
+    "instrument": "vlm_evaluator",
+    "score": 0.9,
+    "passed": false,
+    "details": "visRatio=0.9000, loss=10.00%, rNcc=0.5241",
+    "raw": {
+      "pixelVisibilityRatio": 0.9,
+      "measuredLoss": 0.1,
+      "rNcc": 0.5240641335597752,
+      "unchangedPixelCount": 15300,
+      "pixelLossCount": 1700,
+      "totalPixels": 17000,
+      "targetBBox": {
+        "x": 910,
+        "y": 600,
+        "width": 340,
+        "height": 50
+      }
+    }
+  },
+  "combinedVerdict": "fail",
+  "confidence": 0.9919706341407017,
+  "noiseDelta": 0.008029365859298254,
+  "calibrated": true,
+  "notes": "REJECTED: Visibility loss 9.60% exceeds threshold 1.35% (1700/17000 px loss) at [x=910, y=600, w=340, h=50]"
+}

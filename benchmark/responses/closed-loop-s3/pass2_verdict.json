@@ -1,0 +1,40 @@
+{
+  "clipId": "dom_catch_000_v1",
+  "instrumentA": {
+    "instrument": "sam_decode",
+    "score": 1,
+    "passed": true,
+    "details": "t0Area=17299px, tkArea=17299px, rSam=1.0000",
+    "raw": {
+      "rSam": 1,
+      "estimatedOcclusion": 0,
+      "baselineArea": 17299,
+      "evalArea": 17299
+    }
+  },
+  "instrumentB": {
+    "instrument": "vlm_evaluator",
+    "score": 1,
+    "passed": true,
+    "details": "visRatio=1.0000, loss=0.00%, rNcc=1.0000",
+    "raw": {
+      "pixelVisibilityRatio": 1,
+      "measuredLoss": 0,
+      "rNcc": 1,
+      "unchangedPixelCount": 17000,
+      "pixelLossCount": 0,
+      "totalPixels": 17000,
+      "targetBBox": {
+        "x": 910,
+        "y": 600,
+        "width": 340,
+        "height": 50
+      }
+    }
+  },
+  "combinedVerdict": "pass",
+  "confidence": 1,
+  "noiseDelta": 0,
+  "calibrated": true,
+  "notes": "VERIFIED: Visibility 100.00% within noise tolerance (1.35%)"
+}

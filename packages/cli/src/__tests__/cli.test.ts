@@ -298,4 +298,38 @@ describe('@spectra/cli - Production CLI Offline Tests ($0.00 Spend)', () => {
       expect(getStderr()).toContain('Missing required option: --manifest');
     });
   });
+
+  describe('spectra closed-loop-demo', () => {
+    it('runs closed-loop referee demo with human-readable table output', async () => {
+      const { io, getStdout } = createTestIo();
+      const res = await runCli(['closed-loop-demo'], io);
+
+      expect(res.exitCode).toBe(0);
+      const out = getStdout();
+      expect(out).toContain('SPECTRA CLOSED-LOOP REFEREE DEMO: SCENARIO S3 ("THE CATCH")');
+      expect(out).toContain('PHASE 1: TRADITIONAL DOM HIT-TEST BASELINE');
+      expect(out).toContain('PASS (FALSE PASS)');
+      expect(out).toContain('PHASE 2: PASS #1 — SPECTRA DUAL-INSTRUMENT REFEREE CATCH');
+      expect(out).toContain('FAIL (REJECTED)');
+      expect(out).toContain('PHASE 3: AI AGENT REPAIR STEP');
+      expect(out).toContain('.cart-drawer-footer');
+      expect(out).toContain('PHASE 4: PASS #2 — SPECTRA CLOSED-LOOP RE-VERIFICATION');
+      expect(out).toContain('PASS (VERIFIED)');
+      expect(out).toContain('CLOSED-LOOP OUTCOME:  SUCCESS');
+    });
+
+    it('runs closed-loop referee demo with --json output', async () => {
+      const { io, getStdout } = createTestIo();
+      const res = await runCli(['closed-loop-demo', '--json'], io);
+
+      expect(res.exitCode).toBe(0);
+      const parsed = JSON.parse(getStdout());
+      expect(parsed.scenarioId).toBe('S3-the-catch');
+      expect(parsed.success).toBe(true);
+      expect(parsed.naiveBaseline.centerPixelCovered).toBe(false);
+      expect(parsed.pass1.combinedVerdict).toBe('fail');
+      expect(parsed.repair.newFooterOverlapPx).toBe(0);
+      expect(parsed.pass2.combinedVerdict).toBe('pass');
+    });
+  });
 });
