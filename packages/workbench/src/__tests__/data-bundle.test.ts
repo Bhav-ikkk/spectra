@@ -177,6 +177,28 @@ describe('@spectra/workbench - Data Bundle & Offline Replay ($0.00 Spend)', () =
     expect(bundle.benchmarkReport).toBeDefined();
     expect(bundle.benchmarkReport.summary).toBeDefined();
   });
+
+  it('bundles benchmark summary matching 94.4%, 44.4%, 61.1%, and 0.0% false-pass rates and 1.11% MAE', () => {
+    const bundle: WorkbenchDataBundle = JSON.parse(fs.readFileSync(publicDataPath, 'utf-8'));
+    const summary = bundle.benchmarkReport.summary as {
+      spectraMae: number;
+      evaluatorSummaries: {
+        dom_hit_test: { overallFalsePassRate: number };
+        vlm_open_weight: { overallFalsePassRate: number };
+        vlm_flagship: { overallFalsePassRate: number };
+        spectra_referee: { overallFalsePassRate: number };
+      };
+    };
+
+    expect(summary).toBeDefined();
+    expect((summary.spectraMae * 100).toFixed(2)).toBe('1.11');
+
+    const ev = summary.evaluatorSummaries;
+    expect((ev.dom_hit_test.overallFalsePassRate * 100).toFixed(1)).toBe('94.4');
+    expect((ev.vlm_open_weight.overallFalsePassRate * 100).toFixed(1)).toBe('44.4');
+    expect((ev.vlm_flagship.overallFalsePassRate * 100).toFixed(1)).toBe('61.1');
+    expect((ev.spectra_referee.overallFalsePassRate * 100).toFixed(1)).toBe('0.0');
+  });
 });
 
 describe('@spectra/workbench - Local API Server Middleware Tests ($0.00 Spend)', () => {

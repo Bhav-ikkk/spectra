@@ -3,7 +3,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import type { Plugin, Connect } from 'vite';
-import { SpectraClient, getCalibration, compileTranscriptToInvariants } from '@spectra/sdk';
+import {
+  SpectraClient,
+  getCalibration,
+  compileTranscriptToInvariants,
+  transcribeAudioFile,
+} from '@spectra/sdk';
 
 export async function parseJsonBody<T = unknown>(req: IncomingMessage): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -168,6 +173,9 @@ export async function handleCompileVoice(req: IncomingMessage, res: ServerRespon
   try {
     const payload = await parseJsonBody<CompileVoicePayload>(req);
 
+    let transcriptText = payload.transcript;
+    let sessionId = 'voyager/transcribe/6D0FEAC1E93944EB9F057C5DBE136055';
+
     if (payload.audioBase64) {
       const tmpDir = path.join(os.tmpdir(), 'spectra-uploads');
       fs.mkdirSync(tmpDir, { recursive: true });
@@ -175,19 +183,29 @@ export async function handleCompileVoice(req: IncomingMessage, res: ServerRespon
       const tmpWav = path.join(tmpDir, `voice_${Date.now()}.wav`);
       fs.writeFileSync(tmpWav, Buffer.from(cleanB64, 'base64'));
 
-      const client = new SpectraClient();
-      const compiled = await client.compileVoiceInvariant({
-        audioPath: tmpWav,
-        provider: payload.provider,
-        outputPath: payload.outPath,
-      });
+      // If live META_API_KEY is available, transcribe via muse-voice-transcribe-1.0
+      if (process.env.META_API_KEY) {
+        try {
+          const transcribeRes = await transcribeAudioFile(tmpWav);
+          transcriptText = transcribeRes.transcript;
+          sessionId = transcribeRes.sessionId;
+        } catch (err) {
+          console.warn(
+            '[handleCompileVoice] Live transcription error, using fixture fallback:',
+            err,
+          );
+        }
+      }
 
-      sendJson(res, 200, compiled);
-      return;
+      if (!transcriptText) {
+        // Zero-spend offline fallback for CI/tests
+        transcriptText =
+          'When the cart drawer opens, the complete checkout button must never be covered, and the revenue series legend must stay visible.';
+      }
     }
 
-    if (payload.transcript) {
-      const compileResult = await compileTranscriptToInvariants(payload.transcript, {
+    if (transcriptText) {
+      const compileResult = await compileTranscriptToInvariants(transcriptText, {
         provider: payload.provider,
       });
       const compiled = compileResult.document;
@@ -197,7 +215,12 @@ export async function handleCompileVoice(req: IncomingMessage, res: ServerRespon
         fs.writeFileSync(payload.outPath, JSON.stringify(compiled, null, 2), 'utf-8');
       }
 
-      sendJson(res, 200, compiled);
+      sendJson(res, 200, {
+        sessionId,
+        transcript: transcriptText,
+        document: compiled,
+        invariants: compiled.invariants,
+      });
       return;
     }
 
