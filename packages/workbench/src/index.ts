@@ -3,3 +3,6 @@
 
 export { SpectraClient, type SpectraClientConfig } from '@spectra/sdk';
 export * from '@spectra/sdk';
+export * from './types.js';
+export * from './server/api-middleware.js';
+export { bundleWorkbenchData } from './scripts/bundle-workbench-data.js';

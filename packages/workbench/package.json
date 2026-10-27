@@ -9,9 +9,14 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "test": "vitest run --passWithNoTests",
-    "build": "tsc"
+    "build": "tsc",
+    "dev": "vite",
+    "bundle-data": "tsx src/scripts/bundle-workbench-data.ts"
   },
   "dependencies": {
     "@spectra/sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "vite": "^8.3.5"
   }
 }

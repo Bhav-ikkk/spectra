@@ -13,7 +13,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "benchmark:smoke": "tsx packages/core/src/scripts/benchmark-smoke.ts",
-    "benchmark:referee": "tsx packages/sdk/src/scripts/run-full-benchmark.ts"
+    "benchmark:referee": "tsx packages/sdk/src/scripts/run-full-benchmark.ts",
+    "workbench:bundle": "pnpm --filter @spectra/workbench bundle-data",
+    "workbench:dev": "pnpm --filter @spectra/workbench dev"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",
