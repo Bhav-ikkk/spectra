@@ -120,9 +120,9 @@ describe('Dual-Instrument Measurement Engine (Offline $0.00 Spend)', () => {
       });
 
       expect(verdict.verdict).toBe('inconclusive');
-      expect(verdict.reason).toContain('Instrument disagreement exceeds delta');
+      expect(verdict.reason).toContain('Instrument disagreement');
       expect(verdict.instrumentAgreementDelta).toBeCloseTo(0.25, 4);
-      expect(verdict.disagreementThreshold).toBe(0.0886);
+      expect(verdict.disagreementThreshold).toBe(cal.delta);
     });
 
     it('returns "pass" (VERIFIED) on clean 0% occlusion (loss <= 3 * sigma_noise)', () => {

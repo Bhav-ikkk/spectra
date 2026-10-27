@@ -6,6 +6,7 @@ export interface DualInstrumentInput {
   clipId?: string;
   rSam: number;
   rNcc: number;
+  visRatio?: number; // Fraction of target pixels within color tolerance
   targetBBox?: BoundingBox;
   pixelLossCount?: number;
   totalPixels?: number;
@@ -20,6 +21,9 @@ export interface DualInstrumentVerdict {
   instrumentAgreementDelta: number;
   threshold: number; // 3 * sigma_noise
   disagreementThreshold: number; // delta
+  rSam: number;
+  visRatio: number;
+  rNcc: number;
   pixelLossCount?: number;
   totalPixels?: number;
   targetBBox?: BoundingBox;
@@ -30,8 +34,8 @@ export interface DualInstrumentVerdict {
  * Dual-Instrument Referee Verdict Engine (Blueprint Pillar 1)
  *
  * 1. Calls assertCalibrated() first (enforces Rule 2).
- * 2. Checks instrument agreement: if |R_SAM - R_NCC| > delta -> "inconclusive".
- * 3. Otherwise, computes visibility loss L = 1.0 - (R_SAM + R_NCC) / 2.
+ * 2. Checks instrument agreement: if |R_SAM - visRatio| > delta -> "inconclusive".
+ * 3. Otherwise, computes visibility loss L = 1.0 - (R_SAM + visRatio) / 2.
  * 4. If L > 3 * sigma_noise -> "fail" (REJECTED) with measured visibility %, pixel loss, and bounding coordinates.
  * 5. If L <= 3 * sigma_noise -> "pass" (VERIFIED).
  */
@@ -43,27 +47,36 @@ export function evaluateDualInstrument(input: DualInstrumentInput): DualInstrume
   const delta = cal.delta!;
   const threshold = 3 * sigma;
 
-  const instrumentAgreementDelta = Math.abs(input.rSam - input.rNcc);
+  const visRatio = input.visRatio !== undefined ? input.visRatio : input.rNcc;
+  const instrumentAgreementDelta = Math.abs(input.rSam - visRatio);
+
+  const baseResult = {
+    rSam: input.rSam,
+    visRatio,
+    rNcc: input.rNcc,
+    threshold,
+    disagreementThreshold: delta,
+    pixelLossCount: input.pixelLossCount,
+    totalPixels: input.totalPixels,
+    targetBBox: input.targetBBox,
+    calibration: cal,
+  };
 
   // 1. Check instrument agreement
   if (instrumentAgreementDelta > delta) {
+    const combinedVisibility = (input.rSam + visRatio) / 2;
     return {
+      ...baseResult,
       verdict: 'inconclusive',
-      reason: 'Instrument disagreement exceeds delta',
-      visibilityLoss: 1.0 - (input.rSam + input.rNcc) / 2,
-      visibilityPercentage: ((input.rSam + input.rNcc) / 2) * 100,
+      reason: `Instrument disagreement (${(instrumentAgreementDelta * 100).toFixed(2)}%) exceeds delta (${(delta * 100).toFixed(2)}%)`,
+      visibilityLoss: 1.0 - combinedVisibility,
+      visibilityPercentage: Math.max(0.0, Math.min(100.0, combinedVisibility * 100)),
       instrumentAgreementDelta,
-      threshold,
-      disagreementThreshold: delta,
-      pixelLossCount: input.pixelLossCount,
-      totalPixels: input.totalPixels,
-      targetBBox: input.targetBBox,
-      calibration: cal,
     };
   }
 
-  // 2. Compute combined visibility loss L = 1.0 - (R_SAM + R_NCC) / 2
-  const combinedVisibility = (input.rSam + input.rNcc) / 2;
+  // 2. Compute combined visibility loss L = 1.0 - (R_SAM + visRatio) / 2
+  const combinedVisibility = (input.rSam + visRatio) / 2;
   const visibilityLoss = 1.0 - combinedVisibility;
   const visibilityPercentage = Math.max(0.0, Math.min(100.0, combinedVisibility * 100));
 
@@ -78,31 +91,21 @@ export function evaluateDualInstrument(input: DualInstrumentInput): DualInstrume
         : '';
 
     return {
+      ...baseResult,
       verdict: 'fail',
       reason: `REJECTED: Visibility loss ${(visibilityLoss * 100).toFixed(2)}% exceeds threshold ${(threshold * 100).toFixed(2)}%${lossDesc}${bboxDesc}`,
       visibilityLoss,
       visibilityPercentage,
       instrumentAgreementDelta,
-      threshold,
-      disagreementThreshold: delta,
-      pixelLossCount: input.pixelLossCount,
-      totalPixels: input.totalPixels,
-      targetBBox: input.targetBBox,
-      calibration: cal,
     };
   }
 
   return {
+    ...baseResult,
     verdict: 'pass',
     reason: `VERIFIED: Visibility ${visibilityPercentage.toFixed(2)}% within noise tolerance (${(threshold * 100).toFixed(2)}%)`,
     visibilityLoss,
     visibilityPercentage,
     instrumentAgreementDelta,
-    threshold,
-    disagreementThreshold: delta,
-    pixelLossCount: input.pixelLossCount,
-    totalPixels: input.totalPixels,
-    targetBBox: input.targetBBox,
-    calibration: cal,
   };
 }
