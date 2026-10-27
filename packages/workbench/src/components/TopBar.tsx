@@ -16,6 +16,7 @@ interface TopBarProps {
     meta: boolean;
     baseten: boolean;
   };
+  onOpenLens?: () => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -23,6 +24,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   setActiveTab,
   calibration,
   providerStatus,
+  onOpenLens,
 }) => {
   const tabs: Array<{ id: TabMode; label: string; icon: React.ReactNode }> = [
     { id: 'arena', label: 'Closed-Loop Arena', icon: <Layers className="w-3.5 h-3.5" /> },
@@ -88,8 +90,24 @@ export const TopBar: React.FC<TopBarProps> = ({
         })}
       </div>
 
-      {/* Right: Calibration Telemetry Pill + API Beacon */}
+      {/* Right: Calibration Telemetry Pill + API Beacon + Spectra Lens */}
       <div className="flex items-center gap-2.5">
+        {/* Spectra Lens Trigger Pill */}
+        <button
+          onClick={onOpenLens}
+          className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-mono transition-all shadow-sm group active:scale-95"
+          title="Push-to-capture visual referee overlay (Ctrl+Shift+Space)"
+        >
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
+          </span>
+          <span className="font-semibold text-white group-hover:text-rose-200">Spectra Lens</span>
+          <kbd className="hidden sm:inline-block px-1.5 py-0.2 rounded bg-black/50 text-[10px] text-zinc-400 font-sans border border-white/10">
+            Ctrl+Shift+Space
+          </kbd>
+        </button>
+
         {/* Rule 2 Calibrated Badge */}
         <div
           title={calibration.runIdCitation}

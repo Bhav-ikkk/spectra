@@ -232,6 +232,100 @@ export async function handleCompileVoice(req: IncomingMessage, res: ServerRespon
   }
 }
 
+export interface SaveInvariantPayload {
+  id?: string;
+  description: string;
+  target: string;
+  bbox?: [number, number, number, number];
+  minVisibility?: number;
+}
+
+export async function handleSaveInvariant(
+  req: IncomingMessage,
+  res: ServerResponse,
+): Promise<void> {
+  try {
+    const payload = await parseJsonBody<SaveInvariantPayload>(req);
+    if (!payload.description || !payload.target) {
+      sendJson(res, 400, { error: 'description and target are required' });
+      return;
+    }
+
+    let rootDir = process.cwd();
+    while (
+      !fs.existsSync(path.join(rootDir, 'pnpm-workspace.yaml')) &&
+      path.dirname(rootDir) !== rootDir
+    ) {
+      rootDir = path.dirname(rootDir);
+    }
+    const invariantsPath = path.join(rootDir, '.spectra', 'invariants.json');
+    let doc: {
+      $schema?: string;
+      version?: string;
+      invariants: Array<Record<string, unknown>>;
+    } = {
+      $schema: 'https://spectra.dev/schemas/invariants/v1.json',
+      version: '1.0',
+      invariants: [],
+    };
+
+    if (fs.existsSync(invariantsPath)) {
+      try {
+        doc = JSON.parse(fs.readFileSync(invariantsPath, 'utf-8'));
+      } catch {
+        // default empty
+      }
+    }
+
+    const id =
+      payload.id || `inv-${payload.target.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-visible`;
+
+    const newInv: Record<string, unknown> = {
+      id,
+      description: payload.description,
+      type: 'visual',
+      severity: 'error',
+      matcher: {
+        strategy: 'semantic',
+        target: payload.target,
+        expected: true,
+      },
+      source: {
+        voice_transcript_id: 'spectra-lens-push-to-capture',
+        compiled_by: 'spectra-lens-v3',
+        compiled_at: new Date().toISOString(),
+      },
+    };
+
+    if (payload.bbox) {
+      newInv.metadata = {
+        targetBBox: payload.bbox,
+        minVisibility: payload.minVisibility ?? 0.9865,
+      };
+    }
+
+    const existingIdx = (doc.invariants || []).findIndex(
+      (i: Record<string, unknown>) => i.id === id,
+    );
+    if (existingIdx >= 0) {
+      doc.invariants[existingIdx] = newInv;
+    } else {
+      doc.invariants.push(newInv);
+    }
+
+    fs.mkdirSync(path.dirname(invariantsPath), { recursive: true });
+    fs.writeFileSync(invariantsPath, JSON.stringify(doc, null, 2) + '\n', 'utf-8');
+
+    sendJson(res, 200, {
+      success: true,
+      invariant: newInv,
+      totalInvariants: doc.invariants.length,
+    });
+  } catch (err) {
+    sendJson(res, 500, { error: (err as Error).message });
+  }
+}
+
 export function spectraApiMiddleware(): Connect.NextHandleFunction {
   return async (req, res, next) => {
     const url = req.url?.split('?')[0];
@@ -245,6 +339,10 @@ export function spectraApiMiddleware(): Connect.NextHandleFunction {
     }
     if (url === '/api/compile-voice' && req.method === 'POST') {
       await handleCompileVoice(req, res);
+      return;
+    }
+    if (url === '/api/save-invariant' && req.method === 'POST') {
+      await handleSaveInvariant(req, res);
       return;
     }
     next();

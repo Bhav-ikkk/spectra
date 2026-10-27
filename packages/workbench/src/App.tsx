@@ -8,6 +8,7 @@ import { TelemetryPane } from './components/TelemetryPane.js';
 import { BenchmarkView } from './components/BenchmarkView.js';
 import { VoiceStudioView } from './components/VoiceStudioView.js';
 import { LiveDropzoneView } from './components/LiveDropzoneView.js';
+import { SpectraLensOverlay } from './components/SpectraLensOverlay.js';
 
 export const App: React.FC = () => {
   const [data, setData] = useState<WorkbenchDataBundle>(
@@ -17,10 +18,25 @@ export const App: React.FC = () => {
   const [activeScenarioId, setActiveScenarioId] = useState<'s1' | 's2' | 's3'>('s3'); // Default to "The Catch" (S3)
   const [activeClipId, setActiveClipId] = useState<string>('dom_catch_010_v1');
   const [scenarioPhase, setScenarioPhase] = useState<1 | 2 | 3 | 4>(2); // Default to Phase 2 (Spectra Referee Catch)
+  const [isLensOpen, setIsLensOpen] = useState(false);
   const [providerStatus, setProviderStatus] = useState<{ meta: boolean; baseten: boolean }>({
     meta: false,
     baseten: false,
   });
+
+  // Hotkey listener: Ctrl+Shift+Space to toggle Spectra Lens, Esc to close
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && (e.code === 'Space' || e.key === ' ')) {
+        e.preventDefault();
+        setIsLensOpen((prev) => !prev);
+      } else if (e.key === 'Escape') {
+        setIsLensOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Query live local API status
   useEffect(() => {
@@ -50,6 +66,7 @@ export const App: React.FC = () => {
         setActiveTab={setActiveTab}
         calibration={data.calibration}
         providerStatus={providerStatus}
+        onOpenLens={() => setIsLensOpen(true)}
       />
 
       {/* Main Content Area: 100vh - 52px */}
@@ -137,6 +154,33 @@ export const App: React.FC = () => {
         {/* TAB 4: Live Referee Dropzone */}
         {activeTab === 'dropzone' && <LiveDropzoneView />}
       </div>
+
+      {/* Spectra Lens Push-to-Capture Referee Overlay */}
+      <SpectraLensOverlay
+        isOpen={isLensOpen}
+        onClose={() => setIsLensOpen(false)}
+        scenarioId={activeScenarioId}
+        scenario={currentScenario}
+        activeClip={activeClip}
+        calibration={data.calibration}
+        onSendRejectionToRepair={() => {
+          setActiveTab('arena');
+          setScenarioPhase(3); // Jump directly to Phase 3 layout repair patch diff
+        }}
+        onInvariantSaved={(newInv) => {
+          setData((prev) => ({
+            ...prev,
+            invariants: {
+              ...prev.invariants,
+              invariants: [
+                ...((prev.invariants as { invariants?: Array<Record<string, unknown>> })
+                  ?.invariants || []),
+                newInv,
+              ],
+            },
+          }));
+        }}
+      />
     </div>
   );
 };

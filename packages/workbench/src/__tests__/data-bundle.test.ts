@@ -8,6 +8,7 @@ import {
   handleApiStatus,
   handleVerifyLive,
   handleCompileVoice,
+  handleSaveInvariant,
   spectraApiMiddleware,
   type WorkbenchDataBundle,
 } from '../index.js';
@@ -293,5 +294,39 @@ describe('@spectra/workbench - Local API Server Middleware Tests ($0.00 Spend)',
     });
 
     expect(nextCalled).toBe(true);
+  });
+
+  it('POST /api/save-invariant saves reference UI invariant to .spectra/invariants.json', async () => {
+    const invPath = path.join(workspaceRoot, '.spectra', 'invariants.json');
+    const originalContent = fs.existsSync(invPath) ? fs.readFileSync(invPath, 'utf-8') : null;
+
+    try {
+      const { req, res, getResult } = createMockReqRes({
+        method: 'POST',
+        url: '/api/save-invariant',
+        body: {
+          target: 'Checkout CTA Reference',
+          description:
+            'Checkout CTA Reference must remain visible (>= 98.65% retained) at [910, 600, 340, 50]',
+          bbox: [910, 600, 340, 50],
+          minVisibility: 0.9865,
+        },
+      });
+
+      await handleSaveInvariant(req, res);
+      const result = await getResult();
+
+      expect(result.statusCode).toBe(200);
+      const data = result.data as {
+        success: boolean;
+        invariant: { id: string; matcher: { target: string } };
+      };
+      expect(data.success).toBe(true);
+      expect(data.invariant.matcher.target).toBe('Checkout CTA Reference');
+    } finally {
+      if (originalContent !== null) {
+        fs.writeFileSync(invPath, originalContent, 'utf-8');
+      }
+    }
   });
 });
