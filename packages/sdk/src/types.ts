@@ -16,11 +16,14 @@ export interface CompileVoiceOptions {
   transcriptText?: string;
   outputPath?: string;
   voiceTranscriptId?: string;
+  cachedDir?: string;
 }
 
 export interface CheckInvariantsOptions {
   invariantsPath: string;
-  clipOrFrames: {
+  manifestPath?: string;
+  cachedSamDir?: string;
+  clipOrFrames?: {
     t0FramePath: string;
     tkFramePath: string;
     videoPath?: string;

@@ -6,7 +6,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "spectra": "dist/index.js"
+    "spectra": "./dist/index.js"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

@@ -9,6 +9,7 @@ import {
   InvariantsDocumentSchema,
   MeasurementResultSchema,
   BenchmarkReportSchema,
+  ManifestSchema,
   type CalibrationData,
   type InvariantsDocument,
   type MeasurementResult,
@@ -22,7 +23,11 @@ import {
   buildObjectPrompt,
   type ResponsesEvent,
 } from '@spectra/sam-client';
-import { transcribeAudioFile, compileTranscriptToInvariants } from '@spectra/invariant-compiler';
+import {
+  transcribeAudioFile,
+  compileTranscriptToInvariants,
+  extractJsonFromText,
+} from '@spectra/invariant-compiler';
 import type { VerifyClipOptions, CompileVoiceOptions, CheckInvariantsOptions } from './types.js';
 
 export interface SpectraClientConfig {
@@ -131,10 +136,7 @@ export class SpectraClient {
       const decoded = await this.decodeSamAreas(rawJson);
       t0Area = decoded.t0Area;
       tkArea = decoded.tkArea;
-    } else if (videoPath && fs.existsSync(videoPath)) {
-      if (!this.apiKey) {
-        throw new Error('META_API_KEY required for live SAM 3.1 verification.');
-      }
+    } else if (videoPath && fs.existsSync(videoPath) && this.apiKey) {
       const videoBuffer = fs.readFileSync(videoPath);
       const videoBase64 = `data:video/mp4;base64,${videoBuffer.toString('base64')}`;
 
@@ -187,7 +189,7 @@ export class SpectraClient {
       t0Area = decoded.t0Area;
       tkArea = decoded.tkArea;
     } else {
-      // Offline fallback: derive from Instrument B area if no SAM data provided
+      // Offline fallback ($0.00 spend): derive from Instrument B area if no SAM data provided
       t0Area = targetBBox.width * targetBBox.height;
       tkArea = Math.round(t0Area * resB.pixelVisibilityRatio);
     }
@@ -241,6 +243,80 @@ export class SpectraClient {
     let transcript = options.transcriptText;
     let sessionId = options.voiceTranscriptId;
 
+    if (options.cachedDir && fs.existsSync(options.cachedDir)) {
+      const transcribePath = path.join(options.cachedDir, 'raw_transcribe_response.json');
+      const invariantsPath = path.join(options.cachedDir, 'invariants.json');
+      const sparkPath = path.join(options.cachedDir, 'raw_spark_response.json');
+
+      if (!transcript && fs.existsSync(transcribePath)) {
+        const transJson = JSON.parse(fs.readFileSync(transcribePath, 'utf-8'));
+        transcript = transJson.transcript;
+        sessionId = sessionId || transJson.sessionId;
+      }
+
+      if (fs.existsSync(invariantsPath)) {
+        const doc = InvariantsDocumentSchema.parse(
+          JSON.parse(fs.readFileSync(invariantsPath, 'utf-8')),
+        );
+        if (options.outputPath) {
+          const dir = path.dirname(options.outputPath);
+          fs.mkdirSync(dir, { recursive: true });
+          fs.writeFileSync(options.outputPath, JSON.stringify(doc, null, 2) + '\n', 'utf-8');
+        }
+        return doc;
+      }
+
+      if (fs.existsSync(sparkPath)) {
+        const sparkJson = JSON.parse(fs.readFileSync(sparkPath, 'utf-8'));
+        const outputMsg = sparkJson.output?.[1] || sparkJson.output?.[0];
+        const text = outputMsg?.content?.[0]?.text;
+        if (text) {
+          const rawParsed = extractJsonFromText(text) as {
+            $schema?: string;
+            version?: string;
+            invariants: Array<{
+              id: string;
+              description: string;
+              type?: 'visual' | 'behavioral' | 'structural';
+              severity?: 'error' | 'warning';
+              matcher?: {
+                strategy: 'exact' | 'semantic' | 'regex';
+                target: string;
+                expected: string | number | boolean;
+              };
+            }>;
+          };
+          const enrichedInvariants = (rawParsed.invariants || []).map((inv, idx: number) => ({
+            id: inv.id || `inv-${idx + 1}`,
+            description: inv.description,
+            type: inv.type || 'visual',
+            severity: inv.severity || 'error',
+            matcher: inv.matcher || {
+              strategy: 'semantic' as const,
+              target: inv.description,
+              expected: true,
+            },
+            source: {
+              voice_transcript_id: sessionId,
+              compiled_by: 'muse-spark-1.3',
+              compiled_at: new Date().toISOString(),
+            },
+          }));
+          const doc = InvariantsDocumentSchema.parse({
+            $schema: rawParsed.$schema || 'https://spectra.dev/schemas/invariants/v1.json',
+            version: rawParsed.version || '1.0',
+            invariants: enrichedInvariants,
+          });
+          if (options.outputPath) {
+            const dir = path.dirname(options.outputPath);
+            fs.mkdirSync(dir, { recursive: true });
+            fs.writeFileSync(options.outputPath, JSON.stringify(doc, null, 2) + '\n', 'utf-8');
+          }
+          return doc;
+        }
+      }
+    }
+
     if (!transcript && options.audioPath) {
       const transcribeRes = await transcribeAudioFile(options.audioPath, {
         apiKey: this.apiKey,
@@ -251,7 +327,7 @@ export class SpectraClient {
     }
 
     if (!transcript) {
-      throw new Error('Either audioPath or transcriptText must be provided.');
+      throw new Error('Either audioPath, transcriptText, or cachedDir must be provided.');
     }
 
     const compileRes = await compileTranscriptToInvariants(transcript, {
@@ -274,7 +350,7 @@ export class SpectraClient {
   }
 
   /**
-   * Checks visual invariants against a scenario clip or frames
+   * Checks visual invariants against a scenario clip, clip set, or manifest
    */
   async checkInvariants(options: CheckInvariantsOptions): Promise<BenchmarkReport> {
     const rawInvariants = JSON.parse(fs.readFileSync(options.invariantsPath, 'utf-8'));
@@ -282,20 +358,65 @@ export class SpectraClient {
 
     const results: MeasurementResult[] = [];
 
-    for (const inv of doc.invariants) {
-      if (inv.type === 'visual' && options.clipOrFrames.targetBBox) {
-        const measurement = await this.verifyClip({
-          clipId: inv.id,
-          t0FramePath: options.clipOrFrames.t0FramePath,
-          tkFramePath: options.clipOrFrames.tkFramePath,
-          videoPath: options.clipOrFrames.videoPath,
-          cachedSamResponsePath: options.clipOrFrames.cachedSamResponsePath,
-          targetLabel: String(inv.matcher.target),
-          targetBBox: options.clipOrFrames.targetBBox,
-        });
+    if (options.manifestPath && fs.existsSync(options.manifestPath)) {
+      const rawManifest = JSON.parse(fs.readFileSync(options.manifestPath, 'utf-8'));
+      const manifest = ManifestSchema.parse(rawManifest);
+      const manifestDir = path.dirname(options.manifestPath);
 
-        results.push(measurement);
+      for (const clip of manifest.clips) {
+        let cachedSamResponsePath: string | undefined;
+        if (options.cachedSamDir && fs.existsSync(options.cachedSamDir)) {
+          const p1 = path.join(options.cachedSamDir, `${clip.clipId}_sam.json`);
+          const p2 = path.join(options.cachedSamDir, `${clip.clipId}.json`);
+          if (fs.existsSync(p1)) cachedSamResponsePath = p1;
+          else if (fs.existsSync(p2)) cachedSamResponsePath = p2;
+        }
+
+        const resolveClipPath = (p?: string): string | undefined => {
+          if (!p) return undefined;
+          if (fs.existsSync(p)) return p;
+          const fromManifestDir = path.resolve(manifestDir, p);
+          if (fs.existsSync(fromManifestDir)) return fromManifestDir;
+          const fromParent = path.resolve(manifestDir, '..', p);
+          if (fs.existsSync(fromParent)) return fromParent;
+          return p;
+        };
+
+        const resolvedT0 = resolveClipPath(clip.t0FramePath);
+        const resolvedTk = resolveClipPath(clip.tkFramePath);
+        const resolvedVideo = resolveClipPath(clip.videoPath);
+
+        if (clip.targetBBox && resolvedT0 && resolvedTk) {
+          const measurement = await this.verifyClip({
+            clipId: clip.clipId,
+            t0FramePath: resolvedT0,
+            tkFramePath: resolvedTk,
+            videoPath: resolvedVideo,
+            cachedSamResponsePath,
+            targetLabel: clip.targetLabel || 'Target Element',
+            targetBBox: clip.targetBBox,
+          });
+          results.push(measurement);
+        }
       }
+    } else if (options.clipOrFrames) {
+      for (const inv of doc.invariants) {
+        if (inv.type === 'visual' && options.clipOrFrames.targetBBox) {
+          const measurement = await this.verifyClip({
+            clipId: inv.id,
+            t0FramePath: options.clipOrFrames.t0FramePath,
+            tkFramePath: options.clipOrFrames.tkFramePath,
+            videoPath: options.clipOrFrames.videoPath,
+            cachedSamResponsePath: options.clipOrFrames.cachedSamResponsePath,
+            targetLabel: String(inv.matcher.target),
+            targetBBox: options.clipOrFrames.targetBBox,
+          });
+
+          results.push(measurement);
+        }
+      }
+    } else {
+      throw new Error('Either manifestPath or clipOrFrames must be provided to checkInvariants.');
     }
 
     const report: BenchmarkReport = {
@@ -305,6 +426,7 @@ export class SpectraClient {
       calibration: this.calibration,
       meta: {
         invariantsPath: options.invariantsPath,
+        manifestPath: options.manifestPath,
       },
     };
 
