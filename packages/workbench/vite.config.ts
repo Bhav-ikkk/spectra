@@ -1,9 +1,26 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
+import react from '@vitejs/plugin-react';
 import path from 'node:path';
-import { spectraApiPlugin } from './src/server/api-middleware.js';
+
+function spectraApiPlugin(): Plugin {
+  return {
+    name: 'spectra-workbench-api',
+    configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        try {
+          const mod = await server.ssrLoadModule('/src/server/api-middleware.ts');
+          const middleware = mod.spectraApiMiddleware();
+          middleware(req, res, next);
+        } catch (err) {
+          next(err);
+        }
+      });
+    },
+  };
+}
 
 export default defineConfig({
-  plugins: [spectraApiPlugin()],
+  plugins: [react(), spectraApiPlugin()],
   server: {
     port: 5173,
     strictPort: false,
@@ -11,7 +28,11 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': path.resolve(import.meta.dirname, './src'),
     },
+  },
+  build: {
+    emptyOutDir: false,
+    chunkSizeWarningLimit: 2500,
   },
 });

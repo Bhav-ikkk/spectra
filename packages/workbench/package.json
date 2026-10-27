@@ -9,14 +9,23 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "test": "vitest run --passWithNoTests",
-    "build": "tsc",
+    "build": "tsc && vite build",
     "dev": "vite",
     "bundle-data": "tsx src/scripts/bundle-workbench-data.ts"
   },
   "dependencies": {
-    "@spectra/sdk": "workspace:*"
+    "@spectra/sdk": "workspace:*",
+    "lucide-react": "^1.62.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
   },
   "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "autoprefixer": "^10.6.2",
+    "postcss": "^8.5.32",
+    "tailwindcss": "^3.4.19",
     "vite": "^8.3.5"
   }
 }
