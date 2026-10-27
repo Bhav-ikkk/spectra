@@ -15,7 +15,9 @@
     "benchmark:smoke": "tsx packages/core/src/scripts/benchmark-smoke.ts",
     "benchmark:referee": "tsx packages/sdk/src/scripts/run-full-benchmark.ts",
     "workbench:bundle": "pnpm --filter @spectra/workbench bundle-data",
-    "workbench:dev": "pnpm --filter @spectra/workbench dev"
+    "workbench:dev": "pnpm --filter @spectra/workbench dev",
+    "build:all": "pnpm -r build",
+    "start": "pnpm --filter @spectra/workbench start"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",

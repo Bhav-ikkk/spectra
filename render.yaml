@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: spectra-workbench
+    runtime: node
+    plan: starter
+    region: oregon
+    buildCommand: pnpm install --frozen-lockfile && pnpm -r build
+    startCommand: pnpm start
+    envVars:
+      - key: NODE_VERSION
+        value: 22.11.0
+      - key: PNPM_VERSION
+        value: 9.12.3
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: 10000
+      - key: META_API_KEY
+        sync: false
+      - key: BASETEN_API_KEY
+        sync: false
