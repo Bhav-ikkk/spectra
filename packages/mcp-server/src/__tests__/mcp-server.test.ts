@@ -1,18 +1,11 @@
-import fs from 'node:fs';
 import path from 'node:path';
 import readline from 'node:readline';
 import { PassThrough } from 'node:stream';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { SpectraMcpServer } from '../index.js';
+import { SpectraMcpServer, extractBBoxFromSamFrame0, findRepoRoot } from '../index.js';
 
 function findProjectRoot(): string {
-  let dir = process.cwd();
-  while (!fs.existsSync(path.join(dir, 'pnpm-workspace.yaml'))) {
-    const parent = path.dirname(dir);
-    if (parent === dir) break;
-    dir = parent;
-  }
-  return dir;
+  return findRepoRoot();
 }
 
 interface JsonRpcResponse<T = unknown> {
@@ -120,18 +113,17 @@ describe('@spectra/mcp-server - End-to-End Stdio Protocol Integration Tests ($0.
     });
 
     it('acknowledges notifications/initialized without errors', () => {
-      // Must not throw or emit any unhandled errors
       expect(() => {
         client.notify('notifications/initialized');
       }).not.toThrow();
     });
 
-    it('lists all 3 bounded Spectra tools with schemas in tools/list', async () => {
+    it('lists all 4 bounded Spectra tools with schemas in tools/list', async () => {
       const res = await client.request<{
         tools: Array<{
           name: string;
           description: string;
-          inputSchema: { properties: Record<string, unknown> };
+          inputSchema: { properties: Record<string, unknown>; required?: string[] };
         }>;
       }>('tools/list');
 
@@ -142,12 +134,15 @@ describe('@spectra/mcp-server - End-to-End Stdio Protocol Integration Tests ($0.
       expect(toolNames).toContain('spectra_verify');
       expect(toolNames).toContain('spectra_check');
       expect(toolNames).toContain('spectra_compile_invariant');
+      expect(toolNames).toContain('spectra_closed_loop');
 
       const verifyTool = res.result?.tools.find((t) => t.name === 'spectra_verify');
       expect(verifyTool?.description).toContain('Dual-Instrument Referee');
       expect(verifyTool?.inputSchema.properties.t0FramePath).toBeDefined();
       expect(verifyTool?.inputSchema.properties.tkFramePath).toBeDefined();
       expect(verifyTool?.inputSchema.properties.targetBBox).toBeDefined();
+      expect(verifyTool?.inputSchema.properties.videoPath).toBeDefined();
+      expect(verifyTool?.inputSchema.required).toEqual(['targetLabel']);
     });
   });
 
@@ -184,6 +179,7 @@ describe('@spectra/mcp-server - End-to-End Stdio Protocol Integration Tests ($0.
       expect(data.threshold).toBeCloseTo(0.0135, 4);
       expect(data.calibrated).toBe(true);
       expect(data.reason).toContain('VERIFIED:');
+      expect(data.resolvedBBox).toBeDefined();
     });
 
     it('catches dom_catch_010_v1 (10% occlusion) returning verdict === "fail" and pixelLossCount > 0', async () => {
@@ -216,6 +212,107 @@ describe('@spectra/mcp-server - End-to-End Stdio Protocol Integration Tests ($0.
       expect(data.visRatio).toBe(0.9);
       expect(data.rSam).toBeCloseTo(0.908, 2);
       expect(data.reason).toContain('REJECTED: Visibility loss 9.60% exceeds threshold');
+      expect(data.repairActionRequired).toBe(true);
+    });
+
+    // Test 1: Zero-BBox and Zero-PNG resolution with videoPath only (canvas_000_v1)
+    it('verifies canvas_000_v1 with ONLY videoPath and targetLabel (zero-bbox auto-resolution)', async () => {
+      const res = await client.request<{
+        content: Array<{ type: string; text: string }>;
+        isError: boolean;
+      }>('tools/call', {
+        name: 'spectra_verify',
+        arguments: {
+          videoPath: 'benchmark/clips/canvas_000_v1.mp4',
+          targetLabel: 'Revenue Series Legend',
+        },
+      });
+
+      expect(res.error).toBeUndefined();
+      expect(res.result?.isError).toBe(false);
+
+      const data = JSON.parse(res.result?.content[0]?.text || '{}');
+      expect(data.verdict).toBe('pass');
+      expect(data.rSam).toBeCloseTo(0.9912, 3);
+      expect(data.resolvedBBox).toBeDefined();
+      expect(data.resolvedBBox.x).toBe(820);
+      expect(data.resolvedBBox.y).toBe(240);
+      expect(data.resolvedBBox.width).toBe(220);
+      expect(data.resolvedBBox.height).toBe(48);
+      expect(data.bboxSource).toBe('manifest');
+    });
+
+    // Test 2: Zero-BBox and Zero-PNG resolution with videoPath only (dom_catch_010_v1)
+    it('catches dom_catch_010_v1 with ONLY videoPath and targetLabel returning fail and pixelLossCount === 1700', async () => {
+      const res = await client.request<{
+        content: Array<{ type: string; text: string }>;
+        isError: boolean;
+      }>('tools/call', {
+        name: 'spectra_verify',
+        arguments: {
+          videoPath: 'benchmark/clips/dom_catch_010_v1.mp4',
+          targetLabel: 'Complete Checkout',
+        },
+      });
+
+      expect(res.error).toBeUndefined();
+      expect(res.result?.isError).toBe(false);
+
+      const data = JSON.parse(res.result?.content[0]?.text || '{}');
+      expect(data.verdict).toBe('fail');
+      expect(data.pixelLossCount).toBe(1700);
+      expect(data.repairActionRequired).toBe(true);
+      expect(data.resolvedBBox).toBeDefined();
+      expect(data.resolvedBBox.x).toBe(910);
+      expect(data.resolvedBBox.y).toBe(600);
+      expect(data.resolvedBBox.width).toBe(340);
+      expect(data.resolvedBBox.height).toBe(50);
+      expect(data.bboxSource).toBe('manifest');
+    });
+  });
+
+  describe('SAM Frame 0 Bounding Box Extraction', () => {
+    // Test 3: Direct unit test for extractBBoxFromSamFrame0
+    it('extracts valid non-empty bounding box from SAM 3.1 Frame 0 raster mask directly', () => {
+      const samPath = path.join(root, 'benchmark/responses/phase2-smoke/dom_catch_010_v1_sam.json');
+      const bbox = extractBBoxFromSamFrame0(samPath);
+
+      expect(bbox).not.toBeNull();
+      expect(bbox?.x).toBeGreaterThan(0);
+      expect(bbox?.y).toBeGreaterThan(0);
+      expect(bbox?.width).toBeGreaterThan(0);
+      expect(bbox?.height).toBeGreaterThan(0);
+      expect(bbox?.x).toBe(909);
+      expect(bbox?.y).toBe(600);
+      expect(bbox?.width).toBe(342);
+      expect(bbox?.height).toBe(51);
+    });
+  });
+
+  describe('tools/call: spectra_closed_loop', () => {
+    // Test 4: Closed-loop referee invocation over MCP stdio
+    it('executes closed loop referee over stdio for scenario s3 returning closedLoopSuccess === true', async () => {
+      const res = await client.request<{
+        content: Array<{ type: string; text: string }>;
+        isError: boolean;
+      }>('tools/call', {
+        name: 'spectra_closed_loop',
+        arguments: {
+          scenario: 's3',
+        },
+      });
+
+      expect(res.error).toBeUndefined();
+      expect(res.result?.isError).toBe(false);
+
+      const data = JSON.parse(res.result?.content[0]?.text || '{}');
+      expect(data.closedLoopSuccess).toBe(true);
+      expect(data.scenario).toBe('s3');
+      expect(data.pass1).toBeDefined();
+      expect(data.pass1.combinedVerdict).toBe('fail');
+      expect(data.repair).toBeDefined();
+      expect(data.pass2).toBeDefined();
+      expect(data.pass2.combinedVerdict).toBe('pass');
     });
   });
 

@@ -66,6 +66,12 @@ importers:
 
   packages/mcp-server:
     dependencies:
+      '@meta-sam/parser':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@spectra/core':
+        specifier: workspace:*
+        version: link:../core
       '@spectra/sdk':
         specifier: workspace:*
         version: link:../sdk

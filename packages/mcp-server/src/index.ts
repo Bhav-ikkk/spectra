@@ -10,10 +10,24 @@ import {
   type InvariantsDocument,
   type BoundingBox,
   getCalibration,
+  runClosedLoopReferee,
 } from '@spectra/sdk';
+import {
+  resolveVerifyInputs,
+  extractBBoxFromSamFrame0,
+  type RawVerifyToolArgs,
+} from './auto-resolver.js';
 
 export { SpectraClient, type SpectraClientConfig } from '@spectra/sdk';
 export * from '@spectra/sdk';
+export {
+  resolveVerifyInputs,
+  extractBBoxFromSamFrame0,
+  normalizeBBox,
+  findRepoRoot,
+  type RawVerifyToolArgs,
+  type ResolvedVerifyInputs,
+} from './auto-resolver.js';
 
 export interface McpToolDefinition {
   name: string;
@@ -39,11 +53,13 @@ export const TOOLS_DEFINITIONS: McpToolDefinition[] = [
         },
         t0FramePath: {
           type: 'string',
-          description: 'Path to baseline frame (t0) PNG image',
+          description:
+            'Optional path to baseline frame (t0) PNG image (auto-discovered if videoPath provided)',
         },
         tkFramePath: {
           type: 'string',
-          description: 'Path to evaluation frame (tk) PNG image',
+          description:
+            'Optional path to evaluation frame (tk) PNG image (auto-discovered if videoPath provided)',
         },
         targetLabel: {
           type: 'string',
@@ -58,22 +74,25 @@ export const TOOLS_DEFINITIONS: McpToolDefinition[] = [
             height: { type: 'number', description: 'Height in pixels' },
           },
           required: ['x', 'y', 'width', 'height'],
-          description: 'Bounding box of the target element',
+          description:
+            'Optional bounding box of the target element (auto-detected from manifest or SAM Frame 0 if omitted)',
         },
         videoPath: {
           type: 'string',
-          description: 'Optional path to MP4 video clip for live SAM 3.1 tracking',
+          description:
+            'Optional path to MP4 video clip for frame extraction or live SAM 3.1 tracking',
         },
         cachedSamResponsePath: {
           type: 'string',
-          description: 'Optional path to cached SAM 3.1 JSON response for offline $0 spend',
+          description:
+            'Optional path to cached SAM 3.1 JSON response for offline $0 spend (auto-discovered if videoPath provided)',
         },
         tolerance: {
           type: 'number',
           description: 'Color delta E tolerance for pixel matching (default 5.0)',
         },
       },
-      required: ['t0FramePath', 'tkFramePath', 'targetLabel', 'targetBBox'],
+      required: ['targetLabel'],
     },
   },
   {
@@ -147,6 +166,22 @@ export const TOOLS_DEFINITIONS: McpToolDefinition[] = [
       },
     },
   },
+  {
+    name: 'spectra_closed_loop',
+    description:
+      'Executes end-to-end Step 4 closed-loop verification (Pass 1 Rejection -> Agent Repair Patch -> Pass 2 Verification) across standard benchmark scenarios.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        scenario: {
+          type: 'string',
+          enum: ['s1', 's2', 's3', 'all'],
+          description:
+            'Target scenario to evaluate (s1: canvas legend, s2: mobile mp4 CTA, s3: DOM drawer button catch, or all). Default is "s3".',
+        },
+      },
+    },
+  },
 ];
 
 export interface JsonRpcRequest {
@@ -177,46 +212,60 @@ export class SpectraMcpServer {
 
   async executeTool(name: string, args: Record<string, unknown>): Promise<unknown> {
     if (name === 'spectra_verify') {
-      const clipId = (args.clipId as string) || 'verify_0';
-      const t0FramePath = path.resolve(args.t0FramePath as string);
-      const tkFramePath = path.resolve(args.tkFramePath as string);
-      const targetLabel = String(args.targetLabel);
-      const targetBBox = args.targetBBox as BoundingBox;
+      const resolved = resolveVerifyInputs(args as unknown as RawVerifyToolArgs);
+      const clipId =
+        (args.clipId as string) ||
+        (resolved.videoPath
+          ? path.basename(resolved.videoPath, path.extname(resolved.videoPath))
+          : 'verify_0');
 
-      const measurement: MeasurementResult = await this.client.verifyClip({
-        clipId,
-        t0FramePath,
-        tkFramePath,
-        targetLabel,
-        targetBBox,
-        videoPath: args.videoPath ? path.resolve(args.videoPath as string) : undefined,
-        cachedSamResponsePath: args.cachedSamResponsePath
-          ? path.resolve(args.cachedSamResponsePath as string)
-          : undefined,
-        tolerance: typeof args.tolerance === 'number' ? args.tolerance : undefined,
-      });
+      try {
+        const measurement: MeasurementResult = await this.client.verifyClip({
+          clipId,
+          t0FramePath: resolved.t0FramePath,
+          tkFramePath: resolved.tkFramePath,
+          targetLabel: resolved.targetLabel,
+          targetBBox: resolved.targetBBox,
+          videoPath: resolved.videoPath,
+          cachedSamResponsePath: resolved.cachedSamResponsePath,
+          tolerance: resolved.tolerance,
+        });
 
-      const cal = getCalibration();
-      const threshold = 3 * (cal.sigma_noise ?? 0);
-      const pixelLossCount =
-        (measurement.instrumentB.raw as { pixelLossCount?: number } | undefined)?.pixelLossCount ??
-        0;
+        const cal = getCalibration();
+        const threshold = 3 * (cal.sigma_noise ?? 0);
+        const pixelLossCount =
+          (measurement.instrumentB.raw as { pixelLossCount?: number } | undefined)
+            ?.pixelLossCount ?? 0;
 
-      return {
-        verdict: measurement.combinedVerdict,
-        rSam: measurement.instrumentA.score,
-        visRatio: measurement.instrumentB.score,
-        pixelLossCount,
-        threshold,
-        reason: measurement.notes ?? '',
-        clipId: measurement.clipId,
-        confidence: measurement.confidence,
-        noiseDelta: measurement.noiseDelta,
-        calibrated: measurement.calibrated,
-        instrumentA: measurement.instrumentA,
-        instrumentB: measurement.instrumentB,
-        notes: measurement.notes,
-      };
+        const samFrame0DetectedBBox = resolved.cachedSamResponsePath
+          ? extractBBoxFromSamFrame0(resolved.cachedSamResponsePath)
+          : null;
+
+        const repairActionRequired = measurement.combinedVerdict === 'fail';
+
+        return {
+          verdict: measurement.combinedVerdict,
+          rSam: measurement.instrumentA.score,
+          visRatio: measurement.instrumentB.score,
+          pixelLossCount,
+          threshold,
+          reason: measurement.notes ?? '',
+          clipId: measurement.clipId,
+          confidence: measurement.confidence,
+          noiseDelta: measurement.noiseDelta,
+          calibrated: measurement.calibrated,
+          instrumentA: measurement.instrumentA,
+          instrumentB: measurement.instrumentB,
+          notes: measurement.notes,
+          resolvedBBox: resolved.targetBBox,
+          bboxSource: resolved.bboxSource,
+          samFrame0DetectedBBox,
+          repairActionRequired,
+          repairHint: repairActionRequired ? (measurement.notes ?? '') : undefined,
+        };
+      } finally {
+        resolved.cleanupTempFrames();
+      }
     }
 
     if (name === 'spectra_check') {
@@ -276,6 +325,28 @@ export class SpectraMcpServer {
         invariantsCount: doc.invariants.length,
         invariants: doc.invariants,
         document: doc,
+      };
+    }
+
+    if (name === 'spectra_closed_loop') {
+      const scenario = (args.scenario as 's1' | 's2' | 's3' | 'all') || 's3';
+      const result = await runClosedLoopReferee({
+        scenario,
+        client: this.client,
+      });
+
+      return {
+        scenario,
+        closedLoopSuccess: result.summary?.closedLoopSuccess ?? result.success,
+        success: result.success,
+        scenarioId: result.scenarioId,
+        scenarioName: result.scenarioName,
+        naiveBaseline: result.naiveBaseline,
+        pass1: result.pass1,
+        repair: result.repair,
+        pass2: result.pass2,
+        summary: result.summary,
+        allScenarios: result.allScenarios,
       };
     }
 
