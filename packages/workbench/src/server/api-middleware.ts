@@ -491,9 +491,11 @@ export async function handleVerifyLive(req: IncomingMessage, res: ServerResponse
     }`;
 
     const mcpPayloadEquivalent: Record<string, unknown> = {
+      jsonrpc: '2.0',
+      id: 1,
       method: 'tools/call',
       params: {
-        name: 'verify_clip',
+        name: 'spectra_verify',
         arguments: {
           videoPath: displayVideoPath,
           targetLabel: payload.targetLabel,

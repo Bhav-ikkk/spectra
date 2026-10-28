@@ -307,6 +307,10 @@ describe('@spectra/workbench - Local API Server Middleware Tests ($0.00 Spend)',
       'pixel_match',
       'referee_verdict',
     ]);
+    expect(data.cliCommandEquivalent).toContain('spectra verify --video');
+    expect((data.mcpPayloadEquivalent as { params: { name: string } }).params.name).toBe(
+      'spectra_verify',
+    );
   });
 
   it('POST /api/closed-loop-live replays scenario s3 and returns live trace with rendered frame ($0.00 spend)', async () => {
