@@ -144,6 +144,7 @@ server.listen(PORT, HOST, () => {
   console.log(` Active Endpoints:`);
   console.log(`   - GET  /api/status`);
   console.log(`   - POST /api/verify-live`);
+  console.log(`   - POST /api/closed-loop-live`);
   console.log(`   - POST /api/compile-voice`);
   console.log(`   - POST /api/save-invariant`);
   console.log(`================================================================================`);

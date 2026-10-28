@@ -7,10 +7,12 @@ import {
   bundleWorkbenchData,
   handleApiStatus,
   handleVerifyLive,
+  handleClosedLoopLive,
   handleCompileVoice,
   handleSaveInvariant,
   spectraApiMiddleware,
   type WorkbenchDataBundle,
+  type LiveVideoVerifyApiResponse,
 } from '../index.js';
 
 function createMockReqRes(options: { method?: string; url?: string; body?: unknown }): {
@@ -262,6 +264,77 @@ describe('@spectra/workbench - Local API Server Middleware Tests ($0.00 Spend)',
     expect(data.combinedVerdict).toBe('pass');
     expect(data.instrumentA.score).toBeGreaterThan(0.98);
     expect(data.instrumentB.raw.pixelLossCount).toBe(0);
+  });
+
+  it('POST /api/verify-live verifies uploaded single MP4 video with auto-bbox and SVG telemetry ($0.00 spend)', async () => {
+    const videoFilePath = path.join(workspaceRoot, 'benchmark/clips/dom_catch_010_v1.mp4');
+    const videoBuffer = fs.readFileSync(videoFilePath);
+    const videoBase64 = videoBuffer.toString('base64');
+
+    const { req, res, getResult } = createMockReqRes({
+      method: 'POST',
+      url: '/api/verify-live',
+      body: {
+        videoBase64,
+        videoFileName: 'dom_catch_010_v1.mp4',
+        targetLabel: 'Complete Checkout',
+      },
+    });
+
+    await handleVerifyLive(req, res);
+    const result = await getResult();
+
+    expect(result.statusCode).toBe(200);
+    const data = result.data as LiveVideoVerifyApiResponse;
+
+    expect(data.verdict).toBe('fail');
+    expect(data.resolvedBBox).toBeDefined();
+    expect(data.resolvedBBox.x).toBeGreaterThanOrEqual(909);
+    expect(data.resolvedBBox.x).toBeLessThanOrEqual(910);
+    expect(data.resolvedBBox.y).toBe(600);
+    expect(data.resolvedBBox.width).toBeGreaterThanOrEqual(340);
+    expect(data.resolvedBBox.width).toBeLessThanOrEqual(342);
+    expect(data.resolvedBBox.height).toBeGreaterThanOrEqual(50);
+    expect(data.resolvedBBox.height).toBeLessThanOrEqual(51);
+
+    expect(data.t0DataUrl).toMatch(/^data:image\/png;base64,/);
+    expect(data.tkDataUrl).toMatch(/^data:image\/png;base64,/);
+    expect(data.tkSvgMaskPath).toMatch(/^M/);
+    expect(data.pipelineStages).toHaveLength(4);
+    expect(data.pipelineStages.map((s) => s.id)).toEqual([
+      'frame_extract',
+      'sam_segment',
+      'pixel_match',
+      'referee_verdict',
+    ]);
+  });
+
+  it('POST /api/closed-loop-live replays scenario s3 and returns live trace with rendered frame ($0.00 spend)', async () => {
+    const { req, res, getResult } = createMockReqRes({
+      method: 'POST',
+      url: '/api/closed-loop-live',
+      body: {
+        scenario: 's3',
+      },
+    });
+
+    await handleClosedLoopLive(req, res);
+    const result = await getResult();
+
+    expect(result.statusCode).toBe(200);
+    const data = result.data as {
+      closedLoopSuccess: boolean;
+      scenarioId: string;
+      pass1: { combinedVerdict: string };
+      pass2: { combinedVerdict: string };
+      pass2RenderedDataUrl?: string;
+    };
+
+    expect(data.closedLoopSuccess).toBe(true);
+    expect(data.scenarioId).toBe('S3-the-catch');
+    expect(data.pass1.combinedVerdict).toBe('fail');
+    expect(data.pass2.combinedVerdict).toBe('pass');
+    expect(data.pass2RenderedDataUrl).toMatch(/^data:image\/png;base64,/);
   });
 
   it('POST /api/compile-voice returns 400 when body lacks required fields', async () => {
