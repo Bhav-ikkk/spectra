@@ -6,10 +6,10 @@ export type { ModelProvider, VlmJudgeOptions, VlmJudgeResult };
 export interface VerifyClipOptions {
   clipId?: string;
   videoPath?: string;
-  t0FramePath: string;
-  tkFramePath: string;
+  t0FramePath?: string;
+  tkFramePath?: string;
   targetLabel: string;
-  targetBBox: BoundingBox;
+  targetBBox?: BoundingBox;
   cachedSamResponsePath?: string;
   tolerance?: number;
 }

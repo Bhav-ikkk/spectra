@@ -120,4 +120,55 @@ describe('@spectra/sdk - SpectraClient Offline Unit Tests', () => {
     expect(result.clipped).toBe(false);
     expect(result.confidence).toBe(0.99);
   });
+
+  it('verifies dom_catch_010_v1 with ONLY videoPath and targetLabel', async () => {
+    const res = await client.verifyClip({
+      videoPath: 'benchmark/clips/dom_catch_010_v1.mp4',
+      targetLabel: 'Complete Checkout',
+    });
+
+    expect(res.clipId).toBe('dom_catch_010_v1');
+    expect(res.combinedVerdict).toBe('fail');
+    expect(res.instrumentA.score).toBeCloseTo(0.908, 2);
+    expect(res.instrumentB.score).toBe(0.9);
+    expect(res.instrumentA.passed).toBe(false);
+    expect(res.instrumentB.passed).toBe(false);
+    expect(res.calibrated).toBe(true);
+
+    const rawA = res.instrumentA.raw as { detectedBBox?: { x: number; y: number; width: number; height: number } };
+    expect(rawA?.detectedBBox).toBeDefined();
+    expect(rawA?.detectedBBox?.x).toBeGreaterThanOrEqual(905);
+    expect(rawA?.detectedBBox?.x).toBeLessThanOrEqual(915);
+  });
+
+  it('verifies canvas_000_v1 with ONLY videoPath and targetLabel', async () => {
+    const res = await client.verifyClip({
+      videoPath: 'benchmark/clips/canvas_000_v1.mp4',
+      targetLabel: 'Revenue Series Legend',
+    });
+
+    expect(res.clipId).toBe('canvas_000_v1');
+    expect(res.combinedVerdict).toBe('pass');
+    expect(res.instrumentA.score).toBeGreaterThan(0.98);
+    expect(res.instrumentB.score).toBe(1.0);
+    expect(res.instrumentA.passed).toBe(true);
+    expect(res.instrumentB.passed).toBe(true);
+    expect(res.calibrated).toBe(true);
+  });
+
+  it('verifies dom_catch_040_v1 with ONLY videoPath and targetLabel', async () => {
+    const res = await client.verifyClip({
+      videoPath: 'benchmark/clips/dom_catch_040_v1.mp4',
+      targetLabel: 'Complete Checkout',
+    });
+
+    expect(res.clipId).toBe('dom_catch_040_v1');
+    expect(res.combinedVerdict).toBe('fail');
+    expect(res.instrumentA.score).toBeCloseTo(0.62, 2);
+    expect(res.instrumentB.score).toBe(0.6);
+    expect(res.instrumentA.passed).toBe(false);
+    expect(res.instrumentB.passed).toBe(false);
+    expect(res.calibrated).toBe(true);
+  });
 });
+

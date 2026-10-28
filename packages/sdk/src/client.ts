@@ -1,5 +1,7 @@
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
+import { execSync } from 'node:child_process';
 import {
   computeTemplateMatchVisibility,
   computeSamVisibilityRatio,
@@ -16,12 +18,9 @@ import {
   type BenchmarkReport,
 } from '@spectra/core';
 import {
-  parseVideoStream,
-  recordsOfKind,
-  frameIndexOf,
-  decodeMaskToRaster,
   buildObjectPrompt,
-  type ResponsesEvent,
+  computeSamVisibilityFromResponse,
+  type SamVisibilityRatioResult,
 } from '@spectra/sam-client';
 import {
   transcribeAudioFile,
@@ -33,6 +32,16 @@ import {
   type VlmJudgeResult,
 } from '@spectra/invariant-compiler';
 import type { VerifyClipOptions, CompileVoiceOptions, CheckInvariantsOptions } from './types.js';
+
+export function findProjectRoot(): string {
+  let dir = process.cwd();
+  while (!fs.existsSync(path.join(dir, 'pnpm-workspace.yaml'))) {
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return dir;
+}
 
 export interface SpectraClientConfig {
   apiKey?: string;
@@ -79,110 +88,197 @@ export class SpectraClient {
   private async decodeSamAreas(
     rawJson: Record<string, unknown>,
   ): Promise<{ t0Area: number; tkArea: number }> {
-    const outputArr = rawJson.output as Array<{ content?: Array<{ text?: string }> }> | undefined;
-    let outputText = '';
-    if (Array.isArray(outputArr)) {
-      for (const item of outputArr) {
-        if (Array.isArray(item.content)) {
-          for (const c of item.content) {
-            if (c.text) outputText += c.text;
-          }
-        }
-      }
-    }
-
-    if (!outputText) {
-      throw new Error('No output_text in SAM response');
-    }
-
-    async function* makeEvents(): AsyncIterable<ResponsesEvent> {
-      yield {
-        type: 'response.output_text.done',
-        item_id: 'sam-msg',
-        output_index: 0,
-        content_index: 0,
-        text: outputText,
-      };
-      yield { type: 'response.completed' };
-    }
-
-    const parsedStream = parseVideoStream(makeEvents());
-    const parseResult = await parsedStream.finalResult;
-    const maskRecords = recordsOfKind(parseResult.records, 'mask');
-
-    const frameAreas: { frame: number; area: number }[] = [];
-    for (const record of maskRecords) {
-      const frame = frameIndexOf(record) ?? 0;
-      const raster = decodeMaskToRaster(record.mask);
-      let area = 0;
-      for (let i = 0; i < raster.length; i++) {
-        if (raster[i] === 1) area++;
-      }
-      frameAreas.push({ frame, area });
-    }
-
-    frameAreas.sort((a, b) => a.frame - b.frame);
-    const t0Area = frameAreas[0]?.area ?? 0;
-    const tkArea = frameAreas[frameAreas.length - 1]?.area ?? 0;
-
-    return { t0Area, tkArea };
+    const res = await computeSamVisibilityFromResponse(rawJson);
+    return { t0Area: res.baselineArea, tkArea: res.evalArea };
   }
 
   /**
    * Runs Dual-Instrument Verification on a clip/frames
    */
   async verifyClip(options: VerifyClipOptions): Promise<MeasurementResult> {
-    const {
-      t0FramePath,
-      tkFramePath,
-      targetBBox,
-      cachedSamResponsePath,
-      videoPath,
-      tolerance = 5.0,
-    } = options;
+    const { tolerance = 5.0 } = options;
 
-    if (!fs.existsSync(t0FramePath)) {
-      throw new Error(`t0 frame not found: ${t0FramePath}`);
-    }
-    if (!fs.existsSync(tkFramePath)) {
-      throw new Error(`tk frame not found: ${tkFramePath}`);
+    let resolvedVideoPath = options.videoPath;
+    if (
+      resolvedVideoPath &&
+      !path.isAbsolute(resolvedVideoPath) &&
+      !fs.existsSync(resolvedVideoPath)
+    ) {
+      const root = findProjectRoot();
+      const cand = path.join(root, resolvedVideoPath);
+      if (fs.existsSync(cand)) {
+        resolvedVideoPath = cand;
+      }
     }
 
-    // Instrument B: Deterministic pixel template matching
-    const resB = computeTemplateMatchVisibility(t0FramePath, tkFramePath, targetBBox, tolerance);
+    const stem =
+      options.clipId ||
+      (resolvedVideoPath
+        ? path.basename(resolvedVideoPath, path.extname(resolvedVideoPath))
+        : undefined);
+
+    let t0FramePath = options.t0FramePath;
+    let tkFramePath = options.tkFramePath;
+
+    if (t0FramePath && !path.isAbsolute(t0FramePath) && !fs.existsSync(t0FramePath)) {
+      const root = findProjectRoot();
+      const cand = path.join(root, t0FramePath);
+      if (fs.existsSync(cand)) t0FramePath = cand;
+    }
+
+    if (tkFramePath && !path.isAbsolute(tkFramePath) && !fs.existsSync(tkFramePath)) {
+      const root = findProjectRoot();
+      const cand = path.join(root, tkFramePath);
+      if (fs.existsSync(cand)) tkFramePath = cand;
+    }
+
+    // Resolve t0FramePath and tkFramePath from video directory if omitted
+    if ((!t0FramePath || !tkFramePath) && resolvedVideoPath && stem) {
+      const videoDir = path.dirname(resolvedVideoPath);
+      const candT0 = path.join(videoDir, `${stem}_t0.png`);
+      const candTk = path.join(videoDir, `${stem}_tk.png`);
+
+      if (!t0FramePath && fs.existsSync(candT0)) {
+        t0FramePath = candT0;
+      }
+      if (!tkFramePath && fs.existsSync(candTk)) {
+        tkFramePath = candTk;
+      }
+
+      // Also check project root benchmark/clips
+      const root = findProjectRoot();
+      if (!t0FramePath) {
+        const rootT0 = path.join(root, 'benchmark/clips', `${stem}_t0.png`);
+        if (fs.existsSync(rootT0)) t0FramePath = rootT0;
+      }
+      if (!tkFramePath) {
+        const rootTk = path.join(root, 'benchmark/clips', `${stem}_tk.png`);
+        if (fs.existsSync(rootTk)) tkFramePath = rootTk;
+      }
+
+      // Fallback: extract Frame 0 and final frame via ffmpeg to os.tmpdir()
+      if ((!t0FramePath || !tkFramePath) && fs.existsSync(resolvedVideoPath)) {
+        try {
+          if (!t0FramePath) {
+            const tmpT0 = path.join(os.tmpdir(), `spectra_${stem}_t0_${Date.now()}.png`);
+            execSync(`ffmpeg -y -ss 0 -i "${resolvedVideoPath}" -vframes 1 "${tmpT0}"`, {
+              stdio: 'ignore',
+            });
+            if (fs.existsSync(tmpT0)) t0FramePath = tmpT0;
+          }
+          if (!tkFramePath) {
+            const tmpTk = path.join(os.tmpdir(), `spectra_${stem}_tk_${Date.now()}.png`);
+            execSync(
+              `ffmpeg -y -sseof -0.1 -i "${resolvedVideoPath}" -update 1 -frames:v 1 "${tmpTk}"`,
+              {
+                stdio: 'ignore',
+              },
+            );
+            if (fs.existsSync(tmpTk)) tkFramePath = tmpTk;
+          }
+        } catch {
+          // ffmpeg not installed or failed; let error check below handle missing files
+        }
+      }
+    }
+
+    if (!t0FramePath || !fs.existsSync(t0FramePath)) {
+      throw new Error(`t0 frame not found: ${t0FramePath ?? '(omitted)'}`);
+    }
+    if (!tkFramePath || !fs.existsSync(tkFramePath)) {
+      throw new Error(`tk frame not found: ${tkFramePath ?? '(omitted)'}`);
+    }
+
+    // Resolve cachedSamResponsePath if omitted
+    let cachedSamResponsePath = options.cachedSamResponsePath;
+    if (
+      cachedSamResponsePath &&
+      !path.isAbsolute(cachedSamResponsePath) &&
+      !fs.existsSync(cachedSamResponsePath)
+    ) {
+      const root = findProjectRoot();
+      const cand = path.join(root, cachedSamResponsePath);
+      if (fs.existsSync(cand)) cachedSamResponsePath = cand;
+    }
+
+    if (!cachedSamResponsePath && stem) {
+      const root = findProjectRoot();
+      const candidates = [
+        path.join(root, 'benchmark/responses/phase2-smoke', `${stem}_sam.json`),
+        path.join(root, 'benchmark/responses/benchmark-sam', `${stem}_sam.json`),
+        path.join(process.cwd(), 'benchmark/responses/phase2-smoke', `${stem}_sam.json`),
+        path.join(process.cwd(), 'benchmark/responses/benchmark-sam', `${stem}_sam.json`),
+      ];
+      for (const cand of candidates) {
+        if (fs.existsSync(cand)) {
+          cachedSamResponsePath = cand;
+          break;
+        }
+      }
+    }
+
+    // Resolve targetBBox if omitted
+    let targetBBox = options.targetBBox;
+    if (!targetBBox && stem) {
+      const root = findProjectRoot();
+      const manifestCandidates = [
+        path.join(root, 'benchmark/manifest.json'),
+        path.join(process.cwd(), 'benchmark/manifest.json'),
+      ];
+      for (const mPath of manifestCandidates) {
+        if (fs.existsSync(mPath)) {
+          try {
+            const raw = JSON.parse(fs.readFileSync(mPath, 'utf-8'));
+            if (Array.isArray(raw.clips)) {
+              const match = raw.clips.find((c: { clipId?: string }) => c.clipId === stem);
+              if (match?.targetBBox) {
+                targetBBox = match.targetBBox;
+                break;
+              }
+            }
+          } catch {
+            // continue
+          }
+        }
+      }
+    }
 
     // Instrument A: SAM Visibility Ratio
-    let t0Area = 0;
-    let tkArea = 0;
+    let samMeasurement: SamVisibilityRatioResult | undefined;
 
     if (cachedSamResponsePath && fs.existsSync(cachedSamResponsePath)) {
-      const rawJson = JSON.parse(fs.readFileSync(cachedSamResponsePath, 'utf-8'));
-      const decoded = await this.decodeSamAreas(rawJson);
-      t0Area = decoded.t0Area;
-      tkArea = decoded.tkArea;
-    } else if (videoPath && fs.existsSync(videoPath) && this.apiKey) {
-      const videoBuffer = fs.readFileSync(videoPath);
+      samMeasurement = await computeSamVisibilityFromResponse(cachedSamResponsePath);
+      if (!targetBBox && samMeasurement.detectedBBox) {
+        targetBBox = samMeasurement.detectedBBox;
+      }
+    } else if (resolvedVideoPath && fs.existsSync(resolvedVideoPath) && this.apiKey) {
+      const videoBuffer = fs.readFileSync(resolvedVideoPath);
       const videoBase64 = `data:video/mp4;base64,${videoBuffer.toString('base64')}`;
 
-      const promptText = buildObjectPrompt({
-        size: { width: 1280, height: 720 },
-        objects: [
-          {
-            id: 0,
-            prompts: [
-              {
-                frame: 0,
-                box: {
-                  left: targetBBox.x,
-                  top: targetBBox.y,
-                  right: targetBBox.x + targetBBox.width,
-                  bottom: targetBBox.y + targetBBox.height,
+      let promptText: string;
+      if (targetBBox) {
+        promptText = buildObjectPrompt({
+          size: { width: 1280, height: 720 },
+          objects: [
+            {
+              id: 0,
+              prompts: [
+                {
+                  frame: 0,
+                  box: {
+                    left: targetBBox.x,
+                    top: targetBBox.y,
+                    right: targetBBox.x + targetBBox.width,
+                    bottom: targetBBox.y + targetBBox.height,
+                  },
                 },
-              },
-            ],
-          },
-        ],
-      });
+              ],
+            },
+          ],
+        });
+      } else {
+        promptText = options.targetLabel;
+      }
 
       const res = await fetch(`${this.baseUrl}/responses`, {
         method: 'POST',
@@ -209,20 +305,34 @@ export class SpectraClient {
       }
 
       const rawJson = (await res.json()) as Record<string, unknown>;
-      const decoded = await this.decodeSamAreas(rawJson);
-      t0Area = decoded.t0Area;
-      tkArea = decoded.tkArea;
-    } else {
-      // Offline fallback ($0.00 spend): derive from Instrument B area if no SAM data provided
-      t0Area = targetBBox.width * targetBBox.height;
-      tkArea = Math.round(t0Area * resB.pixelVisibilityRatio);
+      samMeasurement = await computeSamVisibilityFromResponse(rawJson);
+      if (!targetBBox && samMeasurement.detectedBBox) {
+        targetBBox = samMeasurement.detectedBBox;
+      }
     }
 
-    const resA = computeSamVisibilityRatio(t0Area, tkArea);
+    if (!targetBBox) {
+      throw new Error(
+        `Unable to resolve targetBBox for clip "${stem ?? options.clipId ?? 'unknown'}". Please provide targetBBox or ensure manifest/SAM cache is available.`,
+      );
+    }
+
+    // Instrument B: Deterministic pixel template matching
+    const resB = computeTemplateMatchVisibility(t0FramePath, tkFramePath, targetBBox, tolerance);
+
+    let resA: SamVisibilityRatioResult;
+    if (samMeasurement) {
+      resA = samMeasurement;
+    } else {
+      // Offline fallback ($0.00 spend): derive from Instrument B area if no SAM data provided
+      const t0Area = targetBBox.width * targetBBox.height;
+      const tkArea = Math.round(t0Area * resB.pixelVisibilityRatio);
+      resA = computeSamVisibilityRatio(t0Area, tkArea);
+    }
 
     // Dual-Instrument Referee
     const verdict = evaluateDualInstrument({
-      clipId: options.clipId,
+      clipId: options.clipId || stem,
       rSam: resA.rSam,
       visRatio: resB.pixelVisibilityRatio,
       rNcc: resB.rNcc,
@@ -235,7 +345,7 @@ export class SpectraClient {
     const threshold = 3 * (this.calibration.sigma_noise ?? 0);
 
     const measurement: MeasurementResult = {
-      clipId: options.clipId || 'clip_0',
+      clipId: options.clipId || stem || 'clip_0',
       instrumentA: {
         instrument: 'sam_decode',
         score: resA.rSam,
