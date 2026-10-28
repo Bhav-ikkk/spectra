@@ -97,9 +97,12 @@ describe('@spectra/cli - Production CLI Offline Tests ($0.00 Spend)', () => {
       expect(res.exitCode).toBe(0);
       const out = getStdout();
       expect(out).toContain('SPECTRA VISUAL REFEREE VERDICT');
-      expect(out).toContain('Instrument A (SAM):   rSam = 0.9912 [PASS]');
-      expect(out).toContain('Instrument B (Pixel): visRatio = 1.0000 [PASS]');
-      expect(out).toContain('VERDICT:              PASS');
+      expect(out).toContain('Instrument A (SAM 3.1):');
+      expect(out).toContain('rSam = 0.9912');
+      expect(out).toContain('Instrument B (Pixel Match):');
+      expect(out).toContain('visRatio = 1.0000');
+      expect(out).toContain('Calibration Guard:');
+      expect(out).toContain('Final Referee Verdict:      PASS (VERIFIED)');
     });
 
     it('verifies canvas_000_v1 with --json output matching MeasurementResultSchema', async () => {
@@ -174,6 +177,81 @@ describe('@spectra/cli - Production CLI Offline Tests ($0.00 Spend)', () => {
       );
       expect(res2.exitCode).toBe(1);
       expect(getStderr2()).toContain('Invalid bbox format');
+    });
+
+    it('verifies canvas_000_v1 with ONLY --video and --target (zero-bbox, table output, exit 0)', async () => {
+      const { io, getStdout } = createTestIo();
+      const res = await runCli(
+        [
+          'verify',
+          '--video',
+          'benchmark/clips/canvas_000_v1.mp4',
+          '--target',
+          'Revenue Series Legend',
+        ],
+        io,
+      );
+
+      expect(res.exitCode).toBe(0);
+      const out = getStdout();
+      expect(out).toContain('SPECTRA VISUAL REFEREE VERDICT');
+      expect(out).toContain('Input Source:               benchmark/clips/canvas_000_v1.mp4');
+      expect(out).toContain('Target Element:             Revenue Series Legend');
+      expect(out).toContain('Instrument A (SAM 3.1):');
+      expect(out).toContain('rSam = 0.9912');
+      expect(out).toContain('Instrument B (Pixel Match):');
+      expect(out).toContain('visRatio = 1.0000');
+      expect(out).toContain('Calibration Guard:');
+      expect(out).toContain('Final Referee Verdict:      PASS (VERIFIED)');
+    });
+
+    it('catches dom_catch_010_v1 with ONLY --video and --target (zero-bbox, table output, exit 1)', async () => {
+      const { io, getStdout } = createTestIo();
+      const res = await runCli(
+        [
+          'verify',
+          '--video',
+          'benchmark/clips/dom_catch_010_v1.mp4',
+          '--target',
+          'Complete Checkout',
+        ],
+        io,
+      );
+
+      expect(res.exitCode).toBe(1);
+      const out = getStdout();
+      expect(out).toContain('SPECTRA VISUAL REFEREE VERDICT');
+      expect(out).toContain('Input Source:               benchmark/clips/dom_catch_010_v1.mp4');
+      expect(out).toContain('Target Element:             Complete Checkout');
+      expect(out).toContain('Instrument A (SAM 3.1):');
+      expect(out).toContain('estimatedOcclusion = 9.20%');
+      expect(out).toContain('Instrument B (Pixel Match):');
+      expect(out).toContain('Final Referee Verdict:      FAIL (REJECTED)');
+    });
+
+    it('verifies dom_catch_010_v1 with ONLY --video and --target with --json flag (exit 1)', async () => {
+      const { io, getStdout } = createTestIo();
+      const res = await runCli(
+        [
+          'verify',
+          '--video',
+          'benchmark/clips/dom_catch_010_v1.mp4',
+          '--target',
+          'Complete Checkout',
+          '--json',
+        ],
+        io,
+      );
+
+      expect(res.exitCode).toBe(1);
+      const parsed = JSON.parse(getStdout());
+      const validated = MeasurementResultSchema.parse(parsed);
+      expect(validated.clipId).toBe('dom_catch_010_v1');
+      expect(validated.combinedVerdict).toBe('fail');
+      expect(validated.instrumentA.score).toBeCloseTo(0.908, 2);
+      expect(validated.instrumentB.score).toBe(0.9);
+      expect(validated.instrumentA.passed).toBe(false);
+      expect(validated.instrumentB.passed).toBe(false);
     });
   });
 

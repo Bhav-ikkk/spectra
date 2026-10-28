@@ -125,15 +125,40 @@ function formatClosedLoopOutput(result: ClosedLoopResult): string {
 function formatRefereeTable(
   result: MeasurementResult,
   targetLabel: string,
-  bbox: BoundingBox,
+  bbox?: BoundingBox,
+  inputSource?: string,
 ): string {
   const cal = getCalibration();
-  const thresholdPct = (3 * (cal.sigma_noise ?? 0) * 100).toFixed(2);
-  const sigmaPct = ((cal.sigma_noise ?? 0) * 100).toFixed(2);
-  const deltaPct = cal.delta != null ? (cal.delta * 100).toFixed(2) + '%' : 'N/A';
-  const noiseDeltaPct =
-    result.noiseDelta != null ? (result.noiseDelta * 100).toFixed(2) + '%' : 'N/A';
-  const confPct = result.confidence != null ? (result.confidence * 100).toFixed(2) + '%' : 'N/A';
+  const sigmaNoise = cal.sigma_noise != null ? (cal.sigma_noise * 100).toFixed(2) + '%' : '0.45%';
+  const threshold = cal.sigma_noise != null ? (3 * cal.sigma_noise * 100).toFixed(2) + '%' : '1.35%';
+  const deltaLimit = cal.delta != null ? (cal.delta * 100).toFixed(2) + '%' : '4.10%';
+
+  const rawA = result.instrumentA.raw as
+    | { rSam?: number; estimatedOcclusion?: number; detectedBBox?: BoundingBox }
+    | undefined;
+  const rawB = result.instrumentB.raw as
+    | { rNcc?: number; pixelLossCount?: number; pixelVisibilityRatio?: number }
+    | undefined;
+
+  const resolvedBBox = bbox ?? rawA?.detectedBBox;
+  const bboxStr = resolvedBBox
+    ? `[${resolvedBBox.x}, ${resolvedBBox.y}, ${resolvedBBox.width}, ${resolvedBBox.height}]`
+    : 'N/A';
+
+  const rSam = result.instrumentA.score;
+  const estimatedOcclusion = rawA?.estimatedOcclusion ?? Math.max(0, 1 - rSam);
+  const occlusionPct = (estimatedOcclusion * 100).toFixed(2);
+
+  const visRatio = result.instrumentB.score;
+  const rNccStr = rawB?.rNcc != null ? rawB.rNcc.toFixed(4) : 'N/A';
+  const pixelLossCountStr = rawB?.pixelLossCount != null ? `${rawB.pixelLossCount}px` : 'N/A';
+
+  const verdictLabel =
+    result.combinedVerdict === 'pass'
+      ? 'PASS (VERIFIED)'
+      : result.combinedVerdict === 'fail'
+        ? 'FAIL (REJECTED)'
+        : 'INCONCLUSIVE';
 
   const sep = '='.repeat(80);
   const line = '-'.repeat(80);
@@ -142,18 +167,16 @@ function formatRefereeTable(
     sep,
     ' SPECTRA VISUAL REFEREE VERDICT',
     sep,
-    ` Clip ID:              ${result.clipId}`,
-    ` Target:               ${targetLabel} [x=${bbox.x}, y=${bbox.y}, w=${bbox.width}, h=${bbox.height}]`,
+    ` Clip ID:                    ${result.clipId}`,
+    ` Input Source:               ${inputSource ?? result.clipId}`,
+    ` Target Element:             ${targetLabel} ${bboxStr}`,
     line,
-    ` Instrument A (SAM):   rSam = ${result.instrumentA.score.toFixed(4)} [${result.instrumentA.passed ? 'PASS' : 'FAIL'}]`,
-    ` Instrument B (Pixel): visRatio = ${result.instrumentB.score.toFixed(4)} [${result.instrumentB.passed ? 'PASS' : 'FAIL'}]`,
-    ` Details:              ${result.instrumentB.details ?? result.instrumentA.details ?? ''}`,
-    ` Noise Threshold:      ${thresholdPct}% (3 * sigma_noise, sigma = ${sigmaPct}%)`,
-    ` Agreement Delta:      ${noiseDeltaPct} (limit delta = ${deltaPct})`,
-    ` Confidence:           ${confPct}`,
+    ` Instrument A (SAM 3.1):     rSam = ${rSam.toFixed(4)} | estimatedOcclusion = ${occlusionPct}% [${result.instrumentA.passed ? 'PASS' : 'FAIL'}]`,
+    ` Instrument B (Pixel Match): visRatio = ${visRatio.toFixed(4)} | rNcc = ${rNccStr} | pixelLossCount = ${pixelLossCountStr} [${result.instrumentB.passed ? 'PASS' : 'FAIL'}]`,
+    ` Calibration Guard:         sigma_noise = ${sigmaNoise} | 3*sigma threshold = ${threshold} | delta limit = ${deltaLimit}`,
     line,
-    ` VERDICT:              ${result.combinedVerdict.toUpperCase()}`,
-    ` Notes:                ${result.notes ?? 'None'}`,
+    ` Final Referee Verdict:      ${verdictLabel}`,
+    ` Notes:                      ${result.notes ?? 'None'}`,
     sep,
   ].join('\n');
 }
@@ -166,17 +189,17 @@ function formatHelp(): string {
     '  spectra <subcommand> [options]',
     '',
     'SUBCOMMANDS:',
-    '  verify               Run dual-instrument referee on a pair of video frames',
+    '  verify               Run dual-instrument referee on a pair of video frames or video clip',
     '  compile-invariant    Compile user expectation into formal visual invariants',
     '  check                Verify visual invariants across a benchmark manifest or clip set',
     '  closed-loop-demo     Run end-to-end closed-loop verification (Reject -> Patch -> Re-Verify)',
     '',
     'OPTIONS (verify):',
-    '  --t0 <path>          Path to baseline frame (t0)',
-    '  --tk <path>          Path to evaluation frame (tk)',
-    '  --target <label>     Semantic label of the target UI element',
-    '  --bbox <x,y,w,h>     Target bounding box coordinates in pixels',
-    '  --video <path>       (Optional) Path to video clip',
+    '  --target <label>     (Required) Semantic label of the target UI element',
+    '  --video <path>       Path to video clip (or provide both --t0 and --tk)',
+    '  --t0 <path>          (Optional) Path to baseline frame (t0)',
+    '  --tk <path>          (Optional) Path to evaluation frame (tk)',
+    '  --bbox <x,y,w,h>     (Optional) Target bounding box coordinates in pixels',
     '  --cached-sam <path>  (Optional) Path to cached SAM 3.1 response JSON ($0 spend)',
     '  --json               Output strict MeasurementResult JSON',
     '',
@@ -233,19 +256,31 @@ export async function runCli(
         allowPositionals: false,
       });
 
-      if (!values.t0) throw new Error('Missing required option: --t0 <path>');
-      if (!values.tk) throw new Error('Missing required option: --tk <path>');
-      if (!values.target) throw new Error('Missing required option: --target <label>');
-      if (!values.bbox) throw new Error('Missing required option: --bbox <x,y,w,h>');
+      if (!values.video) {
+        if (!values.t0 && !values.tk) {
+          throw new Error(
+            'Missing input source: provide either --video <path> or both --t0 <path> and --tk <path>.',
+          );
+        }
+        if (!values.t0) throw new Error('Missing required option: --t0 <path>');
+        if (!values.tk) throw new Error('Missing required option: --tk <path>');
+      }
 
-      const bbox = parseBoundingBox(values.bbox);
+      if (!values.target) throw new Error('Missing required option: --target <label>');
+
+      const bbox = values.bbox ? parseBoundingBox(values.bbox) : undefined;
       const clipId =
-        values['clip-id'] || path.basename(values.t0, path.extname(values.t0)).replace(/_t0$/, '');
+        values['clip-id'] ||
+        (values.video
+          ? path.basename(values.video, path.extname(values.video))
+          : values.t0
+            ? path.basename(values.t0, path.extname(values.t0)).replace(/_t0$/, '')
+            : undefined);
 
       const result = await client.verifyClip({
         clipId,
-        t0FramePath: path.resolve(values.t0),
-        tkFramePath: path.resolve(values.tk),
+        t0FramePath: values.t0 ? path.resolve(values.t0) : undefined,
+        tkFramePath: values.tk ? path.resolve(values.tk) : undefined,
         targetLabel: values.target,
         targetBBox: bbox,
         videoPath: values.video ? path.resolve(values.video) : undefined,
@@ -257,7 +292,10 @@ export async function runCli(
       if (values.json) {
         io.stdout(JSON.stringify(result, null, 2));
       } else {
-        io.stdout(formatRefereeTable(result, values.target, bbox));
+        const inputSource = values.video
+          ? values.video
+          : `${values.t0} -> ${values.tk}`;
+        io.stdout(formatRefereeTable(result, values.target, bbox, inputSource));
       }
 
       const exitCode =
