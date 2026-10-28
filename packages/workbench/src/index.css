@@ -1,6 +1,26 @@
+/* Hallmark · theme: console · genre: modern-minimal · v2.0.0 */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --color-paper: #0b0c0e;
+  --color-paper-2: #131519;
+  --color-paper-3: #08090a;
+  --color-ink: #f3f4f6;
+  --color-ink-2: #cbced4;
+  --color-muted: #8a8f98;
+  --color-rule: #23262d;
+  --color-rule-2: #3f434f;
+  --color-accent: #f59e0b;
+  --color-ok: #30d158;
+  --color-bad: #ff453a;
+  --color-cool: #38bdf8;
+
+  --font-display: "Host Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-body: var(--font-display);
+  --font-outlier: "Atkinson Hyperlegible Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
 
 @layer base {
   * {
@@ -10,73 +30,88 @@
   html,
   body,
   #root {
-    width: 100vw;
+    width: 100%;
     height: 100vh;
     margin: 0;
     padding: 0;
-    overflow: hidden;
-    background-color: #09090b;
-    color: #f4f4f5;
+    overflow-x: clip;
+    overflow-y: hidden;
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-display);
+  }
+
+  ::selection {
+    background-color: var(--color-rule-2);
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-cool);
+    outline-offset: 1px;
+  }
+
+  button:active:not([disabled]) {
+    transform: translateY(1px);
   }
 }
 
-/* Custom Apple Sequoia Dark Glassmorphic Scrollbars */
+button {
+  white-space: nowrap;
+}
+
+/* Precision Instrument Hairline Scrollbars */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 4px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--color-paper-3);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 9999px;
+  background: var(--color-rule);
+  border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: var(--color-rule-2);
 }
 
-/* Translucent Glassmorphism Panels */
-.glass-panel {
-  background: rgba(18, 18, 22, 0.72);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+/* Precision Flat Hairline Panes (Zero Blurs, Zero Slop) */
+.panel-hairline {
+  background-color: var(--color-paper-2);
+  border: 1px solid var(--color-rule);
+  color: var(--color-ink);
 }
 
-.glass-panel-elevated {
-  background: rgba(24, 24, 30, 0.85);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7);
+.well-hairline {
+  background-color: var(--color-paper-3);
+  border: 1px solid var(--color-rule);
+  color: var(--color-ink);
 }
 
-.glass-pill {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+.whitespace-nowrap {
+  white-space: nowrap;
 }
 
-/* Radar & Pulse Animations */
-@keyframes radar-scan {
-  0% {
-    transform: translateY(0);
-    opacity: 0.8;
+/* High-Precision Tabular Monospace Data Rows */
+.tabular-data {
+  font-family: var(--font-outlier);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sub-pixel reticle crosshairs */
+.reticle-hairline {
+  box-shadow: 0 0 0 1px var(--color-rule);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
-  50% {
-    opacity: 0.3;
-  }
-  100% {
-    transform: translateY(100%);
-    opacity: 0.8;
-  }
-}
-
-.animate-radar-scan {
-  animation: radar-scan 2.5s ease-in-out infinite alternate;
 }

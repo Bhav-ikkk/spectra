@@ -14,10 +14,10 @@ export const App: React.FC = () => {
   const [data, setData] = useState<WorkbenchDataBundle>(
     initialBundleData as unknown as WorkbenchDataBundle,
   );
-  const [activeTab, setActiveTab] = useState<TabMode>('arena');
-  const [activeScenarioId, setActiveScenarioId] = useState<'s1' | 's2' | 's3'>('s3'); // Default to "The Catch" (S3)
+  const [activeTab, setActiveTab] = useState<TabMode>('dropzone'); // Default to Live Video Upload (Workspace 1)
+  const [activeScenarioId, setActiveScenarioId] = useState<'s1' | 's2' | 's3'>('s3'); // Default to S3 "The Catch"
   const [activeClipId, setActiveClipId] = useState<string>('dom_catch_010_v1');
-  const [scenarioPhase, setScenarioPhase] = useState<1 | 2 | 3 | 4>(2); // Default to Phase 2 (Spectra Referee Catch)
+  const [scenarioPhase, setScenarioPhase] = useState<1 | 2 | 3 | 4>(2); // Default to Phase 2 (Spectra Rejection)
   const [isLensOpen, setIsLensOpen] = useState(false);
   const [providerStatus, setProviderStatus] = useState<{ meta: boolean; baseten: boolean }>({
     meta: false,
@@ -59,8 +59,8 @@ export const App: React.FC = () => {
   const activeClip = data.clips.find((c) => c.clipId === activeClipId) || data.clips[0];
 
   return (
-    <div className="w-screen h-screen flex flex-col bg-[#09090B] text-zinc-100 overflow-hidden font-sans select-none">
-      {/* Top Command Bar (height: 52px) */}
+    <div className="w-full h-screen flex flex-col bg-paper-base text-ink-primary overflow-hidden select-none font-sans">
+      {/* Top Command Bar (48px) */}
       <TopBar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -69,18 +69,21 @@ export const App: React.FC = () => {
         onOpenLens={() => setIsLensOpen(true)}
       />
 
-      {/* Main Content Area: 100vh - 52px */}
-      <div className="flex-1 w-full flex overflow-hidden">
-        {/* TAB 1: Closed-Loop Arena (Flagship 3-Pane macOS Sequoia Layout) */}
+      {/* Main Workspace Area */}
+      <main className="flex-1 w-full flex overflow-hidden min-h-0">
+        {/* WORKSPACE 1: Upload & Verify Video (Live Studio) */}
+        {activeTab === 'dropzone' && <LiveDropzoneView />}
+
+        {/* WORKSPACE 2: Closed-Loop Repair Arena (S1 / S2 / S3) */}
         {activeTab === 'arena' && (
           <>
-            {/* Left Pane (26%) — Scenario & Invariant Navigator */}
+            {/* Left Column (280px Fixed) */}
             <LeftPane
               scenarios={data.scenarios}
               activeScenarioId={activeScenarioId}
               setActiveScenarioId={(id) => {
                 setActiveScenarioId(id);
-                setScenarioPhase(2); // Reset to Phase 2 catch
+                setScenarioPhase(2);
               }}
               clips={data.clips}
               activeClipId={activeClipId}
@@ -90,7 +93,7 @@ export const App: React.FC = () => {
               voiceTranscript={data.voiceTranscript}
             />
 
-            {/* Center Pane (44%) — Interactive 4-Layer Optical Viewport */}
+            {/* Center Viewport Stage + 3-State Target Zoom Loupe */}
             <OpticalViewport
               t0Url={
                 currentScenario?.pass1?.t0AssetUrl || '/benchmark-assets/dom_catch_010_v1_t0.png'
@@ -109,7 +112,7 @@ export const App: React.FC = () => {
                   ? [820, 240, 220, 48]
                   : activeScenarioId === 's2'
                     ? [475, 610, 330, 52]
-                    : [910, 600, 340, 50]
+                    : [909, 600, 342, 51]
               }
               targetLabel={currentScenario?.targetLabel || 'Target Element'}
               verdict={scenarioPhase >= 4 ? 'pass' : 'fail'}
@@ -117,7 +120,7 @@ export const App: React.FC = () => {
               environment={currentScenario?.environment}
             />
 
-            {/* Right Pane (30%) — Dual-Instrument Telemetry & Closed-Loop Stepper */}
+            {/* Right Telemetry Column (320px Fixed) */}
             <TelemetryPane
               scenario={currentScenario}
               phase={scenarioPhase}
@@ -127,7 +130,7 @@ export const App: React.FC = () => {
           </>
         )}
 
-        {/* TAB 2: 45-Clip Benchmark Explorer */}
+        {/* WORKSPACE 3: 45-Clip Referee Benchmark */}
         {activeTab === 'benchmark' && (
           <>
             <LeftPane
@@ -146,16 +149,16 @@ export const App: React.FC = () => {
           </>
         )}
 
-        {/* TAB 3: Voice-to-Invariant Studio */}
+        {/* WORKSPACE 4: Voice Invariants Studio */}
         {activeTab === 'voice' && (
-          <VoiceStudioView invariants={data.invariants} voiceTranscript={data.voiceTranscript} />
+          <VoiceStudioView
+            invariants={data.invariants}
+            voiceTranscript={data.voiceTranscript}
+          />
         )}
+      </main>
 
-        {/* TAB 4: Live Referee Dropzone */}
-        {activeTab === 'dropzone' && <LiveDropzoneView />}
-      </div>
-
-      {/* Spectra Lens Push-to-Capture Referee Overlay */}
+      {/* Spectra Lens Region Capture HUD Overlay */}
       <SpectraLensOverlay
         isOpen={isLensOpen}
         onClose={() => setIsLensOpen(false)}
@@ -165,7 +168,7 @@ export const App: React.FC = () => {
         calibration={data.calibration}
         onSendRejectionToRepair={() => {
           setActiveTab('arena');
-          setScenarioPhase(3); // Jump directly to Phase 3 layout repair patch diff
+          setScenarioPhase(3);
         }}
         onInvariantSaved={(newInv) => {
           setData((prev) => ({

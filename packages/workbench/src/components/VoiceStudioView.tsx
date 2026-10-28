@@ -3,15 +3,8 @@ import {
   Mic,
   MicOff,
   Sparkles,
-  Play,
-  Pause,
+  RotateCcw,
   FileCode,
-  Volume2,
-  RefreshCw,
-  Radio,
-  Clock,
-  Layers,
-  AlertCircle,
 } from 'lucide-react';
 import { startAudioRecording, type AudioRecordingSession } from '../utils/audio-recorder.js';
 
@@ -24,13 +17,13 @@ export const VoiceStudioView: React.FC<VoiceStudioViewProps> = ({
   invariants,
   voiceTranscript,
 }) => {
-  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const defaultTranscript =
     (voiceTranscript?.transcript as string) ||
     'When the cart drawer opens, the complete checkout button must never be covered, and the revenue series legend must stay visible.';
 
   const defaultSessionId =
-    (voiceTranscript?.sessionId as string) || 'voyager/transcribe/6D0FEAC1E93944EB9F057C5DBE136055';
+    (voiceTranscript?.sessionId as string) ||
+    'voyager/transcribe/6D0FEAC1E93944EB9F057C5DBE136055';
 
   const [promptText, setPromptText] = useState(defaultTranscript);
   const [activeSessionId, setActiveSessionId] = useState(defaultSessionId);
@@ -46,14 +39,12 @@ export const VoiceStudioView: React.FC<VoiceStudioViewProps> = ({
   const recordingSessionRef = useRef<AudioRecordingSession | null>(null);
   const recordTimerRef = useRef<number | null>(null);
 
-  // Clean up recording timer on unmount
   useEffect(() => {
     return () => {
       if (recordTimerRef.current) clearInterval(recordTimerRef.current);
     };
   }, []);
 
-  // Start in-browser microphone recording
   const handleStartRecording = async () => {
     setMicError(null);
     try {
@@ -68,12 +59,10 @@ export const VoiceStudioView: React.FC<VoiceStudioViewProps> = ({
         setRecordSeconds((sec) => sec + 1);
       }, 1000);
     } catch (err) {
-      console.error('[VoiceStudio] Microphone access error:', err);
       setMicError((err as Error).message || 'Microphone access denied or unavailable.');
     }
   };
 
-  // Stop in-browser microphone recording and compile
   const handleStopRecording = async () => {
     if (!recordingSessionRef.current) return;
     if (recordTimerRef.current) {
@@ -88,7 +77,6 @@ export const VoiceStudioView: React.FC<VoiceStudioViewProps> = ({
       const { base64Wav } = await recordingSessionRef.current.stop();
       recordingSessionRef.current = null;
 
-      // Post recorded 16kHz mono WAV base64 to /api/compile-voice
       const res = await fetch('/api/compile-voice', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -100,18 +88,13 @@ export const VoiceStudioView: React.FC<VoiceStudioViewProps> = ({
 
       if (res.ok) {
         const data = await res.json();
-        if (data.transcript) {
-          setPromptText(data.transcript);
-        }
-        if (data.sessionId) {
-          setActiveSessionId(data.sessionId);
-        }
+        if (data.transcript) setPromptText(data.transcript);
+        if (data.sessionId) setActiveSessionId(data.sessionId);
         if (data.document || data.invariants) {
           setCompiledResult(data.document || { invariants: data.invariants });
         }
       }
     } catch (err) {
-      console.error('[VoiceStudio] Compile audio error:', err);
       setMicError((err as Error).message || 'Failed to compile audio recording.');
     } finally {
       setIsCompiling(false);
@@ -119,16 +102,11 @@ export const VoiceStudioView: React.FC<VoiceStudioViewProps> = ({
     }
   };
 
-  // Toggle record / stop
   const toggleRecording = () => {
-    if (isRecording) {
-      handleStopRecording();
-    } else {
-      handleStartRecording();
-    }
+    if (isRecording) handleStopRecording();
+    else handleStartRecording();
   };
 
-  // Reset to verified cached fixture ($0.00 spend)
   const handleReplayFixture = () => {
     setPromptText(defaultTranscript);
     setActiveSessionId(defaultSessionId);
@@ -136,7 +114,6 @@ export const VoiceStudioView: React.FC<VoiceStudioViewProps> = ({
     setMicError(null);
   };
 
-  // Manual text re-compilation
   const handleCompileText = async () => {
     setIsCompiling(true);
     setMicError(null);
@@ -149,202 +126,187 @@ export const VoiceStudioView: React.FC<VoiceStudioViewProps> = ({
           provider: modelProvider,
         }),
       });
+
       if (res.ok) {
         const data = await res.json();
-        setCompiledResult(data.document || data);
+        if (data.document || data.invariants) {
+          setCompiledResult(data.document || { invariants: data.invariants });
+        }
       }
     } catch (err) {
-      console.error('[VoiceStudio] Manual compile error:', err);
-      setMicError('Compiler offline: using active cached invariants.');
+      setMicError((err as Error).message || 'Failed to compile transcript.');
     } finally {
       setIsCompiling(false);
     }
   };
 
   return (
-    <div className="flex-1 h-full flex flex-col bg-[#09090B] overflow-y-auto p-6 space-y-6 select-none">
-      {/* Title Header */}
-      <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Mic className="w-5 h-5 text-purple-400" />
-            <h1 className="text-lg font-bold text-white tracking-tight">
-              Voice-to-Invariant Studio (.spectra/invariants.json)
-            </h1>
-            <span className="px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 text-[10px] font-mono border border-purple-500/30">
-              muse-voice-transcribe-1.0 + muse-spark-open-1026
-            </span>
-          </div>
-          <p className="text-xs text-zinc-400">
-            Capture user expectations via live 16kHz microphone or natural text and compile them
-            into formal visual invariants.
-          </p>
-        </div>
-
-        {/* Action Controls: Cached Replay vs Live Recording */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleReplayFixture}
-            className="px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white text-xs font-semibold border border-white/10 flex items-center gap-1.5 transition-all shadow-sm"
-            title="Replay verified fixture with zero network latency"
-          >
-            <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Replay Verified Fixture ($0.00)</span>
-          </button>
-
-          <button
-            onClick={toggleRecording}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-all shadow-md ${
-              isRecording
-                ? 'bg-rose-600 hover:bg-rose-500 text-white animate-pulse shadow-rose-600/30'
-                : 'bg-purple-600 hover:bg-purple-500 text-white shadow-purple-600/30'
-            }`}
-          >
-            {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-            <span>
-              {isRecording
-                ? `Recording (${recordSeconds}s) — Click to Stop`
-                : 'Hold / Click to Record Live Mic (Muse Voice 1.0)'}
-            </span>
-          </button>
-        </div>
-      </div>
-
-      {/* Mic Error Banner */}
-      {micError && (
-        <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 flex-shrink-0" />
-          <span>{micError}</span>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1">
-        {/* Left: Spoken Audio Turn & Natural Language Expectation */}
-        <div className="space-y-4 flex flex-col">
-          {/* Spoken Turn Audio Player Card */}
-          <div className="p-4 rounded-xl bg-zinc-900/60 border border-white/[0.08] space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-zinc-200 flex items-center gap-1.5">
-                <Volume2 className="w-4 h-4 text-purple-400" />
-                {isRecording ? 'Live Microphone Audio Feed' : 'Spoken Input Turn Audio'}
-              </span>
-              <span className="text-[10px] font-mono text-zinc-500 truncate max-w-[260px]">
-                Session: {activeSessionId}
-              </span>
+    <div className="flex-1 h-full flex bg-paper-base text-ink-primary overflow-hidden select-none divide-x divide-rule-border">
+      {/* Left Column: Voice Audio Capture & Transcript */}
+      <div className="w-96 shrink-0 h-full flex flex-col justify-between overflow-y-auto divide-y divide-rule-border min-h-0">
+        <div className="divide-y divide-rule-border">
+          {/* Header */}
+          <div className="h-10 px-3 bg-paper-surface flex items-center justify-between shrink-0 whitespace-nowrap">
+            <div className="flex items-center gap-1.5 text-xs font-medium text-ink-primary">
+              <Mic className="w-3.5 h-3.5 text-signal-cool" />
+              <span className="whitespace-nowrap">Voice Invariants Compiler</span>
             </div>
+            <span className="text-[10px] font-mono text-ink-muted">16kHz Mono WAV</span>
+          </div>
 
-            {/* Audio Waveform Simulator / Live Visualizer */}
-            <div className="h-14 rounded-lg bg-black/60 border border-white/[0.06] p-2 flex items-center justify-between gap-1">
-              <button
-                onClick={() => setIsPlayingAudio(!isPlayingAudio)}
-                disabled={isRecording}
-                className={`w-10 h-10 rounded-full flex items-center justify-center text-white flex-shrink-0 transition-transform active:scale-95 shadow-md ${
-                  isRecording
-                    ? 'bg-zinc-800 opacity-50 cursor-not-allowed'
-                    : 'bg-purple-600 hover:bg-purple-500 shadow-purple-600/30'
+          {/* Microphone Recording Action Card */}
+          <div className="p-4 bg-paper-well space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono text-ink-muted">
+                Microphone Input
+              </span>
+              <span
+                className={`text-[10px] font-mono ${
+                  isRecording ? 'text-signal-vermilion' : 'text-ink-muted'
                 }`}
               >
-                {isPlayingAudio ? (
-                  <Pause className="w-4 h-4" />
-                ) : (
-                  <Play className="w-4 h-4 ml-0.5" />
-                )}
-              </button>
-
-              <div className="flex-1 flex items-center gap-[3px] h-full px-2 overflow-hidden">
-                {Array.from({ length: 48 }).map((_, i) => {
-                  const defaultHeights = [30, 45, 75, 90, 60, 40, 85, 100, 70, 50, 65, 80];
-                  let height = defaultHeights[i % defaultHeights.length]!;
-
-                  if (isRecording) {
-                    // Modulate with live mic level
-                    const randomVariation = Math.sin(i * 0.5 + Date.now() * 0.01) * 20;
-                    height = Math.max(15, Math.min(100, micLevel * 100 + randomVariation));
-                  }
-
-                  return (
-                    <div
-                      key={i}
-                      className={`flex-1 rounded-full transition-all duration-150 ${
-                        isRecording
-                          ? 'bg-rose-500 animate-pulse'
-                          : isPlayingAudio
-                            ? 'bg-gradient-to-t from-purple-500 to-indigo-400 animate-pulse'
-                            : 'bg-zinc-700'
-                      }`}
-                      style={{ height: `${height}%` }}
-                    />
-                  );
-                })}
-              </div>
-
-              <span className="text-[11px] font-mono text-zinc-400 px-2 flex-shrink-0">
-                {isRecording ? `REC 00:0${recordSeconds}` : '08.24s'}
+                {isRecording ? `Recording (${recordSeconds}s)` : 'Ready'}
               </span>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={toggleRecording}
+                className={`w-12 h-12 rounded border flex items-center justify-center transition-colors shrink-0 whitespace-nowrap ${
+                  isRecording
+                    ? 'bg-signal-vermilion/20 border-signal-vermilion text-signal-vermilion'
+                    : 'bg-paper-surface border-rule-border hover:border-signal-cool text-ink-primary'
+                }`}
+              >
+                {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+              </button>
+              <div className="flex-1 space-y-1">
+                <div className="text-xs font-semibold text-ink-primary">
+                  {isRecording ? 'Speak UI Invariant' : 'Record Voice Spec'}
+                </div>
+                <div className="text-[10px] text-ink-muted">
+                  Transcribed by <code>muse-voice-transcribe-1.0</code>
+                </div>
+                {isRecording && (
+                  <div className="w-full h-1.5 rounded bg-paper-base border border-rule-border overflow-hidden mt-1">
+                    <div
+                      className="h-full bg-signal-emerald"
+                      style={{ width: `${Math.min(100, micLevel * 100)}%` }}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {micError && (
+              <div className="p-2 rounded bg-signal-vermilion/10 border border-signal-vermilion/30 text-signal-vermilion text-[10px] font-mono">
+                {micError}
+              </div>
+            )}
+          </div>
+
+          {/* Transcript Textarea */}
+          <div className="p-4 bg-paper-base space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono text-ink-muted">
+                Transcribed Specification
+              </span>
+              <button
+                onClick={handleReplayFixture}
+                className="text-[10px] font-mono text-signal-cool hover:underline flex items-center gap-1 whitespace-nowrap"
+              >
+                <RotateCcw className="w-2.5 h-2.5" />
+                <span className="whitespace-nowrap">Replay Fixture ($0.00)</span>
+              </button>
+            </div>
+            <textarea
+              rows={4}
+              value={promptText}
+              onChange={(e) => setPromptText(e.target.value)}
+              className="w-full bg-paper-well border border-rule-border focus:border-rule-active rounded p-2 text-xs text-ink-primary font-mono outline-none resize-none leading-relaxed"
+            />
+            <div className="text-[10px] font-mono text-ink-muted truncate">
+              Session: {activeSessionId}
             </div>
           </div>
 
-          {/* Transcript / Expectation Text Editor */}
-          <div className="p-4 rounded-xl bg-zinc-900/60 border border-white/[0.08] space-y-3 flex-1 flex flex-col">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-zinc-200 flex items-center gap-2">
-                <span>Spoken Transcript / User Expectation:</span>
-                <span className="px-1.5 py-0.5 rounded bg-zinc-800 text-[10px] font-mono text-zinc-400">
-                  Editable
-                </span>
-              </label>
-
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] text-zinc-500">Compiler:</span>
-                <select
-                  value={modelProvider}
-                  onChange={(e) => setModelProvider(e.target.value as 'baseten' | 'meta')}
-                  className="bg-black/60 border border-white/10 rounded px-2 py-1 text-xs text-zinc-200 font-mono focus:outline-none"
-                >
-                  <option value="baseten">Baseten (muse-spark-open-1026)</option>
-                  <option value="meta">Meta API (muse-spark-1.3)</option>
-                </select>
-              </div>
+          {/* Compiler Configuration */}
+          <div className="p-4 bg-paper-base space-y-2">
+            <div className="text-[10px] font-mono text-ink-muted">
+              LLM Invariant Compiler
             </div>
-
-            <textarea
-              value={promptText}
-              onChange={(e) => setPromptText(e.target.value)}
-              rows={4}
-              className="w-full flex-1 bg-black/60 border border-white/10 rounded-lg p-3 text-xs text-zinc-200 leading-relaxed focus:outline-none focus:border-purple-500/50 font-sans resize-none"
-              placeholder="Speak into microphone or type your UI requirement..."
-            />
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setModelProvider('baseten')}
+                className={`p-2 rounded text-xs font-mono border text-left transition-colors whitespace-nowrap ${
+                  modelProvider === 'baseten'
+                    ? 'bg-paper-surface border-rule-active text-ink-primary'
+                    : 'bg-paper-well border-rule-border text-ink-muted'
+                }`}
+              >
+                <div className="font-semibold text-[11px] text-ink-primary">Baseten Open</div>
+                <div className="text-[9px] text-ink-muted">Open 1026</div>
+              </button>
+              <button
+                onClick={() => setModelProvider('meta')}
+                className={`p-2 rounded text-xs font-mono border text-left transition-colors whitespace-nowrap ${
+                  modelProvider === 'meta'
+                    ? 'bg-paper-surface border-rule-active text-ink-primary'
+                    : 'bg-paper-well border-rule-border text-ink-muted'
+                }`}
+              >
+                <div className="font-semibold text-[11px] text-ink-primary">Meta Hosted</div>
+                <div className="text-[9px] text-ink-muted">Spark 1.3</div>
+              </button>
+            </div>
 
             <button
               onClick={handleCompileText}
-              disabled={isCompiling || isRecording}
-              className="w-full py-2.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-md shadow-purple-600/20 disabled:opacity-50"
+              disabled={isCompiling}
+              className="w-full h-8 mt-2 rounded bg-ink-primary hover:bg-white text-paper-base font-medium text-xs flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50 whitespace-nowrap"
             >
-              <Sparkles className="w-4 h-4" />
-              <span>
-                {isCompiling
-                  ? 'Compiling Invariants via Muse Spark...'
-                  : 'Compile to .spectra/invariants.json'}
-              </span>
+              {isCompiling ? (
+                <>
+                  <span className="w-3 h-3 border-2 border-paper-base border-t-transparent rounded-full animate-spin" />
+                  <span className="whitespace-nowrap">Compiling…</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span className="whitespace-nowrap">Compile</span>
+                </>
+              )}
             </button>
           </div>
         </div>
 
-        {/* Right: Compiled Invariants Document JSON */}
-        <div className="p-4 rounded-xl bg-zinc-900/60 border border-white/[0.08] flex flex-col space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-emerald-300 flex items-center gap-1.5">
-              <FileCode className="w-4 h-4 text-emerald-400" />
-              .spectra/invariants.json Output
-            </span>
-            <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 text-[10px] font-mono border border-emerald-500/20">
-              Valid InvariantsSchema v1.0
-            </span>
+        {/* Footer */}
+        <div className="p-3 border-t border-rule-border bg-paper-well text-[10px] text-ink-muted font-mono">
+          Model IDs verified per Rule 5 against dev.meta.ai
+        </div>
+      </div>
+
+      {/* Right Column: Compiled JSON Contract Display */}
+      <div className="flex-1 h-full flex flex-col justify-between overflow-y-auto bg-paper-well min-h-0">
+        <div className="divide-y divide-rule-border">
+          <div className="h-10 px-4 bg-paper-surface border-b border-rule-border flex items-center justify-between shrink-0 whitespace-nowrap">
+            <div className="flex items-center gap-1.5 text-xs font-medium text-ink-primary">
+              <FileCode className="w-3.5 h-3.5 text-signal-emerald" />
+              <span className="whitespace-nowrap">Compiled Contract: .spectra/invariants.json</span>
+            </div>
+            <span className="text-[10px] font-mono text-signal-emerald">JSON-Schema Valid</span>
           </div>
 
-          <pre className="flex-1 p-3.5 rounded-lg bg-black/80 border border-white/[0.08] text-[11px] font-mono text-emerald-300 overflow-auto leading-relaxed">
-            <code>{JSON.stringify(compiledResult, null, 2)}</code>
-          </pre>
+          <div className="p-4">
+            <pre className="p-3 rounded bg-paper-base border border-rule-border text-xs font-mono text-ink-muted overflow-x-auto leading-relaxed">
+              {JSON.stringify(compiledResult, null, 2)}
+            </pre>
+          </div>
+        </div>
+
+        <div className="p-3 border-t border-rule-border bg-paper-base text-[10px] font-mono text-ink-muted flex items-center justify-between">
+          <span>Target Schema: v1.0.0</span>
+          <span className="text-signal-emerald">Saved to repository</span>
         </div>
       </div>
     </div>

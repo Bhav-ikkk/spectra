@@ -1,15 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  Eye,
   SlidersHorizontal,
-  Target,
-  Maximize2,
-  Film,
-  Sparkles,
-  AlertTriangle,
-  CheckCircle2,
   Play,
   Pause,
+  Target,
+  Crosshair,
+  Maximize2,
+  Sparkles,
 } from 'lucide-react';
 import type { DecodedMaskFrame } from '../types.js';
 
@@ -22,7 +19,7 @@ interface OpticalViewportProps {
   targetBBox?: [number, number, number, number];
   targetLabel: string;
   verdict: 'pass' | 'fail' | 'inconclusive';
-  scenarioPhase?: 1 | 2 | 3 | 4; // Phase 1/2 = fractured, Phase 3/4 = repaired
+  scenarioPhase?: 1 | 2 | 3 | 4;
   environment?: string;
 }
 
@@ -30,224 +27,246 @@ export const OpticalViewport: React.FC<OpticalViewportProps> = ({
   t0Url,
   tkUrl,
   repairedUrl,
-  videoUrl,
   masks,
   targetBBox,
-  targetLabel,
+  targetLabel: _targetLabel,
   verdict,
   scenarioPhase = 1,
   environment = 'dom_catch',
 }) => {
-  // Layer toggles
-  const [showRaw, setShowRaw] = useState(true);
+  const [passView, setPassView] = useState<'pass1' | 'pass2' | 'split'>(
+    scenarioPhase >= 4 ? 'pass2' : 'pass1',
+  );
+
+  useEffect(() => {
+    if (scenarioPhase >= 4) {
+      setPassView('pass2');
+    } else {
+      setPassView('pass1');
+    }
+  }, [scenarioPhase]);
+
   const [showMask, setShowMask] = useState(true);
   const [showBBox, setShowBBox] = useState(true);
   const [showCrosshair, setShowCrosshair] = useState(true);
-  const [splitMode, setSplitMode] = useState(false);
-  const [splitPos, setSplitPos] = useState(50); // percentage (0..100)
-  const [activeFrameIndex, setActiveFrameIndex] = useState(7); // default to tk (frame 7)
+
+  const [activeFrameIndex, setActiveFrameIndex] = useState(7);
   const [isPlaying, setIsPlaying] = useState(false);
 
+  const [splitPos, setSplitPos] = useState(50);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Playback timer for 8-frame scrub
   useEffect(() => {
     let timer: NodeJS.Timeout | null = null;
     if (isPlaying) {
       timer = setInterval(() => {
         setActiveFrameIndex((prev) => (prev + 1) % 8);
-      }, 250); // 4 FPS = 250ms per frame
+      }, 250);
     }
     return () => {
       if (timer) clearInterval(timer);
     };
   }, [isPlaying]);
 
-  // Handle split curtain dragging
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!splitMode || !containerRef.current) return;
-    if (e.buttons !== 1) return; // only drag on left click
+    if (passView !== 'split' || !containerRef.current) return;
+    if (e.buttons !== 1) return;
     const rect = containerRef.current.getBoundingClientRect();
     const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
     setSplitPos((x / rect.width) * 100);
   };
 
-  const isVerified = verdict === 'pass' || scenarioPhase >= 4;
+  const isVerifiedPass = passView === 'pass2' || (verdict === 'pass' && passView !== 'pass1');
 
-  // Active mask for current scrub frame or fallback
   const activeMask =
     masks?.find((m) => m.frameIndex === activeFrameIndex) ||
-    (isVerified ? masks?.[0] : masks?.[masks.length - 1]);
+    (isVerifiedPass ? masks?.[0] : masks?.[masks.length - 1]);
 
-  // Current display image URL
   const currentImageUrl =
-    scenarioPhase >= 4 && repairedUrl ? repairedUrl : activeFrameIndex === 0 ? t0Url : tkUrl;
+    passView === 'pass2' && repairedUrl
+      ? repairedUrl
+      : activeFrameIndex === 0
+        ? t0Url
+        : tkUrl;
 
-  // Center coordinate of target bounding box for DOM naive hit-test
-  const bboxX = targetBBox?.[0] ?? 910;
+  const bboxX = targetBBox?.[0] ?? 909;
   const bboxY = targetBBox?.[1] ?? 600;
-  const bboxW = targetBBox?.[2] ?? 340;
-  const bboxH = targetBBox?.[3] ?? 50;
-  const centerX = bboxX + bboxW / 2;
-  const centerY = bboxY + bboxH / 2;
+  const bboxW = targetBBox?.[2] ?? 342;
+  const bboxH = targetBBox?.[3] ?? 51;
+
+  const hitX = bboxX + Math.round(bboxW / 2);
+  const hitY = bboxY + Math.round(bboxH / 2);
 
   return (
-    <div className="flex-1 h-full flex flex-col bg-[#09090B] border-r border-white/[0.08] relative select-none overflow-hidden">
-      {/* Viewport Top Header */}
-      <div className="h-10 px-4 border-b border-white/[0.06] flex items-center justify-between bg-[#121216]/80 backdrop-blur-md z-20">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-zinc-200 flex items-center gap-1.5">
-            <Film className="w-3.5 h-3.5 text-indigo-400" />
-            Optical Viewport
-          </span>
-          <span className="text-[11px] text-zinc-500 font-mono">1280×720 @ 4 FPS</span>
-          <span className="px-1.5 py-0.5 rounded bg-zinc-800 text-[10px] font-mono text-zinc-400">
-            {environment.toUpperCase()}
-          </span>
+    <div className="flex-1 h-full flex flex-col bg-paper-well border-r border-rule-border overflow-hidden select-none">
+      {/* TOP TOOLBAR (40px, Single Line, No Wrapping) */}
+      <div className="h-10 px-3 bg-paper-base border-b border-rule-border flex items-center justify-between shrink-0 whitespace-nowrap overflow-x-clip">
+        {/* Pass Switcher */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className="text-[10px] font-mono text-ink-muted">Pass:</span>
+          <div className="flex items-center bg-paper-well rounded border border-rule-border p-0.5">
+            <button
+              onClick={() => setPassView('pass1')}
+              className={`px-2 py-0.5 text-xs font-mono rounded transition-colors whitespace-nowrap ${
+                passView === 'pass1'
+                  ? 'bg-paper-surface text-signal-vermilion border border-signal-vermilion/40 font-medium'
+                  : 'text-ink-muted hover:text-ink-primary'
+              }`}
+            >
+              Pass #1: Broken
+            </button>
+            <button
+              onClick={() => setPassView('pass2')}
+              className={`px-2 py-0.5 text-xs font-mono rounded transition-colors whitespace-nowrap ${
+                passView === 'pass2'
+                  ? 'bg-paper-surface text-signal-emerald border border-signal-emerald/40 font-medium'
+                  : 'text-ink-muted hover:text-ink-primary'
+              }`}
+            >
+              Pass #2: Repaired
+            </button>
+            <button
+              onClick={() => setPassView('split')}
+              className={`px-2 py-0.5 text-xs font-mono rounded transition-colors flex items-center gap-1 whitespace-nowrap ${
+                passView === 'split'
+                  ? 'bg-paper-surface text-signal-cool border border-signal-cool/40 font-medium'
+                  : 'text-ink-muted hover:text-ink-primary'
+              }`}
+            >
+              <SlidersHorizontal className="w-3 h-3" />
+              <span className="whitespace-nowrap">Split View</span>
+            </button>
+          </div>
         </div>
 
-        {/* Layer Controls Bar */}
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => setShowRaw(!showRaw)}
-            className={`px-2 py-1 rounded text-[11px] font-medium flex items-center gap-1 transition-all ${
-              showRaw
-                ? 'bg-zinc-700/80 text-white border border-white/10'
-                : 'text-zinc-500 hover:text-zinc-300'
-            }`}
-            title="Layer 1: Raw Video/Image Render"
-          >
-            <Eye className="w-3 h-3" />
-            <span>Raw</span>
-          </button>
-
+        {/* Vector Layer Toggles */}
+        <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => setShowMask(!showMask)}
-            className={`px-2 py-1 rounded text-[11px] font-medium flex items-center gap-1 transition-all ${
+            className={`px-2 py-0.5 rounded text-[11px] font-mono border transition-colors flex items-center gap-1 whitespace-nowrap ${
               showMask
-                ? isVerified
-                  ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/40'
-                  : 'bg-rose-950/80 text-rose-300 border border-rose-500/40'
-                : 'text-zinc-500 hover:text-zinc-300'
+                ? isVerifiedPass
+                  ? 'bg-signal-emerald/10 text-signal-emerald border-signal-emerald/40'
+                  : 'bg-signal-vermilion/10 text-signal-vermilion border-signal-vermilion/40'
+                : 'bg-paper-well border-rule-border text-ink-muted'
             }`}
-            title="Layer 2: SAM 3.1 Decoded SVG Vector Mask"
           >
             <Sparkles className="w-3 h-3" />
-            <span>SAM 3.1 Mask</span>
+            <span className="whitespace-nowrap">SAM 3.1 Mask</span>
           </button>
 
           <button
             onClick={() => setShowBBox(!showBBox)}
-            className={`px-2 py-1 rounded text-[11px] font-medium flex items-center gap-1 transition-all ${
+            className={`px-2 py-0.5 rounded text-[11px] font-mono border transition-colors flex items-center gap-1 whitespace-nowrap ${
               showBBox
-                ? 'bg-amber-950/80 text-amber-300 border border-amber-500/40'
-                : 'text-zinc-500 hover:text-zinc-300'
+                ? 'bg-signal-cool/10 text-signal-cool border-signal-cool/40'
+                : 'bg-paper-well border-rule-border text-ink-muted'
             }`}
-            title="Layer 3: Target Region Invariant Bounding Box"
           >
             <Target className="w-3 h-3" />
-            <span>BBox</span>
+            <span className="whitespace-nowrap">Target Reticle</span>
           </button>
 
           <button
             onClick={() => setShowCrosshair(!showCrosshair)}
-            className={`px-2 py-1 rounded text-[11px] font-medium flex items-center gap-1 transition-all ${
+            className={`px-2 py-0.5 rounded text-[11px] font-mono border transition-colors flex items-center gap-1 whitespace-nowrap ${
               showCrosshair
-                ? 'bg-cyan-950/80 text-cyan-300 border border-cyan-500/40'
-                : 'text-zinc-500 hover:text-zinc-300'
+                ? 'bg-signal-amber/10 text-signal-amber border-signal-amber/40'
+                : 'bg-paper-well border-rule-border text-ink-muted'
             }`}
-            title="Layer 3: DOM Center Point Crosshair"
           >
-            <span className="font-mono text-xs">+</span>
-            <span>DOM Hit-Pt</span>
+            <Crosshair className="w-3 h-3" />
+            <span className="whitespace-nowrap">DOM Hit Pin</span>
           </button>
+        </div>
 
-          <div className="w-[1px] h-4 bg-white/10 mx-1" />
-
+        {/* 8-Frame Scrubber */}
+        <div className="flex items-center gap-1 shrink-0">
           <button
-            onClick={() => setSplitMode(!splitMode)}
-            className={`px-2 py-1 rounded text-[11px] font-medium flex items-center gap-1 transition-all ${
-              splitMode
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
-            }`}
-            title="Layer 4: Split Curtain Slider (Pass 1 Fractured vs Pass 2 Repaired)"
+            onClick={() => setIsPlaying(!isPlaying)}
+            className="p-1 rounded bg-paper-surface border border-rule-border text-ink-muted hover:text-ink-primary whitespace-nowrap"
+            title={isPlaying ? 'Pause' : 'Play 8-Frame Sequence'}
           >
-            <SlidersHorizontal className="w-3 h-3" />
-            <span>Split Curtain</span>
+            {isPlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
           </button>
+          <div className="flex items-center bg-paper-well rounded border border-rule-border p-0.5">
+            {[0, 1, 2, 3, 4, 5, 6, 7].map((idx) => (
+              <button
+                key={idx}
+                onClick={() => {
+                  setActiveFrameIndex(idx);
+                  setIsPlaying(false);
+                }}
+                className={`px-1.5 py-0.5 text-[10px] font-mono rounded whitespace-nowrap ${
+                  activeFrameIndex === idx
+                    ? 'bg-paper-surface text-ink-primary border border-rule-active'
+                    : 'text-ink-muted hover:text-ink-primary'
+                }`}
+              >
+                t_{idx}
+              </button>
+            ))}
+          </div>
+          <span className="text-[10px] font-mono text-ink-muted pl-1 whitespace-nowrap">
+            {environment.toUpperCase()}
+          </span>
         </div>
       </div>
 
-      {/* Main Optical Canvas Area */}
+      {/* MAIN 16:9 VIEWPORT (ZERO FLOATING TEXT BANNERS INSIDE) */}
       <div
         ref={containerRef}
         onMouseMove={handleMouseMove}
-        className="flex-1 w-full bg-[#050507] flex items-center justify-center p-3 overflow-hidden relative cursor-crosshair"
+        className="flex-1 w-full bg-paper-well flex items-center justify-center p-3 overflow-hidden relative"
       >
-        <div
-          className="relative rounded-lg overflow-hidden border border-white/10 shadow-2xl bg-black max-w-full max-h-full aspect-[16/9]"
-          style={{ width: '100%', maxWidth: '1280px' }}
-        >
-          {/* Base Layer: Fractured or Repaired Frame */}
+        <div className="relative w-full max-w-5xl aspect-video bg-black rounded border border-rule-border overflow-hidden">
           <img
             src={currentImageUrl}
             alt="Optical Frame"
             className="w-full h-full object-contain block select-none pointer-events-none"
           />
 
-          {/* Layer 4: Split Curtain Overlay (When Split Mode is Active) */}
-          {splitMode && (
-            <div
-              className="absolute inset-0 overflow-hidden pointer-events-none"
-              style={{ clipPath: `inset(0 ${100 - splitPos}% 0 0)` }}
-            >
-              <img
-                src={repairedUrl || t0Url}
-                alt="Repaired Verified Frame"
-                className="w-full h-full object-contain block select-none"
-              />
-              <div className="absolute top-3 left-3 px-2 py-0.5 rounded bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 text-[10px] font-mono">
-                Pass #2 Repaired (100% Verified)
+          {passView === 'split' && (
+            <>
+              <div
+                className="absolute inset-0 overflow-hidden pointer-events-none"
+                style={{ clipPath: `inset(0 ${100 - splitPos}% 0 0)` }}
+              >
+                <img
+                  src={repairedUrl || t0Url}
+                  alt="Repaired Frame"
+                  className="w-full h-full object-contain block select-none"
+                />
               </div>
-            </div>
+              <div
+                className="absolute top-0 bottom-0 w-0.5 bg-ink-primary cursor-ew-resize z-30"
+                style={{ left: `${splitPos}%` }}
+              >
+                <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-5 h-5 rounded bg-paper-surface border border-rule-border text-ink-primary flex items-center justify-center text-[9px] font-mono">
+                  ↔
+                </div>
+              </div>
+            </>
           )}
 
-          {/* Split Handle Line */}
-          {splitMode && (
-            <div
-              className="absolute top-0 bottom-0 w-0.5 bg-white cursor-ew-resize shadow-[0_0_10px_rgba(255,255,255,0.8)] z-30"
-              style={{ left: `${splitPos}%` }}
-            >
-              <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-white text-zinc-900 flex items-center justify-center shadow-lg text-[10px] font-bold">
-                ↔
-              </div>
-            </div>
-          )}
-
-          {/* SVG Overlay: Decoded SAM 3.1 Vector Mask + Target BBox + DOM Center Point */}
+          {/* SVG Overlays Only */}
           <svg
+            aria-hidden="true"
             viewBox="0 0 1280 720"
             className="absolute inset-0 w-full h-full pointer-events-none z-10"
           >
-            {/* Layer 2: Decoded SAM 3.1 SVG Mask Path */}
             {showMask && activeMask && (
-              <g
-                transform={`translate(${activeMask.bounds.left}, ${activeMask.bounds.top})`}
-                className="transition-all duration-300"
-              >
+              <g transform={`translate(${activeMask.bounds.left}, ${activeMask.bounds.top})`}>
                 <path
                   d={activeMask.svgPath}
-                  fill={isVerified ? 'rgba(16, 185, 129, 0.45)' : 'rgba(239, 68, 68, 0.55)'}
-                  stroke={isVerified ? '#10B981' : '#EF4444'}
-                  strokeWidth="2.5"
+                  fill={isVerifiedPass ? 'rgba(48, 209, 88, 0.40)' : 'rgba(255, 69, 58, 0.45)'}
+                  stroke={isVerifiedPass ? '#30D158' : '#FF453A'}
+                  strokeWidth="2"
                   strokeLinejoin="round"
-                  className={!isVerified ? 'animate-pulse' : ''}
                 />
               </g>
             )}
 
-            {/* Layer 3: Target Region Invariant Bounding Box */}
             {showBBox && (
               <g>
                 <rect
@@ -256,181 +275,173 @@ export const OpticalViewport: React.FC<OpticalViewportProps> = ({
                   width={bboxW}
                   height={bboxH}
                   fill="none"
-                  stroke="#F59E0B"
+                  stroke="#38BDF8"
                   strokeWidth="2"
-                  strokeDasharray="6 3"
-                  className="transition-all duration-300"
+                  strokeDasharray="4 2"
                 />
-                <rect
-                  x={bboxX}
-                  y={bboxY - 20}
-                  width={Math.min(bboxW, 260)}
-                  height="18"
-                  fill="rgba(245, 158, 11, 0.9)"
-                  rx="3"
-                />
-                <text
-                  x={bboxX + 6}
-                  y={bboxY - 7}
-                  fill="#000"
-                  fontSize="11"
-                  fontFamily="Inter, sans-serif"
-                  fontWeight="600"
-                >
-                  {targetLabel} ({bboxW}×{bboxH}px)
-                </text>
+                <circle cx={bboxX} cy={bboxY} r="3" fill="#38BDF8" />
+                <circle cx={bboxX + bboxW} cy={bboxY} r="3" fill="#38BDF8" />
+                <circle cx={bboxX} cy={bboxY + bboxH} r="3" fill="#38BDF8" />
+                <circle cx={bboxX + bboxW} cy={bboxY + bboxH} r="3" fill="#38BDF8" />
               </g>
             )}
 
-            {/* Layer 3: Naive DOM Hit-Test Crosshair Point (Blind Spot Demonstration) */}
             {showCrosshair && (
-              <g className="transition-all duration-300">
-                {/* Crosshair lines */}
+              <g>
                 <line
-                  x1={centerX - 16}
-                  y1={centerY}
-                  x2={centerX + 16}
-                  y2={centerY}
-                  stroke="#06B6D4"
-                  strokeWidth="2"
+                  x1={hitX - 12}
+                  y1={hitY}
+                  x2={hitX + 12}
+                  y2={hitY}
+                  stroke="#F59E0B"
+                  strokeWidth="1.5"
                 />
                 <line
-                  x1={centerX}
-                  y1={centerY - 16}
-                  x2={centerX}
-                  y2={centerY + 16}
-                  stroke="#06B6D4"
-                  strokeWidth="2"
+                  x1={hitX}
+                  y1={hitY - 12}
+                  x2={hitX}
+                  y2={hitY + 12}
+                  stroke="#F59E0B"
+                  strokeWidth="1.5"
                 />
-                <circle
-                  cx={centerX}
-                  cy={centerY}
-                  r="6"
-                  fill="rgba(6, 182, 212, 0.3)"
-                  stroke="#06B6D4"
-                  strokeWidth="2"
-                />
-                <circle cx={centerX} cy={centerY} r="2" fill="#FFFFFF" />
-
-                {/* DOM Center Point Callout Label */}
-                <rect
-                  x={centerX + 12}
-                  y={centerY - 18}
-                  width="190"
-                  height="22"
-                  rx="4"
-                  fill="rgba(6, 182, 212, 0.95)"
-                />
-                <text
-                  x={centerX + 18}
-                  y={centerY - 4}
-                  fill="#09090B"
-                  fontSize="10"
-                  fontFamily="JetBrains Mono, monospace"
-                  fontWeight="700"
-                >
-                  DOM Pt ({Math.round(centerX)}, {Math.round(centerY)}): PASS
-                </text>
+                <circle cx={hitX} cy={hitY} r="4" fill="none" stroke="#F59E0B" strokeWidth="1.5" />
+                <circle cx={hitX} cy={hitY} r="1.5" fill="#FFFFFF" />
               </g>
             )}
           </svg>
-
-          {/* Split Mode Indicator Label */}
-          {splitMode && (
-            <div className="absolute top-3 right-3 px-2 py-0.5 rounded bg-rose-950/80 border border-rose-500/50 text-rose-300 text-[10px] font-mono z-20">
-              Pass #1 Fractured (Occluded)
-            </div>
-          )}
-
-          {/* Blind Spot Floating Warning Banner */}
-          {!isVerified && showCrosshair && (
-            <div className="absolute bottom-3 left-3 right-3 px-3 py-2 rounded-lg bg-black/85 backdrop-blur-md border border-rose-500/40 flex items-center justify-between text-xs text-rose-200 z-20">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-rose-400 flex-shrink-0 animate-pulse" />
-                <span>
-                  <strong>THE CATCH:</strong> Naive DOM center-point at ({Math.round(centerX)},{' '}
-                  {Math.round(centerY)}) returns <code>true</code> (no hit obstruction), yet Spectra
-                  catches <strong>10.0% visual edge occlusion</strong> (1,700 px covered).
-                </span>
-              </div>
-              <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300">
-                Rule 1 Genuine
-              </span>
-            </div>
-          )}
-
-          {/* Pass 2 Verified Banner */}
-          {isVerified && (
-            <div className="absolute bottom-3 left-3 right-3 px-3 py-2 rounded-lg bg-emerald-950/85 backdrop-blur-md border border-emerald-500/40 flex items-center justify-between text-xs text-emerald-200 z-20">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                <span>
-                  <strong>VERIFIED BY SPECTRA REFEREE:</strong> Target element is 100% visible (0.0%
-                  loss). Instrument A & B cross-agreement verified within noise tolerance (1.35%).
-                </span>
-              </div>
-              <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
-                0 PX LOSS
-              </span>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* 8-Frame Scrub Bar & Playback Controls */}
-      <div className="h-11 px-4 border-t border-white/[0.08] flex items-center justify-between bg-[#121216]/90 backdrop-blur-md z-20">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsPlaying(!isPlaying)}
-            className="w-7 h-7 rounded-md bg-white/10 hover:bg-white/20 flex items-center justify-center text-zinc-200 transition-colors"
-            title={isPlaying ? 'Pause' : 'Play 4 FPS Scrub'}
-          >
-            {isPlaying ? (
-              <Pause className="w-3.5 h-3.5" />
-            ) : (
-              <Play className="w-3.5 h-3.5 ml-0.5" />
-            )}
-          </button>
-
-          {/* Frame Pills (0 to 7) */}
-          <div className="flex items-center gap-1">
-            {[0, 1, 2, 3, 4, 5, 6, 7].map((idx) => {
-              const isSelected = activeFrameIndex === idx;
-              const isBaseline = idx === 0;
-              const isEval = idx === 7;
-              return (
-                <button
-                  key={idx}
-                  onClick={() => setActiveFrameIndex(idx)}
-                  className={`px-2 py-0.5 rounded text-[10px] font-mono font-medium transition-all ${
-                    isSelected
-                      ? 'bg-indigo-600 text-white shadow-sm'
-                      : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700'
-                  }`}
-                >
-                  t_{idx}
-                  {isBaseline && <span className="text-[9px] text-zinc-400 ml-0.5">(t₀)</span>}
-                  {isEval && <span className="text-[9px] text-zinc-400 ml-0.5">(tₖ)</span>}
-                </button>
-              );
-            })}
+      {/* 3-COLUMN MAGNIFIED TARGET STRIP */}
+      <div className="px-4 py-2.5 bg-paper-base border-t border-rule-border shrink-0">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <Maximize2 className="w-3.5 h-3.5 text-signal-cool" />
+            <span className="text-[11px] font-mono text-ink-primary font-medium">
+              3-State Target Zoom Loupe
+            </span>
+            <span className="text-[10px] font-mono text-ink-muted">
+              BBox [{bboxX}, {bboxY}, {bboxW}, {bboxH}] · Center Hit ({hitX}, {hitY})
+            </span>
           </div>
+          <span className="text-[10px] font-mono text-ink-muted">
+            Sub-pixel 10% bottom-edge clipping isolated
+          </span>
         </div>
 
-        {/* Mask Readout */}
-        <div className="text-[11px] font-mono text-zinc-400 flex items-center gap-2">
-          <span>
-            Active Frame: <strong className="text-white">t_{activeFrameIndex}</strong>
-          </span>
-          {activeMask?.area && (
-            <>
-              <span className="text-zinc-600">|</span>
-              <span>
-                SAM Mask Area:{' '}
-                <strong className="text-white">{activeMask.area.toLocaleString()} px</strong>
-              </span>
-            </>
-          )}
+        <div className="grid grid-cols-3 gap-3">
+          {/* Column 1: Baseline t0 */}
+          <div className="p-2 rounded bg-paper-well border border-rule-border space-y-1">
+            <div className="flex items-center justify-between text-[10px] font-mono">
+              <span className="text-ink-muted">1. Baseline (t_0)</span>
+              <span className="text-signal-emerald">100.0% Visible</span>
+            </div>
+            <div className="w-full h-20 bg-black rounded border border-rule-border overflow-hidden flex items-center justify-center">
+              <svg
+                aria-hidden="true"
+                viewBox={`${bboxX - 15} ${bboxY - 8} ${bboxW + 30} ${bboxH + 16}`}
+                className="w-full h-full object-contain"
+              >
+                <image href={t0Url} width="1280" height="720" />
+                <rect
+                  x={bboxX}
+                  y={bboxY}
+                  width={bboxW}
+                  height={bboxH}
+                  fill="none"
+                  stroke="#38BDF8"
+                  strokeWidth="1.5"
+                  strokeDasharray="3 2"
+                />
+              </svg>
+            </div>
+            <div className="text-[9px] font-mono text-ink-muted text-center">
+              Unobstructed 17,000 px contract
+            </div>
+          </div>
+
+          {/* Column 2: Pass #1 Broken */}
+          <div className="p-2 rounded bg-paper-well border border-rule-border space-y-1">
+            <div className="flex items-center justify-between text-[10px] font-mono">
+              <span className="text-ink-muted">2. Pass #1 (Broken)</span>
+              <span className="text-signal-vermilion">90.0% Visible (1,700 px lost)</span>
+            </div>
+            <div className="w-full h-20 bg-black rounded border border-rule-border overflow-hidden flex items-center justify-center">
+              <svg
+                aria-hidden="true"
+                viewBox={`${bboxX - 15} ${bboxY - 8} ${bboxW + 30} ${bboxH + 16}`}
+                className="w-full h-full object-contain"
+              >
+                <image href={tkUrl} width="1280" height="720" />
+                {masks && masks.length > 0 && masks[masks.length - 1]?.svgPath && (
+                  <g
+                    transform={`translate(${masks[masks.length - 1].bounds.left}, ${masks[masks.length - 1].bounds.top})`}
+                  >
+                    <path
+                      d={masks[masks.length - 1].svgPath}
+                      fill="rgba(255, 69, 58, 0.40)"
+                      stroke="#FF453A"
+                      strokeWidth="1.5"
+                    />
+                  </g>
+                )}
+                <rect
+                  x={bboxX}
+                  y={bboxY}
+                  width={bboxW}
+                  height={bboxH}
+                  fill="none"
+                  stroke="#38BDF8"
+                  strokeWidth="1.5"
+                  strokeDasharray="3 2"
+                />
+                <circle cx={hitX} cy={hitY} r="3" fill="#F59E0B" />
+              </svg>
+            </div>
+            <div className="text-[9px] font-mono text-signal-vermilion text-center">
+              10% bottom-edge occluded by drawer
+            </div>
+          </div>
+
+          {/* Column 3: Pass #2 Repaired */}
+          <div className="p-2 rounded bg-paper-well border border-rule-border space-y-1">
+            <div className="flex items-center justify-between text-[10px] font-mono">
+              <span className="text-ink-muted">3. Pass #2 (Repaired)</span>
+              <span className="text-signal-emerald">100.0% Visible (0 px lost)</span>
+            </div>
+            <div className="w-full h-20 bg-black rounded border border-rule-border overflow-hidden flex items-center justify-center">
+              <svg
+                aria-hidden="true"
+                viewBox={`${bboxX - 15} ${bboxY - 8} ${bboxW + 30} ${bboxH + 16}`}
+                className="w-full h-full object-contain"
+              >
+                <image href={repairedUrl || t0Url} width="1280" height="720" />
+                {masks && masks.length > 0 && masks[0]?.svgPath && (
+                  <g transform={`translate(${masks[0].bounds.left}, ${masks[0].bounds.top})`}>
+                    <path
+                      d={masks[0].svgPath}
+                      fill="rgba(48, 209, 88, 0.35)"
+                      stroke="#30D158"
+                      strokeWidth="1.5"
+                    />
+                  </g>
+                )}
+                <rect
+                  x={bboxX}
+                  y={bboxY}
+                  width={bboxW}
+                  height={bboxH}
+                  fill="none"
+                  stroke="#30D158"
+                  strokeWidth="1.5"
+                  strokeDasharray="3 2"
+                />
+              </svg>
+            </div>
+            <div className="text-[9px] font-mono text-signal-emerald text-center">
+              Patched z-index & margin verified
+            </div>
+          </div>
         </div>
       </div>
     </div>
