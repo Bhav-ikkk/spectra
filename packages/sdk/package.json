@@ -16,7 +16,11 @@
   },
   "dependencies": {
     "@spectra/core": "workspace:*",
+    "@spectra/invariant-compiler": "workspace:*",
     "@spectra/sam-client": "workspace:*",
-    "@spectra/invariant-compiler": "workspace:*"
+    "pngjs": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/pngjs": "^6.0.5"
   }
 }

@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
+import { computeTemplateMatchVisibility } from '@spectra/core';
 import { runClosedLoopReferee, runAllClosedLoopScenarios } from '../closed-loop.js';
+import { renderPatchedScene } from '../scene-renderer.js';
 
 function findProjectRoot(): string {
   let dir = process.cwd();
@@ -183,6 +186,101 @@ describe('@spectra/sdk - Closed-Loop Scenarios (S1, S2, S3) Offline Tests ($0.00
       expect(result.allScenarios?.s1.success).toBe(true);
       expect(result.allScenarios?.s2.success).toBe(true);
       expect(result.allScenarios?.s3.success).toBe(true);
+    });
+  });
+
+  describe('Dynamic Post-Patch Scene Rendering & Botched Patch Rejection (Step 4)', () => {
+    const tmpBase = path.join(os.tmpdir(), `spectra_test_${Date.now()}`);
+
+    it('deterministic scene-renderer renders clean frame (< 40ms) with 0% pixel loss', async () => {
+      const outPng = path.join(tmpBase, 's3_clean_rendered.png');
+      const start = Date.now();
+      await renderPatchedScene({
+        scenario: 's3',
+        baselineT0Path: path.join(root, 'benchmark/clips/dom_catch_010_v1_t0.png'),
+        patchedParams: { remainingOverlapRatio: 0.0 },
+        outputPngPath: outPng,
+      });
+      const duration = Date.now() - start;
+      expect(duration).toBeLessThan(1000);
+      expect(fs.existsSync(outPng)).toBe(true);
+
+      const match = computeTemplateMatchVisibility(
+        path.join(root, 'benchmark/clips/dom_catch_010_v1_t0.png'),
+        outPng,
+        { x: 910, y: 600, width: 340, height: 50 },
+      );
+      expect(match.pixelVisibilityRatio).toBe(1.0);
+      expect(match.measuredLoss).toBe(0.0);
+      expect(match.pixelLossCount).toBe(0);
+    });
+
+    it('deterministic scene-renderer renders partial/botched frame with exact 9% occlusion', async () => {
+      const outPng = path.join(tmpBase, 's3_botched_rendered.png');
+      await renderPatchedScene({
+        scenario: 's3',
+        baselineT0Path: path.join(root, 'benchmark/clips/dom_catch_010_v1_t0.png'),
+        patchedParams: { remainingOverlapRatio: 0.09 },
+        outputPngPath: outPng,
+      });
+      expect(fs.existsSync(outPng)).toBe(true);
+
+      const match = computeTemplateMatchVisibility(
+        path.join(root, 'benchmark/clips/dom_catch_010_v1_t0.png'),
+        outPng,
+        { x: 910, y: 600, width: 340, height: 50 },
+      );
+      expect(match.pixelVisibilityRatio).toBeCloseTo(0.91, 2);
+      expect(match.measuredLoss).toBeCloseTo(0.09, 2);
+      expect(match.pixelLossCount).toBe(1530); // 17,000 * 0.09 = 1,530
+    });
+
+    it('runClosedLoopReferee catches botched patch on Pass #2 and forces another pass', async () => {
+      const runDir = path.join(tmpBase, 'run_multi_pass');
+      // Pass #2 attempt 1 has 9% remaining overlap (botched), attempt 2 has 0% (clean)
+      const res = await runClosedLoopReferee({
+        scenario: 's3',
+        saveDir: runDir,
+        mockRemainingOverlapRatio: (attempt) => (attempt === 1 ? 0.09 : 0.0),
+      });
+
+      expect(res.success).toBe(true);
+      expect(res.attempts).toBeDefined();
+      expect(res.attempts?.length).toBe(2);
+
+      // Attempt 1 was rejected by referee
+      const attempt1 = res.attempts![0];
+      expect(attempt1.remainingOverlapRatio).toBe(0.09);
+      expect(attempt1.pass2.combinedVerdict).toBe('fail');
+      expect(attempt1.pass2.instrumentB.passed).toBe(false);
+      expect(attempt1.pass2.instrumentB.score).toBeCloseTo(0.91, 2);
+
+      // Attempt 2 passed referee verification
+      const attempt2 = res.attempts![1];
+      expect(attempt2.remainingOverlapRatio).toBe(0.0);
+      expect(attempt2.pass2.combinedVerdict).toBe('pass');
+      expect(attempt2.pass2.instrumentB.passed).toBe(true);
+      expect(attempt2.pass2.instrumentB.score).toBe(1.0);
+
+      expect(res.pass2.combinedVerdict).toBe('pass');
+      expect(res.summary.closedLoopSuccess).toBe(true);
+      expect(res.summary.attemptsCount).toBe(2);
+    });
+
+    it('runClosedLoopReferee exhausts maxAttempts and rejects if all patches are botched', async () => {
+      const runDir = path.join(tmpBase, 'run_exhausted');
+      const res = await runClosedLoopReferee({
+        scenario: 's3',
+        saveDir: runDir,
+        maxAttempts: 3,
+        mockRemainingOverlapRatio: 0.09, // All attempts leave 9% overlap
+      });
+
+      expect(res.success).toBe(false);
+      expect(res.pass2.combinedVerdict).toBe('fail');
+      expect(res.summary.closedLoopSuccess).toBe(false);
+      expect(res.attempts?.length).toBe(3);
+      expect(res.attempts?.every((a) => a.pass2.combinedVerdict === 'fail')).toBe(true);
     });
   });
 });

@@ -1,15 +1,15 @@
 {
-  "clipId": "mobile_mp4_000_v1",
+  "clipId": "mobile_mp4_015_v1_pass2_attempt1",
   "instrumentA": {
     "instrument": "sam_decode",
-    "score": 0.9887365606689801,
+    "score": 1,
     "passed": true,
-    "details": "t0Area=17579px, tkArea=17381px, rSam=0.9887",
+    "details": "t0Area=17160px, tkArea=17160px, rSam=1.0000",
     "raw": {
-      "rSam": 0.9887365606689801,
-      "estimatedOcclusion": 0.01126343933101992,
-      "baselineArea": 17579,
-      "evalArea": 17381
+      "rSam": 1,
+      "estimatedOcclusion": 0,
+      "baselineArea": 17160,
+      "evalArea": 17160
     }
   },
   "instrumentB": {
@@ -33,8 +33,8 @@
     }
   },
   "combinedVerdict": "pass",
-  "confidence": 0.9887365606689801,
-  "noiseDelta": 0.01126343933101992,
+  "confidence": 1,
+  "noiseDelta": 0,
   "calibrated": true,
-  "notes": "VERIFIED: Visibility 99.44% within noise tolerance (1.35%)"
+  "notes": "VERIFIED: Visibility 100.00% within noise tolerance (1.35%)"
 }

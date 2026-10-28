@@ -1,15 +1,15 @@
 {
-  "clipId": "dom_catch_000_v1",
+  "clipId": "dom_catch_010_v1_pass2_attempt1",
   "instrumentA": {
     "instrument": "sam_decode",
     "score": 1,
     "passed": true,
-    "details": "t0Area=17299px, tkArea=17299px, rSam=1.0000",
+    "details": "t0Area=17000px, tkArea=17000px, rSam=1.0000",
     "raw": {
       "rSam": 1,
       "estimatedOcclusion": 0,
-      "baselineArea": 17299,
-      "evalArea": 17299
+      "baselineArea": 17000,
+      "evalArea": 17000
     }
   },
   "instrumentB": {

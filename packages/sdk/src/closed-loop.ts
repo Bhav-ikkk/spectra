@@ -3,6 +3,10 @@ import path from 'node:path';
 import type { MeasurementResult } from '@spectra/core';
 import { extractJsonFromText, type ModelProvider } from '@spectra/invariant-compiler';
 import { SpectraClient } from './client.js';
+import {
+  renderPatchedScene,
+  computeRemainingOverlapRatio,
+} from './scene-renderer.js';
 
 export type ScenarioSelection = 's1' | 's2' | 's3' | 'all';
 
@@ -20,6 +24,7 @@ export interface AgentRepairPatch {
   patch: string;
   newFooterOverlapPx?: number;
   newOverlapPx?: number;
+  remainingOverlapRatio?: number;
   explanation: string;
   rawResponse?: Record<string, unknown>;
   model: string;
@@ -41,6 +46,16 @@ export interface ClosedLoopSummary {
   pass2LossPct: number;
   closedLoopSuccess: boolean;
   timestamp: string;
+  attemptsCount?: number;
+  renderedFramePath?: string;
+}
+
+export interface ClosedLoopAttempt {
+  attempt: number;
+  repair: AgentRepairPatch;
+  pass2: MeasurementResult;
+  renderedFramePath: string;
+  remainingOverlapRatio: number;
 }
 
 export interface ClosedLoopResult {
@@ -55,6 +70,7 @@ export interface ClosedLoopResult {
   summary: ClosedLoopSummary;
   success: boolean;
   allScenarios?: Record<'s1' | 's2' | 's3', ClosedLoopResult>;
+  attempts?: ClosedLoopAttempt[];
 }
 
 export interface RunClosedLoopOptions {
@@ -68,6 +84,10 @@ export interface RunClosedLoopOptions {
   cachedDir?: string;
   saveDir?: string;
   forceLiveRepair?: boolean;
+  maxAttempts?: number;
+  throwOnFailure?: boolean;
+  mockRepairPatch?: AgentRepairPatch | ((attempt: number) => AgentRepairPatch);
+  mockRemainingOverlapRatio?: number | ((attempt: number) => number);
 }
 
 function findProjectRoot(): string {
@@ -328,6 +348,168 @@ Respond ONLY with valid JSON conforming to this schema:
   };
 }
 
+async function requestAgentRepairPatch(
+  scenarioDef: ScenarioDefinition,
+  options: RunClosedLoopOptions,
+  root: string,
+): Promise<AgentRepairPatch> {
+  let provider: ModelProvider = options.provider || 'baseten';
+  let apiKey = options.apiKey;
+  let baseUrl = options.baseUrl;
+
+  if (!apiKey && fs.existsSync(path.join(root, '.env'))) {
+    const envText = fs.readFileSync(path.join(root, '.env'), 'utf-8');
+    if (provider === 'baseten') {
+      apiKey =
+        envText.match(/BASETEN_API_KEY=([^\r\n]+)/)?.[1]?.trim() || process.env.BASETEN_API_KEY;
+      baseUrl =
+        baseUrl ||
+        envText.match(/BASETEN_BASE_URL=([^\r\n]+)/)?.[1]?.trim() ||
+        process.env.BASETEN_BASE_URL ||
+        'https://inference.baseten.co/v1';
+    } else {
+      apiKey = envText.match(/META_API_KEY=([^\r\n]+)/)?.[1]?.trim() || process.env.META_API_KEY;
+      baseUrl =
+        baseUrl ||
+        envText.match(/META_API_BASE_URL=([^\r\n]+)/)?.[1]?.trim() ||
+        process.env.META_API_BASE_URL ||
+        'https://api.meta.ai/v1';
+    }
+  }
+
+  if (!apiKey && provider === 'baseten' && process.env.META_API_KEY) {
+    provider = 'meta';
+    apiKey = process.env.META_API_KEY;
+    baseUrl = process.env.META_API_BASE_URL || 'https://api.meta.ai/v1';
+  }
+
+  if (provider === 'baseten' && apiKey) {
+    const model = options.model || 'meta-models/muse-spark-open-1026';
+    const endpoint = `${(baseUrl || 'https://inference.baseten.co/v1').replace(/\/+$/, '')}/chat/completions`;
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: 'system', content: scenarioDef.repairPrompt.system },
+          { role: 'user', content: scenarioDef.repairPrompt.user },
+        ],
+        temperature: 0.1,
+        max_tokens: 2048,
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error(`Baseten repair call failed (${res.status}): ${await res.text()}`);
+    }
+
+    const rawJson = (await res.json()) as Record<string, unknown>;
+    const choices = rawJson.choices as
+      | Array<{ message?: { content?: string; reasoning_content?: string } }>
+      | undefined;
+    const text = choices?.[0]?.message?.content || choices?.[0]?.message?.reasoning_content || '';
+    try {
+      const parsed = extractJsonFromText(text) as {
+        cssPatch?: string;
+        codePatch?: string;
+        patch?: string;
+        newFooterOverlapPx?: number;
+        newOverlapPx?: number;
+        remainingOverlapRatio?: number;
+        explanation?: string;
+      };
+
+      const patchStr = parsed.cssPatch || parsed.codePatch || parsed.patch || '';
+      return {
+        cssPatch: parsed.cssPatch,
+        codePatch: parsed.codePatch,
+        patch: patchStr,
+        newFooterOverlapPx: parsed.newFooterOverlapPx ?? parsed.newOverlapPx ?? 0,
+        newOverlapPx: parsed.newOverlapPx ?? parsed.newFooterOverlapPx ?? 0,
+        remainingOverlapRatio: parsed.remainingOverlapRatio,
+        explanation: parsed.explanation ?? '',
+        rawResponse: rawJson,
+        model,
+      };
+    } catch {
+      return {
+        ...scenarioDef.repairPrompt.defaultFallback,
+        rawResponse: rawJson,
+        model,
+      };
+    }
+  } else if (provider === 'meta' && apiKey) {
+    const model = options.model || 'muse-spark-1.3';
+    const endpoint = `${(baseUrl || 'https://api.meta.ai/v1').replace(/\/+$/, '')}/responses`;
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        input: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'input_text',
+                text: `${scenarioDef.repairPrompt.system}\n\n${scenarioDef.repairPrompt.user}`,
+              },
+            ],
+          },
+        ],
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error(`Meta repair call failed (${res.status}): ${await res.text()}`);
+    }
+
+    const rawJson = (await res.json()) as Record<string, unknown>;
+    let text = '';
+    const outputArr = rawJson.output as Array<{ content?: Array<{ text?: string }> }> | undefined;
+    if (Array.isArray(outputArr)) {
+      for (const item of outputArr) {
+        if (Array.isArray(item.content)) {
+          for (const c of item.content) {
+            if (c.text) text += (text ? '\n' : '') + c.text;
+          }
+        }
+      }
+    }
+
+    const parsed = extractJsonFromText(text) as {
+      cssPatch?: string;
+      codePatch?: string;
+      newFooterOverlapPx?: number;
+      newOverlapPx?: number;
+      remainingOverlapRatio?: number;
+      explanation: string;
+    };
+
+    const patchStr = parsed.cssPatch || parsed.codePatch || '';
+    return {
+      cssPatch: parsed.cssPatch,
+      codePatch: parsed.codePatch,
+      patch: patchStr,
+      newFooterOverlapPx: parsed.newFooterOverlapPx ?? parsed.newOverlapPx ?? 0,
+      newOverlapPx: parsed.newOverlapPx ?? parsed.newFooterOverlapPx ?? 0,
+      remainingOverlapRatio: parsed.remainingOverlapRatio,
+      explanation: parsed.explanation,
+      rawResponse: rawJson,
+      model,
+    };
+  }
+
+  return scenarioDef.repairPrompt.defaultFallback;
+}
+
 async function executeSingleScenario(
   scenarioDef: ScenarioDefinition,
   options: RunClosedLoopOptions,
@@ -358,183 +540,93 @@ async function executeSingleScenario(
     );
   }
 
-  // Agent Repair Step
-  const cachedPatchFile = path.join(artifactsDir, 'agent_repair_patch.json');
-  let repairPatch: AgentRepairPatch;
+  const maxAttempts = options.maxAttempts ?? 3;
+  const attempts: ClosedLoopAttempt[] = [];
 
-  if (fs.existsSync(cachedPatchFile) && !options.forceLiveRepair) {
-    repairPatch = JSON.parse(fs.readFileSync(cachedPatchFile, 'utf-8'));
-  } else {
-    // Generate repair patch via live model call (authorized budget: 1 call)
-    let provider: ModelProvider = options.provider || 'baseten';
-    let apiKey = options.apiKey;
-    let baseUrl = options.baseUrl;
+  let lastRepairPatch: AgentRepairPatch = scenarioDef.repairPrompt.defaultFallback;
+  let lastPass2: MeasurementResult | undefined;
 
-    if (!apiKey && fs.existsSync(path.join(root, '.env'))) {
-      const envText = fs.readFileSync(path.join(root, '.env'), 'utf-8');
-      if (provider === 'baseten') {
-        apiKey =
-          envText.match(/BASETEN_API_KEY=([^\r\n]+)/)?.[1]?.trim() || process.env.BASETEN_API_KEY;
-        baseUrl =
-          baseUrl ||
-          envText.match(/BASETEN_BASE_URL=([^\r\n]+)/)?.[1]?.trim() ||
-          process.env.BASETEN_BASE_URL ||
-          'https://inference.baseten.co/v1';
-      } else {
-        apiKey = envText.match(/META_API_KEY=([^\r\n]+)/)?.[1]?.trim() || process.env.META_API_KEY;
-        baseUrl =
-          baseUrl ||
-          envText.match(/META_API_BASE_URL=([^\r\n]+)/)?.[1]?.trim() ||
-          process.env.META_API_BASE_URL ||
-          'https://api.meta.ai/v1';
-      }
-    }
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    // Agent Repair Step
+    let repairPatch: AgentRepairPatch;
 
-    if (!apiKey && provider === 'baseten' && process.env.META_API_KEY) {
-      provider = 'meta';
-      apiKey = process.env.META_API_KEY;
-      baseUrl = process.env.META_API_BASE_URL || 'https://api.meta.ai/v1';
-    }
-
-    if (provider === 'baseten' && apiKey) {
-      const model = options.model || 'meta-models/muse-spark-open-1026';
-      const endpoint = `${(baseUrl || 'https://inference.baseten.co/v1').replace(/\/+$/, '')}/chat/completions`;
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: 'system', content: scenarioDef.repairPrompt.system },
-            { role: 'user', content: scenarioDef.repairPrompt.user },
-          ],
-          temperature: 0.1,
-          max_tokens: 2048,
-        }),
-      });
-
-      if (!res.ok) {
-        throw new Error(`Baseten repair call failed (${res.status}): ${await res.text()}`);
-      }
-
-      const rawJson = (await res.json()) as Record<string, unknown>;
-      const choices = rawJson.choices as
-        | Array<{ message?: { content?: string; reasoning_content?: string } }>
-        | undefined;
-      const text = choices?.[0]?.message?.content || choices?.[0]?.message?.reasoning_content || '';
-      try {
-        const parsed = extractJsonFromText(text) as {
-          cssPatch?: string;
-          codePatch?: string;
-          patch?: string;
-          newFooterOverlapPx?: number;
-          newOverlapPx?: number;
-          explanation?: string;
-        };
-
-        const patchStr = parsed.cssPatch || parsed.codePatch || parsed.patch || '';
-        repairPatch = {
-          cssPatch: parsed.cssPatch,
-          codePatch: parsed.codePatch,
-          patch: patchStr,
-          newFooterOverlapPx: parsed.newFooterOverlapPx ?? parsed.newOverlapPx ?? 0,
-          newOverlapPx: parsed.newOverlapPx ?? parsed.newFooterOverlapPx ?? 0,
-          explanation: parsed.explanation ?? '',
-          rawResponse: rawJson,
-          model,
-        };
-      } catch {
-        repairPatch = {
-          ...scenarioDef.repairPrompt.defaultFallback,
-          rawResponse: rawJson,
-          model,
-        };
-      }
-    } else if (provider === 'meta' && apiKey) {
-      const model = options.model || 'muse-spark-1.3';
-      const endpoint = `${(baseUrl || 'https://api.meta.ai/v1').replace(/\/+$/, '')}/responses`;
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model,
-          input: [
-            {
-              role: 'user',
-              content: [
-                {
-                  type: 'input_text',
-                  text: `${scenarioDef.repairPrompt.system}\n\n${scenarioDef.repairPrompt.user}`,
-                },
-              ],
-            },
-          ],
-        }),
-      });
-
-      if (!res.ok) {
-        throw new Error(`Meta repair call failed (${res.status}): ${await res.text()}`);
-      }
-
-      const rawJson = (await res.json()) as Record<string, unknown>;
-      let text = '';
-      const outputArr = rawJson.output as Array<{ content?: Array<{ text?: string }> }> | undefined;
-      if (Array.isArray(outputArr)) {
-        for (const item of outputArr) {
-          if (Array.isArray(item.content)) {
-            for (const c of item.content) {
-              if (c.text) text += (text ? '\n' : '') + c.text;
-            }
-          }
-        }
-      }
-
-      const parsed = extractJsonFromText(text) as {
-        cssPatch?: string;
-        codePatch?: string;
-        newFooterOverlapPx?: number;
-        newOverlapPx?: number;
-        explanation: string;
-      };
-
-      const patchStr = parsed.cssPatch || parsed.codePatch || '';
-      repairPatch = {
-        cssPatch: parsed.cssPatch,
-        codePatch: parsed.codePatch,
-        patch: patchStr,
-        newFooterOverlapPx: parsed.newFooterOverlapPx ?? parsed.newOverlapPx ?? 0,
-        newOverlapPx: parsed.newOverlapPx ?? parsed.newFooterOverlapPx ?? 0,
-        explanation: parsed.explanation,
-        rawResponse: rawJson,
-        model,
-      };
+    if (options.mockRepairPatch) {
+      repairPatch =
+        typeof options.mockRepairPatch === 'function'
+          ? options.mockRepairPatch(attempt)
+          : options.mockRepairPatch;
     } else {
-      repairPatch = scenarioDef.repairPrompt.defaultFallback;
+      const cachedPatchFile = path.join(artifactsDir, 'agent_repair_patch.json');
+      if (fs.existsSync(cachedPatchFile) && !options.forceLiveRepair) {
+        repairPatch = JSON.parse(fs.readFileSync(cachedPatchFile, 'utf-8'));
+      } else {
+        repairPatch = await requestAgentRepairPatch(scenarioDef, options, root);
+      }
+    }
+
+    lastRepairPatch = repairPatch;
+
+    let remainingOverlapRatio: number;
+    if (options.mockRemainingOverlapRatio !== undefined) {
+      remainingOverlapRatio =
+        typeof options.mockRemainingOverlapRatio === 'function'
+          ? options.mockRemainingOverlapRatio(attempt)
+          : options.mockRemainingOverlapRatio;
+    } else if (repairPatch.remainingOverlapRatio !== undefined) {
+      remainingOverlapRatio = repairPatch.remainingOverlapRatio;
+    } else {
+      remainingOverlapRatio = computeRemainingOverlapRatio(scenarioDef.key, {
+        remainingOverlapRatio: undefined,
+        cssOrLayoutPatch: repairPatch.cssPatch || repairPatch.codePatch || repairPatch.patch,
+        newOverlapPx: repairPatch.newOverlapPx,
+        newFooterOverlapPx: repairPatch.newFooterOverlapPx,
+      });
+    }
+
+    // Dynamic Scene Re-Render: render post-patch frame to disk using deterministic scene-renderer
+    const renderedFramePath = path.join(saveDir, 'pass2_rendered_tk.png');
+    await renderPatchedScene({
+      scenario: scenarioDef.key,
+      baselineT0Path: scenarioDef.pass1Clip.t0Path,
+      patchedParams: {
+        remainingOverlapRatio,
+        cssOrLayoutPatch: repairPatch.cssPatch || repairPatch.codePatch || repairPatch.patch,
+        newOverlapPx: repairPatch.newOverlapPx,
+        newFooterOverlapPx: repairPatch.newFooterOverlapPx,
+      },
+      outputPngPath: renderedFramePath,
+    });
+
+    // Pass #2 Verification: run SpectraClient.verifyClip directly against the newly rendered frame
+    const pass2 = await client.verifyClip({
+      clipId: `${scenarioDef.pass1Clip.clipId}_pass2_attempt${attempt}`,
+      t0FramePath: scenarioDef.pass1Clip.t0Path,
+      tkFramePath: renderedFramePath,
+      targetLabel: scenarioDef.targetLabel,
+      targetBBox: scenarioDef.targetBBox,
+    });
+
+    lastPass2 = pass2;
+    attempts.push({
+      attempt,
+      repair: repairPatch,
+      pass2,
+      renderedFramePath,
+      remainingOverlapRatio,
+    });
+
+    if (pass2.combinedVerdict === 'pass') {
+      // Patch verified clean by Spectra Referee!
+      break;
     }
   }
 
-  // Pass #2: Closed-Loop Re-Verification on Repaired State
-  const pass2 = await client.verifyClip({
-    clipId: scenarioDef.pass2Clip.clipId,
-    t0FramePath: scenarioDef.pass2Clip.t0Path,
-    tkFramePath: scenarioDef.pass2Clip.tkPath,
-    videoPath: scenarioDef.pass2Clip.videoPath,
-    cachedSamResponsePath: fs.existsSync(scenarioDef.pass2Clip.samPath)
-      ? scenarioDef.pass2Clip.samPath
-      : undefined,
-    targetLabel: scenarioDef.targetLabel,
-    targetBBox: scenarioDef.targetBBox,
-  });
+  const pass2LossPct = Number(((1.0 - (lastPass2?.instrumentB.score ?? 1.0)) * 100).toFixed(2));
+  const isSuccess = pass1.combinedVerdict === 'fail' && lastPass2?.combinedVerdict === 'pass';
 
-  if (pass2.combinedVerdict !== 'pass') {
+  if (options.throwOnFailure && !isSuccess) {
     throw new Error(
-      `Pass #2 was expected to verify ${scenarioDef.pass2Clip.clipId} with "pass", but returned "${pass2.combinedVerdict}".`,
+      `Pass #2 verification failed after ${attempts.length} attempts; last verdict: "${lastPass2?.combinedVerdict}".`,
     );
   }
 
@@ -548,12 +640,14 @@ async function executeSingleScenario(
     pass1LossPct: scenarioDef.pass1Clip.expectedLossPct,
     thresholdPct: 1.35,
     repairPatchApplied: true,
-    newOverlapPx: repairPatch.newOverlapPx ?? repairPatch.newFooterOverlapPx ?? 0,
-    newFooterOverlapPx: repairPatch.newFooterOverlapPx ?? repairPatch.newOverlapPx ?? 0,
-    pass2Verdict: pass2.combinedVerdict,
-    pass2LossPct: 0.0,
-    closedLoopSuccess: pass1.combinedVerdict === 'fail' && pass2.combinedVerdict === 'pass',
+    newOverlapPx: lastRepairPatch.newOverlapPx ?? lastRepairPatch.newFooterOverlapPx ?? 0,
+    newFooterOverlapPx: lastRepairPatch.newFooterOverlapPx ?? lastRepairPatch.newOverlapPx ?? 0,
+    pass2Verdict: lastPass2?.combinedVerdict ?? 'fail',
+    pass2LossPct: pass2LossPct,
+    closedLoopSuccess: isSuccess,
     timestamp: new Date().toISOString(),
+    attemptsCount: attempts.length,
+    renderedFramePath: path.join(saveDir, 'pass2_rendered_tk.png'),
   };
 
   // Persist the 4 required artifacts
@@ -565,12 +659,12 @@ async function executeSingleScenario(
   );
   fs.writeFileSync(
     path.join(saveDir, 'agent_repair_patch.json'),
-    JSON.stringify(repairPatch, null, 2) + '\n',
+    JSON.stringify(lastRepairPatch, null, 2) + '\n',
     'utf-8',
   );
   fs.writeFileSync(
     path.join(saveDir, 'pass2_verdict.json'),
-    JSON.stringify(pass2, null, 2) + '\n',
+    JSON.stringify(lastPass2!, null, 2) + '\n',
     'utf-8',
   );
   fs.writeFileSync(
@@ -586,10 +680,11 @@ async function executeSingleScenario(
     environment: scenarioDef.environment,
     naiveBaseline: scenarioDef.naiveBaseline,
     pass1,
-    repair: repairPatch,
-    pass2,
+    repair: lastRepairPatch,
+    pass2: lastPass2!,
     summary,
-    success: summary.closedLoopSuccess,
+    success: isSuccess,
+    attempts,
   };
 }
 

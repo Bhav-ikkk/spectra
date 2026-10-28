@@ -8,3 +8,4 @@ export * from './client.js';
 export * from './types.js';
 export * from './closed-loop.js';
 export * from './benchmark-runner.js';
+export * from './scene-renderer.js';

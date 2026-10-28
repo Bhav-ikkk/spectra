@@ -9,7 +9,23 @@
       "rSam": 0.846350759428864,
       "estimatedOcclusion": 0.15364924057113605,
       "baselineArea": 17579,
-      "evalArea": 14878
+      "evalArea": 14878,
+      "detectedBBox": {
+        "x": 473,
+        "y": 610,
+        "width": 334,
+        "height": 53
+      },
+      "frameAreas": [
+        17579,
+        17358,
+        17390,
+        16542,
+        15386,
+        14916,
+        14909,
+        14878
+      ]
     }
   },
   "instrumentB": {
