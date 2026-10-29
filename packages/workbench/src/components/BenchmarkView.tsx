@@ -2,13 +2,15 @@ import React, { useState } from 'react';
 import {
   BarChart3,
   Table,
+  X,
 } from 'lucide-react';
 
-interface BenchmarkViewProps {
+export interface BenchmarkViewProps {
   report?: Record<string, unknown>;
+  onClose?: () => void;
 }
 
-export const BenchmarkView: React.FC<BenchmarkViewProps> = ({ report: _report }) => {
+export const BenchmarkView: React.FC<BenchmarkViewProps> = ({ report: _report, onClose }) => {
   const [metricMode, setMetricMode] = useState<'false_pass' | 'detection'>('false_pass');
   const [displayMode, setDisplayMode] = useState<'bars' | 'table'>('bars');
 
@@ -151,6 +153,17 @@ export const BenchmarkView: React.FC<BenchmarkViewProps> = ({ report: _report })
               Table
             </button>
           </div>
+
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-[#86868B] hover:text-[#F5F5F7] hover:bg-white/10 active:scale-95 transition-all cursor-pointer ml-1"
+              title="Close modal (Esc)"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
 

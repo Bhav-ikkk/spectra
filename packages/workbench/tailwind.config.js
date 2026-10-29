@@ -5,6 +5,17 @@ export default {
   theme: {
     extend: {
       colors: {
+        apple: {
+          canvas: '#090A0C',
+          card: '#111318',
+          inset: '#171A21',
+          text: '#F5F5F7',
+          muted: '#86868B',
+          blue: '#0071E3',
+          'blue-hover': '#0077ED',
+          red: '#FF453A',
+          green: '#30D158',
+        },
         paper: {
           DEFAULT: '#0B0C0E',
           base: '#0B0C0E',

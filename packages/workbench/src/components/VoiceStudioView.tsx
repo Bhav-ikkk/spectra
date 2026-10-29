@@ -5,17 +5,20 @@ import {
   Sparkles,
   RotateCcw,
   FileCode,
+  X,
 } from 'lucide-react';
 import { startAudioRecording, type AudioRecordingSession } from '../utils/audio-recorder.js';
 
-interface VoiceStudioViewProps {
+export interface VoiceStudioViewProps {
   invariants: Record<string, unknown>;
   voiceTranscript: Record<string, unknown>;
+  onClose?: () => void;
 }
 
 export const VoiceStudioView: React.FC<VoiceStudioViewProps> = ({
   invariants,
   voiceTranscript,
+  onClose,
 }) => {
   const defaultTranscript =
     (voiceTranscript?.transcript as string) ||
@@ -294,7 +297,19 @@ export const VoiceStudioView: React.FC<VoiceStudioViewProps> = ({
               <FileCode className="w-3.5 h-3.5 text-signal-emerald" />
               <span className="whitespace-nowrap">Compiled Contract: .spectra/invariants.json</span>
             </div>
-            <span className="text-[10px] font-mono text-signal-emerald">JSON-Schema Valid</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono text-signal-emerald">JSON-Schema Valid</span>
+              {onClose && (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="p-1 rounded-lg text-[#86868B] hover:text-[#F5F5F7] hover:bg-white/10 active:scale-95 transition-all cursor-pointer ml-1"
+                  title="Close modal (Esc)"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="p-4">

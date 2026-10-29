@@ -1,12 +1,16 @@
 import React from 'react';
-import { ShieldCheck, Layers, BarChart3, Mic, UploadCloud, Eye } from 'lucide-react';
+import { BarChart3, Mic, Eye, Check } from 'lucide-react';
 
+export type WizardStep = 1 | 2 | 3;
 export type TabMode = 'dropzone' | 'arena' | 'benchmark' | 'voice';
 
-interface TopBarProps {
-  activeTab: TabMode;
-  setActiveTab: (tab: TabMode) => void;
-  calibration: {
+export interface TopBarProps {
+  currentStep: WizardStep;
+  onStepChange: (step: WizardStep) => void;
+  onOpenBenchmark: () => void;
+  onOpenVoice: () => void;
+  onOpenLens: () => void;
+  calibration?: {
     sigma_noise: number;
     threshold: number;
     delta: number;
@@ -16,117 +20,128 @@ interface TopBarProps {
     meta: boolean;
     baseten: boolean;
   };
-  onOpenLens?: () => void;
+  // Optional legacy props for backward compatibility
+  activeTab?: TabMode;
+  setActiveTab?: (tab: TabMode) => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
-  activeTab,
-  setActiveTab,
-  calibration,
-  providerStatus,
+  currentStep,
+  onStepChange,
+  onOpenBenchmark,
+  onOpenVoice,
   onOpenLens,
+  calibration,
 }) => {
-  const tabs: Array<{ id: TabMode; label: string; icon: React.ReactNode }> = [
-    { id: 'dropzone', label: 'Upload & Verify Video', icon: <UploadCloud className="w-3.5 h-3.5" /> },
-    { id: 'arena', label: 'Closed-Loop Repair Arena', icon: <Layers className="w-3.5 h-3.5" /> },
-    { id: 'benchmark', label: '45-Clip Benchmark', icon: <BarChart3 className="w-3.5 h-3.5" /> },
-    { id: 'voice', label: 'Voice Invariants', icon: <Mic className="w-3.5 h-3.5" /> },
+  const steps: Array<{ step: WizardStep; label: string; shortLabel: string }> = [
+    { step: 1, label: 'Step 1 · Select or Upload Clip', shortLabel: '1 · Select Clip' },
+    { step: 2, label: 'Step 2 · Optical Scan & Catch', shortLabel: '2 · Optical Scan' },
+    { step: 3, label: 'Step 3 · Auto-Patch & Verify', shortLabel: '3 · Auto-Patch' },
   ];
 
   return (
-    <header className="h-12 w-full bg-paper-base border-b border-rule-border flex items-center justify-between px-3 z-50 select-none shrink-0 overflow-x-clip whitespace-nowrap">
-      {/* Left: Brand Identity & Subhead (Single Line, Never Wraps) */}
-      <div className="flex items-center gap-2.5 shrink-0 whitespace-nowrap">
-        <div className="w-6 h-6 rounded bg-paper-surface border border-rule-border flex items-center justify-center shrink-0">
-          <ShieldCheck className="w-3.5 h-3.5 text-signal-cool" />
+    <header className="h-14 w-full px-6 border-b border-white/[0.08] bg-[#090A0C]/90 backdrop-blur-xl sticky top-0 z-40 flex items-center justify-between select-none shrink-0">
+      {/* Left: macOS Window Controls & Title */}
+      <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-1.5" aria-hidden="true">
+          <div className="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]/60 shadow-xs" />
+          <div className="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]/60 shadow-xs" />
+          <div className="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]/60 shadow-xs" />
         </div>
-        <div className="flex items-center gap-1.5 shrink-0 text-xs">
-          <span className="font-semibold text-ink-primary">Spectra</span>
-          <span className="px-1 py-0.2 rounded bg-paper-surface border border-rule-border text-ink-muted font-mono text-[10px]">
-            v3.0
-          </span>
-          <span className="text-rule-active text-xs">/</span>
-          <span className="text-ink-muted text-xs font-normal hidden md:inline">
-            Visual Referee for AI Agents
+
+        <div className="flex items-center gap-2 ml-1">
+          <span className="text-base font-semibold tracking-tight text-[#F5F5F7]">Spectra</span>
+          <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-white/[0.06] text-[#86868B] border border-white/[0.08]">
+            Visual Referee
           </span>
         </div>
       </div>
 
-      {/* Center: 4 Workspaces Tabs (Single Line, Hallmark Restrained) */}
-      <nav className="flex items-center gap-1 bg-paper-well p-0.5 rounded border border-rule-border shrink-0 whitespace-nowrap">
-        {tabs.map((tab) => {
-          const isActive = activeTab === tab.id;
+      {/* Center: Interactive 3-Step Segmented Stepper */}
+      <nav
+        aria-label="Wizard Steps"
+        className="flex items-center p-1 rounded-xl bg-[#171A21] border border-white/[0.08] shadow-inner"
+      >
+        {steps.map(({ step, label, shortLabel }) => {
+          const isActive = currentStep === step;
+          const isCompleted = currentStep > step;
+
           return (
             <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition-colors shrink-0 whitespace-nowrap ${
+              key={step}
+              type="button"
+              onClick={() => onStepChange(step)}
+              className={`relative flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 active:scale-[0.98] cursor-pointer whitespace-nowrap ${
                 isActive
-                  ? 'bg-paper-surface text-ink-primary border border-rule-active font-medium'
-                  : 'text-ink-muted hover:text-ink-primary border border-transparent'
+                  ? 'bg-[#0071E3] text-white shadow-sm'
+                  : isCompleted
+                    ? 'text-[#F5F5F7] hover:bg-white/[0.06]'
+                    : 'text-[#86868B] hover:text-[#F5F5F7] hover:bg-white/[0.04]'
               }`}
             >
-              {tab.icon}
-              <span className="whitespace-nowrap">{tab.label}</span>
+              {isCompleted ? (
+                <Check className="w-3 h-3 text-[#30D158] stroke-[2.5]" />
+              ) : (
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    isActive ? 'bg-white' : 'bg-white/20'
+                  }`}
+                />
+              )}
+              <span className="hidden md:inline">{label}</span>
+              <span className="md:hidden">{shortLabel}</span>
             </button>
           );
         })}
       </nav>
 
-      {/* Right: Rule 2 Calibration Citation + Spectra Lens Trigger */}
-      <div className="flex items-center gap-2 shrink-0 whitespace-nowrap">
-        {/* Spectra Lens Trigger */}
+      {/* Right: Modals & Tool Triggers */}
+      <div className="flex items-center gap-2 shrink-0">
+        {/* Benchmark Data Modal Trigger */}
         <button
-          onClick={onOpenLens}
-          className="flex items-center gap-1.5 px-2 py-1 rounded bg-paper-surface hover:bg-obsidian-800 border border-rule-border hover:border-rule-active text-xs text-ink-primary font-mono transition-colors shrink-0 whitespace-nowrap"
-          title="Push-to-capture visual referee overlay (Ctrl+Shift+Space)"
+          type="button"
+          onClick={onOpenBenchmark}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.10] border border-white/[0.08] text-xs font-medium text-[#F5F5F7] active:scale-[0.98] transition-all cursor-pointer"
         >
-          <Eye className="w-3 h-3 text-signal-cool" />
-          <span className="whitespace-nowrap">Lens</span>
-          <kbd className="hidden lg:inline-block px-1 py-0.2 rounded bg-paper-well text-[9px] text-ink-muted border border-rule-border whitespace-nowrap">
+          <BarChart3 className="w-3.5 h-3.5 text-[#0071E3]" />
+          <span className="hidden lg:inline">Benchmark Data (45 Clips)</span>
+          <span className="lg:hidden">Benchmark</span>
+        </button>
+
+        {/* Voice Rule Modal Trigger */}
+        <button
+          type="button"
+          onClick={onOpenVoice}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.10] border border-white/[0.08] text-xs font-medium text-[#F5F5F7] active:scale-[0.98] transition-all cursor-pointer"
+        >
+          <Mic className="w-3.5 h-3.5 text-[#30D158]" />
+          <span>Voice Rule</span>
+        </button>
+
+        {/* Lens Trigger */}
+        <button
+          type="button"
+          onClick={onOpenLens}
+          title="Spectra Lens Push-to-Capture (Ctrl+Shift+Space)"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.10] border border-white/[0.08] text-xs font-medium text-[#F5F5F7] active:scale-[0.98] transition-all cursor-pointer"
+        >
+          <Eye className="w-3.5 h-3.5 text-[#38BDF8]" />
+          <span>Lens</span>
+          <kbd className="hidden xl:inline-block px-1.5 py-0.2 rounded bg-white/[0.06] text-[10px] text-[#86868B] font-mono border border-white/[0.08]">
             Ctrl+Shift+Space
           </kbd>
         </button>
 
-        {/* Rule 2 Calibrated Readout */}
-        <div
-          title={`Rule 2 Calibrated Measurement: ${calibration.runIdCitation}`}
-          className="flex items-center gap-2 px-2.5 py-1 rounded bg-paper-well border border-rule-border text-ink-muted text-[11px] font-mono shrink-0 whitespace-nowrap"
-        >
-          <span className="w-1.5 h-1.5 rounded-full bg-signal-emerald shrink-0" />
-          <span className="hidden sm:inline">
-            3σ: <span className="text-ink-primary font-semibold">{(calibration.threshold * 100).toFixed(2)}%</span>
-          </span>
-          <span className="text-rule-border hidden md:inline">|</span>
-          <span className="hidden md:inline">
-            σ: <span className="text-ink-primary">{(calibration.sigma_noise * 100).toFixed(2)}%</span>
-          </span>
-          <span className="text-rule-border hidden lg:inline">|</span>
-          <span className="hidden lg:inline">
-            Δ: <span className="text-ink-primary">{(calibration.delta * 100).toFixed(2)}%</span>
-          </span>
-        </div>
-
-        {/* SAM 3.1 & Model Indicators */}
-        <div className="hidden xl:flex items-center gap-2 px-2 py-1 rounded bg-paper-well border border-rule-border text-[10px] text-ink-muted font-mono shrink-0 whitespace-nowrap">
-          <span className="flex items-center gap-1">
-            <span
-              className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                providerStatus?.meta ? 'bg-signal-emerald' : 'bg-rule-active'
-              }`}
-            />
-            <span>SAM 3.1</span>
-          </span>
-          <span className="text-rule-border">/</span>
-          <span className="flex items-center gap-1">
-            <span
-              className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                providerStatus?.baseten ? 'bg-signal-emerald' : 'bg-rule-active'
-              }`}
-            />
-            <span>Spark</span>
-          </span>
-        </div>
+        {/* Subtle Rule 2 Noise Floor Indicator */}
+        {calibration && (
+          <div
+            title={`Rule 2 Measured Calibration: ${calibration.runIdCitation}`}
+            className="hidden 2xl:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#171A21] border border-white/[0.08] text-[11px] font-mono text-[#86868B]"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-[#30D158]" />
+            <span>3σ: {(calibration.threshold * 100).toFixed(2)}%</span>
+          </div>
+        )}
       </div>
     </header>
   );
