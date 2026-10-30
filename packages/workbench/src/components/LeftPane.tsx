@@ -72,12 +72,12 @@ export const LeftPane: React.FC<LeftPaneProps> = ({
   const contractRule =
     currentId === 's2'
       ? {
-          ruleId: 'pay-button-visible',
-          target: 'Target: Pay $149.00',
+          ruleId: 'mobile-pay-button-visible',
+          target: 'Target: Pay $149.00 Button',
         }
       : currentId === 's1'
         ? {
-            ruleId: 'revenue-legend-visible',
+            ruleId: 'canvas-legend-unobstructed',
             target: 'Target: Revenue Series Legend',
           }
         : {
@@ -88,18 +88,19 @@ export const LeftPane: React.FC<LeftPaneProps> = ({
   const invList = (invariants as { invariants?: Array<{ id: string; matcher?: { target: string } }> })
     ?.invariants;
   const matchedInv = invList?.find((i) => i.id.includes(currentId));
-  const displayRuleId = matchedInv?.id || contractRule.ruleId;
-  const displayTarget = matchedInv?.matcher?.target
-    ? `Target: ${matchedInv.matcher.target}`
-    : contractRule.target;
+  const displayRuleId = contractRule.ruleId;
+  const displayTarget = contractRule.target;
 
   return (
     <aside className="w-[270px] shrink-0 bg-[#EAE7DF] border-r border-[#B8B4A9] h-full flex flex-col justify-between overflow-y-auto select-none font-sans">
       <div className="flex flex-col">
         {/* Top Header */}
-        <div className="h-9 px-3.5 border-b border-[#B8B4A9] flex items-center shrink-0">
+        <div className="h-9 px-3.5 border-b border-[#B8B4A9] flex items-center justify-between shrink-0">
           <span className="font-mono text-xs font-semibold tracking-[0.06em] uppercase text-[#181816]">
             REPAIR SCENARIOS
+          </span>
+          <span className="font-mono text-[11px] text-[#4A4843]">
+            3 Available
           </span>
         </div>
 

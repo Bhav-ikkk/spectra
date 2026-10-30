@@ -51,14 +51,39 @@ describe('@spectra/workbench - Field Monitor UI (Step 1) Component Architecture'
     expect(el).toBeDefined();
   });
 
-  it('renders SubPixelMatrixLoupe with target label', () => {
+  it('renders SubPixelMatrixLoupe with target label and interactive tab support', () => {
     const el = React.createElement(SubPixelMatrixLoupe, {
       targetLabel: 'Pay $149.00',
       lossPercent: 15.0,
       isRepaired: false,
+      targetBBox: [475, 610, 330, 52],
+      t0Area: 17536,
+      tkArea: 14878,
+      rSam: 0.8464,
+      visRatio: 0.85,
     });
     expect(el).toBeDefined();
     expect(el.props.targetLabel).toBe('Pay $149.00');
+    expect(el.props.t0Area).toBe(17536);
+    expect(el.props.tkArea).toBe(14878);
+  });
+
+  it('renders TelemetryPane with dynamic scenario telemetry for S1, S2, and S3', () => {
+    const s2El = React.createElement(TelemetryPane, {
+      scenarioId: 's2',
+      phase: 2,
+      activeFrameIndex: 7,
+    });
+    expect(s2El).toBeDefined();
+    expect(s2El.props.scenarioId).toBe('s2');
+
+    const s3El = React.createElement(TelemetryPane, {
+      scenarioId: 's3',
+      phase: 4,
+    });
+    expect(s3El).toBeDefined();
+    expect(s3El.props.scenarioId).toBe('s3');
+    expect(s3El.props.phase).toBe(4);
   });
 
   it('validates TopBar component structure matching image_41bab6.jpg', () => {

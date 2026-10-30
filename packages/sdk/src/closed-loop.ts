@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import type { MeasurementResult } from '@spectra/core';
 import { extractJsonFromText, type ModelProvider } from '@spectra/invariant-compiler';
 import { SpectraClient } from './client.js';
@@ -83,6 +84,7 @@ export interface RunClosedLoopOptions {
   model?: string;
   cachedDir?: string;
   saveDir?: string;
+  outputDir?: string;
   forceLiveRepair?: boolean;
   maxAttempts?: number;
   throwOnFailure?: boolean;
@@ -519,7 +521,21 @@ async function executeSingleScenario(
   const artifactsDir = options.cachedDir
     ? path.resolve(options.cachedDir)
     : path.join(root, scenarioDef.defaultArtifactsDir);
-  const saveDir = options.saveDir ? path.resolve(options.saveDir) : artifactsDir;
+
+  const isTestOrTransient = Boolean(
+    process.env.VITEST ||
+      process.env.NODE_ENV === 'test' ||
+      process.env.SPECTRA_TEMP_OUTPUT ||
+      (!options.saveDir && !options.outputDir),
+  );
+
+  const saveDir = options.saveDir
+    ? path.resolve(options.saveDir)
+    : options.outputDir
+      ? path.resolve(options.outputDir)
+      : isTestOrTransient
+        ? path.join(os.tmpdir(), 'spectra-closed-loop', scenarioDef.key)
+        : artifactsDir;
 
   // Pass #1: Spectra Referee verification on clipped clip
   const pass1 = await client.verifyClip({

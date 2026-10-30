@@ -21,6 +21,7 @@ export const App: React.FC = () => {
   const [activeClipId, setActiveClipId] = useState<string>('mobile_mp4_015_v1');
   // Default to Phase 2 (Spectra Rejection)
   const [scenarioPhase, setScenarioPhase] = useState<1 | 2 | 3 | 4>(2);
+  const [activeFrameIndex, setActiveFrameIndex] = useState<number>(7);
   const [isPatching, setIsPatching] = useState(false);
   const [showSamMask, setShowSamMask] = useState(true);
   const [isLensOpen, setIsLensOpen] = useState(false);
@@ -62,7 +63,7 @@ export const App: React.FC = () => {
 
   const handleApplyPatch = async () => {
     setIsPatching(true);
-    setScenarioPhase(3); // Patch Synthesis
+    setScenarioPhase(3); // 03. Patch Synthesis
     try {
       const res = await fetch('/api/closed-loop-live', {
         method: 'POST',
@@ -70,7 +71,7 @@ export const App: React.FC = () => {
         body: JSON.stringify({ scenario: activeScenarioId }),
       });
       if (res.ok) {
-        setScenarioPhase(4); // Verified Pass
+        setScenarioPhase(4); // 04. Pass #2 Re-Verify
       } else {
         setScenarioPhase(4);
       }
@@ -79,6 +80,11 @@ export const App: React.FC = () => {
     } finally {
       setIsPatching(false);
     }
+  };
+
+  const handleResetPass = () => {
+    setScenarioPhase(2);
+    setActiveFrameIndex(7);
   };
 
   const currentScenario = data.scenarios[activeScenarioId];
@@ -114,10 +120,12 @@ export const App: React.FC = () => {
             setActiveScenarioId={(id) => {
               setActiveScenarioId(id);
               setScenarioPhase(2);
+              setActiveFrameIndex(7);
             }}
             onSelectScenario={(id) => {
               setActiveScenarioId(id);
               setScenarioPhase(2);
+              setActiveFrameIndex(7);
             }}
             clips={data.clips}
             activeClipId={activeClipId}
@@ -130,6 +138,9 @@ export const App: React.FC = () => {
           {/* Center Stage: flex-1 min-w-0 min-h-0 */}
           <main className="flex-1 min-w-0 min-h-0 flex flex-col bg-[#E5E2DA] bg-[radial-gradient(#B5B1A6_1px,transparent_1px)] [background-size:12px_12px] overflow-hidden relative">
             <OpticalViewport
+              scenarioId={activeScenarioId}
+              activeFrameIndex={activeFrameIndex}
+              onFrameChange={setActiveFrameIndex}
               t0Url={
                 scenarioPhase >= 4
                   ? currentScenario?.pass2?.t0AssetUrl ||
@@ -176,9 +187,15 @@ export const App: React.FC = () => {
                   ? [820, 240, 220, 48]
                   : activeScenarioId === 's2'
                     ? [475, 610, 330, 52]
-                    : [909, 600, 342, 51]
+                    : [910, 600, 340, 50]
               }
-              targetLabel={currentScenario?.targetLabel || 'Target Element'}
+              targetLabel={
+                activeScenarioId === 's1'
+                  ? 'Revenue Series Legend'
+                  : activeScenarioId === 's2'
+                    ? 'Pay $149.00'
+                    : 'Complete Checkout'
+              }
               verdict={scenarioPhase >= 4 ? 'pass' : 'fail'}
               scenarioPhase={scenarioPhase}
               environment={currentScenario?.environment}
@@ -187,12 +204,15 @@ export const App: React.FC = () => {
 
           {/* Right Inspector Rail: 320px fixed width, flush 1px left border */}
           <TelemetryPane
+            scenarioId={activeScenarioId}
             scenario={currentScenario}
             phase={scenarioPhase}
+            activeFrameIndex={activeFrameIndex}
             setPhase={setScenarioPhase}
             calibration={data.calibration}
             isPatching={isPatching}
             onApplyPatch={handleApplyPatch}
+            onResetPass={handleResetPass}
             showSamMask={showSamMask}
             onToggleSamMask={setShowSamMask}
           />

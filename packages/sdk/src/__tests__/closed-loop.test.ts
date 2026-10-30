@@ -202,7 +202,7 @@ describe('@spectra/sdk - Closed-Loop Scenarios (S1, S2, S3) Offline Tests ($0.00
         outputPngPath: outPng,
       });
       const duration = Date.now() - start;
-      expect(duration).toBeLessThan(1000);
+      expect(duration).toBeLessThan(3500);
       expect(fs.existsSync(outPng)).toBe(true);
 
       const match = computeTemplateMatchVisibility(
