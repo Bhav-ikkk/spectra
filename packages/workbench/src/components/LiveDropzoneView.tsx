@@ -1,16 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import {
-  UploadCloud,
-  Play,
-  Copy,
-  Check,
-  Target,
-  Maximize2,
-  ChevronDown,
-  ChevronRight,
-  ShieldAlert,
-  ShieldCheck,
-} from 'lucide-react';
+import { UploadCloud, Copy, Check, Target, Sparkles, Terminal, Layers } from 'lucide-react';
+import { RangefinderReticleOverlay } from './FieldMonitorPrimitives.js';
 
 interface PipelineStage {
   id: string;
@@ -25,42 +15,37 @@ interface SampleClip {
   title: string;
   targetLabel: string;
   expectedVerdict: 'REJECTED' | 'VERIFIED';
-  lossText: string;
   badge: string;
 }
 
 const SAMPLE_CLIPS: SampleClip[] = [
   {
     fileName: 'dom_catch_010_v1.mp4',
-    title: 'The Catch (S3)',
+    title: 'S3 · The Catch (DOM)',
     targetLabel: 'Complete Checkout',
     expectedVerdict: 'REJECTED',
-    lossText: '10.0% Edge Clip',
-    badge: 'FAIL · 10%',
+    badge: '10.0% Edge',
   },
   {
     fileName: 'canvas_015_v1.mp4',
-    title: 'HTML5 Canvas (S1)',
+    title: 'S1 · Canvas Collision',
     targetLabel: 'Revenue Series Legend',
     expectedVerdict: 'REJECTED',
-    lossText: '15.0% Tooltip Collision',
-    badge: 'FAIL · 15%',
+    badge: '15.0% Tooltip',
   },
   {
     fileName: 'mobile_mp4_015_v1.mp4',
-    title: 'Mobile MP4 (S2)',
+    title: 'S2 · Mobile MP4',
     targetLabel: 'Pay $149.00',
     expectedVerdict: 'REJECTED',
-    lossText: '15.0% Bottom Sheet Overlap',
-    badge: 'FAIL · 15%',
+    badge: '15.0% Overlap',
   },
   {
     fileName: 'canvas_000_v1.mp4',
-    title: 'Control Benchmark',
+    title: 'Control · 0% Clean',
     targetLabel: 'Revenue Series Legend',
     expectedVerdict: 'VERIFIED',
-    lossText: '0.0% Clean Unobstructed',
-    badge: 'PASS · 0%',
+    badge: '0.0% Clean',
   },
 ];
 
@@ -69,13 +54,6 @@ export const LiveDropzoneView: React.FC = () => {
   const [targetLabel, setTargetLabel] = useState<string>('Complete Checkout');
   const [uploadedVideoBase64, setUploadedVideoBase64] = useState<string | null>(null);
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
-  const [showManualBBox, setShowManualBBox] = useState<boolean>(false);
-  const [manualBBox, setManualBBox] = useState({ x: 909, y: 600, width: 342, height: 51 });
-  const [useAutoBBox, setUseAutoBBox] = useState<boolean>(true);
-
-  const [activeFrameView, setActiveFrameView] = useState<'tk' | 't0' | 'split'>('tk');
-  const [showMaskOverlay, setShowMaskOverlay] = useState<boolean>(true);
-  const [showReticle, setShowReticle] = useState<boolean>(true);
 
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -85,14 +63,10 @@ export const LiveDropzoneView: React.FC = () => {
   const [result, setResult] = useState<Record<string, any> | null>(null);
 
   useEffect(() => {
-    executeVerify('dom_catch_010_v1.mp4', 'Complete Checkout', true);
+    executeVerify('dom_catch_010_v1.mp4', 'Complete Checkout');
   }, []);
 
-  const executeVerify = async (
-    sampleFileName?: string,
-    overrideLabel?: string,
-    useAuto: boolean = useAutoBBox,
-  ) => {
+  const executeVerify = async (sampleFileName?: string, overrideLabel?: string) => {
     setIsRunning(true);
     setErrorMsg(null);
 
@@ -110,10 +84,6 @@ export const LiveDropzoneView: React.FC = () => {
       } else {
         payload.videoFileName = activeFileName;
         payload.videoPath = `benchmark/clips/${activeFileName}`;
-      }
-
-      if (!useAuto) {
-        payload.targetBBox = manualBBox;
       }
 
       const res = await fetch('/api/verify-live', {
@@ -154,617 +124,311 @@ export const LiveDropzoneView: React.FC = () => {
     setUploadedVideoBase64(null);
     setUploadedFileName(null);
     setTargetLabel(sample.targetLabel);
-    executeVerify(sample.fileName, sample.targetLabel, true);
+    executeVerify(sample.fileName, sample.targetLabel);
   };
 
   const resolvedBox = result?.resolvedBBox || { x: 909, y: 600, width: 342, height: 51 };
-  const t0Img = result?.t0Base64 || `/benchmark-assets/${selectedSample.replace('.mp4', '_t0.png')}`;
-  const tkImg = result?.tkBase64 || `/benchmark-assets/${selectedSample.replace('.mp4', '_tk.png')}`;
-  const tkMaskSvg = result?.tkSvgMaskPath || '';
+  const t0Img =
+    result?.t0DataUrl ||
+    result?.t0Base64 ||
+    `/benchmark-assets/${selectedSample.replace('.mp4', '_t0.png')}`;
+  const tkImg =
+    result?.tkDataUrl ||
+    result?.tkBase64 ||
+    `/benchmark-assets/${selectedSample.replace('.mp4', '_tk.png')}`;
+  const tkMaskSvg = result?.tkSvgMaskPath || result?.tkSvgPath || '';
   const isRejected = result?.verdict === 'fail' || result?.combinedVerdict === 'fail';
 
-  const defaultStages: PipelineStage[] = [
+  const stages: PipelineStage[] = [
     {
       id: 'frame_extract',
-      label: '01 · EXTRACT',
+      label: '01 · FRAME EXTRACT',
       status: 'completed',
-      durationMs: 14,
       detail: 'Frames t_0 & t_k isolated at 4.0 FPS (1280×720)',
     },
     {
       id: 'sam_segment',
-      label: '02 · SAM 3.1',
+      label: '02 · SAM 3.1 FRAME-0',
       status: 'completed',
-      durationMs: 182,
-      detail: `Frame-0 zero-bbox decoded: [${resolvedBox.x}, ${resolvedBox.y}, ${resolvedBox.width}, ${resolvedBox.height}]`,
+      detail: `Auto-bbox: [x=${resolvedBox.x}, y=${resolvedBox.y}, w=${resolvedBox.width}, h=${resolvedBox.height}]`,
     },
     {
       id: 'pixel_match',
-      label: '03 · PIXEL NCC',
+      label: '03 · PIXEL NCC & VISIBILITY',
       status: 'completed',
-      durationMs: 24,
-      detail: `Instrument B: visRatio = ${Number(result?.visRatio ?? 0.9).toFixed(4)} (${result?.pixelLossCount ?? 1700} px lost)`,
+      detail: `visRatio = ${Number(result?.visRatio ?? 0.9).toFixed(4)} (${result?.pixelLossCount ?? 1700} px loss)`,
     },
     {
       id: 'referee_verdict',
-      label: '04 · VERDICT',
+      label: '04 · CALIBRATED REFEREE',
       status: 'completed',
-      durationMs: 6,
-      detail: `Rule 2 calibrated: ${isRejected ? 'loss > 1.35% 3σ threshold' : 'within 3σ noise floor'} → ${isRejected ? 'REJECTED' : 'VERIFIED'}`,
+      detail: `Rule 2: ${isRejected ? 'loss > 1.35% threshold' : 'within noise floor'} → ${isRejected ? 'REJECTED' : 'VERIFIED'}`,
     },
   ];
-
-  const stages: PipelineStage[] = result?.pipelineStages?.length
-    ? result.pipelineStages
-    : defaultStages;
 
   const cliCommand =
     result?.cliCommandEquivalent ||
     `spectra verify --video benchmark/clips/${selectedSample || 'clip.mp4'} --target "${targetLabel}"`;
-  const mcpPayload = result?.mcpPayloadEquivalent
-    ? JSON.stringify(result.mcpPayloadEquivalent, null, 2)
-    : JSON.stringify(
-        {
-          jsonrpc: '2.0',
-          id: 1,
-          method: 'tools/call',
-          params: {
-            name: 'spectra_verify',
-            arguments: {
-              videoPath: `benchmark/clips/${selectedSample || 'clip.mp4'}`,
-              targetLabel,
-            },
-          },
-        },
-        null,
-        2,
-      );
+
+  const mcpPayload = result?.mcpPayloadEquivalent || {
+    method: 'tools/call',
+    params: {
+      name: 'spectra_verify',
+      arguments: {
+        videoPath: `benchmark/clips/${selectedSample || 'clip.mp4'}`,
+        targetLabel,
+      },
+    },
+  };
+
+  const handleCopyCli = () => {
+    navigator.clipboard.writeText(cliCommand);
+    setCopiedCli(true);
+    setTimeout(() => setCopiedCli(false), 2000);
+  };
+
+  const handleCopyMcp = () => {
+    navigator.clipboard.writeText(JSON.stringify(mcpPayload, null, 2));
+    setCopiedMcp(true);
+    setTimeout(() => setCopiedMcp(false), 2000);
+  };
 
   return (
-    <div className="flex-1 h-full flex bg-paper-base text-ink-primary overflow-hidden select-none">
-      {/* LEFT CONTROL COLUMN (320px Fixed Width) */}
-      <aside className="w-80 shrink-0 h-full border-r border-rule-border bg-paper-base flex flex-col justify-between overflow-y-auto min-h-0">
-        <div className="divide-y divide-rule-border">
-          {/* Section Header */}
-          <div className="px-3 py-2.5 bg-paper-surface">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-mono text-ink-muted">Input Video Clip</span>
-              <span className="text-[10px] font-mono text-signal-cool">MP4 / H.264</span>
+    <div className="flex-1 h-full flex bg-[#EAE7DF] text-[#181816] overflow-hidden select-none font-sans">
+      {/* LEFT COLUMN: Ingest & Pipeline Controls */}
+      <aside className="w-[300px] shrink-0 border-r border-[#B8B4A9] bg-[#EAE7DF] p-3.5 flex flex-col justify-between overflow-y-auto">
+        <div className="space-y-3.5">
+          {/* Header */}
+          <div className="border-b border-[#B8B4A9] pb-2 flex items-center justify-between">
+            <span className="font-mono text-xs font-semibold uppercase tracking-wider text-[#181816]">
+              VIDEO INGEST & PIPELINE
+            </span>
+            <span className="font-mono text-[10px] text-[#4A4843]">Auto-Ref</span>
+          </div>
+
+          {/* Mechanical Dashed Drop-Well */}
+          <label className="border-[1.5px] border-dashed border-[#8C887E] bg-[#DFDCD3] hover:bg-[#D6D3C9] rounded-[4px] p-4 text-center cursor-pointer block transition-colors">
+            <input
+              type="file"
+              accept="video/mp4"
+              className="hidden"
+              onChange={handleVideoUpload}
+            />
+            <div className="flex flex-col items-center gap-1.5 text-[#181816]">
+              <UploadCloud className="w-5 h-5" />
+              <span className="font-mono text-xs font-semibold">
+                {uploadedFileName ? uploadedFileName : '↑ DROP .MP4 VIDEO CLIP'}
+              </span>
+              <span className="font-mono text-[10px] text-[#4A4843]">
+                or click to browse local file
+              </span>
             </div>
-          </div>
+          </label>
 
-          {/* Video Dropzone */}
-          <div className="p-3 bg-paper-base">
-            <label
-              htmlFor="video-file-input"
-              className="w-full h-20 rounded border border-dashed border-rule-border hover:border-signal-cool bg-paper-well flex flex-col items-center justify-center cursor-pointer transition-colors px-2 text-center"
-            >
-              <input
-                id="video-file-input"
-                type="file"
-                accept="video/mp4,video/*,image/png"
-                onChange={handleVideoUpload}
-                className="hidden"
-              />
-              <UploadCloud className="w-4 h-4 text-ink-muted mb-1" />
-              <div className="text-[11px] text-ink-primary font-medium">
-                {uploadedFileName ? uploadedFileName : 'Drop .mp4 video clip here'}
-              </div>
-              <div className="text-[10px] text-ink-muted font-mono mt-0.5">
-                {uploadedFileName ? 'Ready to verify' : 'or click to browse files'}
-              </div>
-            </label>
-          </div>
-
-          {/* 4 Instant Benchmark Sample Clips */}
-          <div className="p-3 bg-paper-base space-y-2">
-            <div className="text-[10px] font-mono text-ink-muted">Instant Benchmark Clips</div>
-            <div className="space-y-1">
-              {SAMPLE_CLIPS.map((sample) => {
-                const isSelected = selectedSample === sample.fileName && !uploadedFileName;
-                return (
-                  <button
-                    key={sample.fileName}
-                    onClick={() => handleSampleClick(sample)}
-                    className={`w-full text-left px-2.5 py-1.5 rounded text-xs transition-colors border flex items-center justify-between ${
-                      isSelected
-                        ? 'bg-paper-surface border-rule-active text-ink-primary'
-                        : 'bg-paper-well border-rule-border text-ink-muted hover:text-ink-primary hover:border-rule-active'
-                    }`}
-                  >
-                    <div className="truncate pr-2">
-                      <div className="font-medium text-[11px] text-ink-primary truncate">
-                        {sample.title}
-                      </div>
-                      <div className="text-[10px] text-ink-muted truncate font-mono">
-                        "{sample.targetLabel}"
-                      </div>
-                    </div>
-                    <span
-                      className={`text-[9px] font-mono px-1 py-0.5 rounded border shrink-0 ${
-                        sample.expectedVerdict === 'REJECTED'
-                          ? 'bg-signal-vermilion/10 text-signal-vermilion border-signal-vermilion/30'
-                          : 'bg-signal-emerald/10 text-signal-emerald border-signal-emerald/30'
-                      }`}
-                    >
-                      {sample.badge}
-                    </span>
-                  </button>
-                );
-              })}
+          {/* Quick-load Presets */}
+          <div className="space-y-1.5">
+            <span className="font-mono text-[10px] text-[#4A4843] uppercase tracking-wider">
+              Quick Scenarios:
+            </span>
+            <div className="grid grid-cols-2 gap-1.5">
+              {SAMPLE_CLIPS.map((sample) => (
+                <button
+                  key={sample.fileName}
+                  type="button"
+                  onClick={() => handleSampleClick(sample)}
+                  className={`p-2 rounded-[3px] border font-mono text-[11px] text-left transition-colors cursor-pointer ${
+                    selectedSample === sample.fileName
+                      ? 'bg-[#181816] text-white border-[#181816] font-medium'
+                      : 'bg-[#DFDCD3] text-[#181816] border-[#B8B4A9] hover:bg-[#D5D1C7]'
+                  }`}
+                >
+                  <div className="truncate font-semibold">{sample.title}</div>
+                  <div className="text-[10px] opacity-80">{sample.badge}</div>
+                </button>
+              ))}
             </div>
           </div>
 
           {/* Target Element Input */}
-          <div className="p-3 bg-paper-base space-y-2">
-            <div className="flex items-center justify-between">
-              <label htmlFor="target-element-input" className="text-[10px] font-mono text-ink-muted">
-                Target Invariant Element
-              </label>
-              <Target className="w-3 h-3 text-signal-cool" />
-            </div>
+          <div className="space-y-1">
+            <label className="font-mono text-[10px] text-[#4A4843] uppercase tracking-wider block">
+              Target UI Element:
+            </label>
             <input
-              id="target-element-input"
               type="text"
               value={targetLabel}
               onChange={(e) => setTargetLabel(e.target.value)}
               placeholder="e.g. Complete Checkout"
-              className="w-full bg-paper-well border border-rule-border focus:border-rule-active rounded px-2.5 py-1.5 text-xs text-ink-primary font-mono outline-none"
+              className="w-full bg-[#D6D3C9] border border-[#B8B4A9] font-mono text-xs px-2.5 py-2 text-[#181816] rounded-[3px] focus:outline-none focus:border-[#181816]"
             />
-
-            {/* Zero-BBox Auto-Detect Mode Badge */}
-            <div className="pt-1">
-              <div className="flex items-center justify-between p-2 rounded bg-paper-well border border-rule-border">
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-medium text-ink-primary">
-                    SAM 3.1 Frame-0 Auto-Detect
-                  </span>
-                  <span className="text-[9px] font-mono text-signal-emerald">Zero-BBox Mode Active</span>
-                </div>
-                <button
-                  onClick={() => setShowManualBBox(!showManualBBox)}
-                  className="text-[10px] font-mono text-ink-muted hover:text-ink-primary flex items-center gap-0.5"
-                >
-                  <span>Manual</span>
-                  {showManualBBox ? (
-                    <ChevronDown className="w-3 h-3" />
-                  ) : (
-                    <ChevronRight className="w-3 h-3" />
-                  )}
-                </button>
-              </div>
-
-              {/* Collapsed Manual Coordinates */}
-              {showManualBBox && (
-                <div className="mt-2 p-2 rounded bg-paper-surface border border-rule-border space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-ink-muted font-mono">Explicit BBox (px)</span>
-                    <label className="flex items-center gap-1 text-[10px] text-ink-muted cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={!useAutoBBox}
-                        onChange={(e) => setUseAutoBBox(!e.target.checked)}
-                        className="rounded bg-paper-well border-rule-border"
-                      />
-                      <span>Override</span>
-                    </label>
-                  </div>
-                  <div className="grid grid-cols-4 gap-1">
-                    {(['x', 'y', 'width', 'height'] as const).map((axis) => (
-                      <div key={axis}>
-                        <span className="text-[9px] font-mono text-ink-muted block">
-                          {axis[0]}
-                        </span>
-                        <input
-                          type="number"
-                          value={manualBBox[axis]}
-                          onChange={(e) =>
-                            setManualBBox({ ...manualBBox, [axis]: Number(e.target.value) })
-                          }
-                          disabled={useAutoBBox}
-                          className="w-full bg-paper-well border border-rule-border rounded px-1.5 py-0.5 text-[10px] text-ink-primary font-mono disabled:opacity-40"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
           </div>
 
-          {/* Primary Action Button */}
-          <div className="p-3 bg-paper-base">
-            <button
-              onClick={() => executeVerify()}
-              disabled={isRunning}
-              className="w-full h-9 rounded bg-ink-primary hover:bg-white text-paper-base font-medium text-xs flex items-center justify-center gap-1.5 shadow-none transition-colors disabled:opacity-50 whitespace-nowrap"
-            >
-              {isRunning ? (
-                <>
-                  <span className="w-3 h-3 border-2 border-paper-base border-t-transparent rounded-full animate-spin" />
-                  <span className="whitespace-nowrap">Arbitrating…</span>
-                </>
-              ) : (
-                <>
-                  <Play className="w-3.5 h-3.5 fill-current" />
-                  <span className="whitespace-nowrap">Run Referee</span>
-                </>
-              )}
-            </button>
-            {errorMsg && (
-              <div className="mt-2 p-2 rounded bg-signal-vermilion/10 border border-signal-vermilion/30 text-signal-vermilion text-[10px] font-mono">
-                {errorMsg}
-              </div>
-            )}
+          {/* Zero-BBox Mode Pill */}
+          <div className="bg-[#DCE8DF] text-[#1D4D35] border border-[#9BB8A5] font-mono text-[10px] px-2.5 py-1.5 rounded-[3px] flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 shrink-0" />
+            <span>SAM 3.1 FRAME-0 AUTO-BBOX (ZERO-BBOX MODE)</span>
           </div>
 
-          {/* 4-Stage Live Pipeline Trace */}
-          <div className="p-3 bg-paper-base space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-mono text-ink-muted">Pipeline Latency Trace</span>
-              <span className="text-[10px] font-mono text-signal-emerald">
-                {stages.reduce((acc, s) => acc + (s.durationMs || 0), 0)} ms
-              </span>
+          {/* Run Button */}
+          <button
+            type="button"
+            disabled={isRunning}
+            onClick={() => executeVerify()}
+            className="w-full bg-[#181816] hover:bg-[#2C2C29] text-white font-mono text-xs font-semibold py-2.5 rounded-[3px] cursor-pointer transition-colors shadow-2xs disabled:opacity-50"
+          >
+            {isRunning ? 'RUNNING OPTICAL REFEREE...' : 'RUN OPTICAL REFEREE ↗'}
+          </button>
+
+          {errorMsg && (
+            <div className="p-2 rounded-[3px] bg-[#F2C6BE] border border-[#DF9B90] text-[#9E2A22] font-mono text-[11px]">
+              {errorMsg}
             </div>
-            <div className="divide-y divide-rule-border border border-rule-border rounded bg-paper-well">
-              {stages.map((stage, idx) => (
-                <div key={stage.id || idx} className="p-2 space-y-0.5">
-                  <div className="flex items-center justify-between text-[11px] font-mono">
-                    <span className="text-ink-primary font-medium">
-                      {stage.label || `0${idx + 1} · ${stage.id.toUpperCase()}`}
-                    </span>
-                    <span className="text-ink-muted text-[10px]">{stage.durationMs ?? 0} ms</span>
-                  </div>
-                  {stage.detail && (
-                    <div className="text-[10px] font-mono text-ink-muted truncate">
-                      {stage.detail}
-                    </div>
-                  )}
+          )}
+
+          {/* 4-Stage Pipeline Checklist */}
+          <div className="p-2.5 rounded-[4px] bg-[#D6D3C9] border border-[#B8B4A9] space-y-1.5">
+            <span className="font-mono text-[10px] font-semibold tracking-wider uppercase text-[#181816] block">
+              Optical Pipeline Status
+            </span>
+            <div className="space-y-1">
+              {stages.map((st) => (
+                <div key={st.id} className="text-[11px] font-mono leading-tight">
+                  <div className="font-semibold text-[#181816]">{st.label}</div>
+                  <div className="text-[10px] text-[#4A4843]">{st.detail}</div>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Footer Calibration Note */}
-        <div className="p-3 border-t border-rule-border bg-paper-well text-[10px] text-ink-muted font-mono">
-          Spectra v3.0 · Calibrated 3σ: 1.35%
+        <div className="pt-3 border-t border-[#B8B4A9] font-mono text-[10px] text-[#4A4843]">
+          Rule 2 Calibrated Measurement Engine
         </div>
       </aside>
 
-      {/* CENTER / RIGHT INSPECTION AREA */}
-      <main className="flex-1 h-full flex flex-col bg-paper-well overflow-y-auto min-h-0 divide-y divide-rule-border">
-        {/* Top Viewport Toolbar */}
-        <div className="h-10 px-4 bg-paper-base border-b border-rule-border flex items-center justify-between shrink-0 whitespace-nowrap">
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="text-[10px] font-mono text-ink-muted">Inspect Stage:</span>
-            <div className="flex items-center bg-paper-well rounded border border-rule-border p-0.5">
-              <button
-                onClick={() => setActiveFrameView('tk')}
-                className={`px-2 py-0.5 text-xs rounded transition-colors whitespace-nowrap ${
-                  activeFrameView === 'tk'
-                    ? 'bg-paper-surface text-ink-primary border border-rule-active font-medium'
-                    : 'text-ink-muted hover:text-ink-primary'
-                }`}
-              >
-                Settled (t_k)
-              </button>
-              <button
-                onClick={() => setActiveFrameView('t0')}
-                className={`px-2 py-0.5 text-xs rounded transition-colors whitespace-nowrap ${
-                  activeFrameView === 't0'
-                    ? 'bg-paper-surface text-ink-primary border border-rule-active font-medium'
-                    : 'text-ink-muted hover:text-ink-primary'
-                }`}
-              >
-                Baseline (t_0)
-              </button>
-              <button
-                onClick={() => setActiveFrameView('split')}
-                className={`px-2 py-0.5 text-xs rounded transition-colors whitespace-nowrap ${
-                  activeFrameView === 'split'
-                    ? 'bg-paper-surface text-ink-primary border border-rule-active font-medium'
-                    : 'text-ink-muted hover:text-ink-primary'
-                }`}
-              >
-                Split View
-              </button>
-            </div>
-          </div>
+      {/* CENTER STAGE: Rangefinder Viewport & Extracted Frames */}
+      <main className="flex-1 fm-dot-stage relative p-6 flex flex-col justify-between overflow-y-auto min-w-0">
+        <RangefinderReticleOverlay showCrosshair={false} />
 
-          <div className="flex items-center gap-3 shrink-0">
-            <label className="flex items-center gap-1.5 text-xs text-ink-muted cursor-pointer whitespace-nowrap">
-              <input
-                type="checkbox"
-                checked={showMaskOverlay}
-                onChange={(e) => setShowMaskOverlay(e.target.checked)}
-                className="rounded bg-paper-well border-rule-border"
-              />
-              <span>SAM 3.1 Mask</span>
-            </label>
-
-            <label className="flex items-center gap-1.5 text-xs text-ink-muted cursor-pointer whitespace-nowrap">
-              <input
-                type="checkbox"
-                checked={showReticle}
-                onChange={(e) => setShowReticle(e.target.checked)}
-                className="rounded bg-paper-well border-rule-border"
-              />
-              <span>Target Reticle</span>
-            </label>
-
-            <span className="text-[11px] font-mono text-ink-muted border-l border-rule-border pl-3 whitespace-nowrap">
-              1280 × 720 @ 4 FPS
-            </span>
-          </div>
-        </div>
-
-        {/* Viewport Canvas (16:9 Aspect Ratio) */}
-        <div className="p-4 flex items-center justify-center bg-paper-well">
-          <div className="w-full max-w-4xl relative aspect-video bg-black rounded border border-rule-border overflow-hidden">
-            {activeFrameView === 'split' ? (
-              <div className="w-full h-full grid grid-cols-2 divide-x divide-rule-border">
-                {/* Baseline t0 */}
-                <div className="relative w-full h-full">
-                  <img src={t0Img} alt="t0 frame" className="w-full h-full object-contain" />
-                  <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-paper-base/90 border border-rule-border text-[10px] font-mono text-ink-primary rounded">
-                    t_0 (Baseline)
-                  </div>
-                </div>
-                {/* Evaluated tk with overlays */}
-                <div className="relative w-full h-full">
-                  <img src={tkImg} alt="tk frame" className="w-full h-full object-contain" />
-                  <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-paper-base/90 border border-rule-border text-[10px] font-mono text-ink-primary rounded">
-                    t_k (Settled)
-                  </div>
-                  {/* SVG Overlays */}
-                  <svg
-                    aria-hidden="true"
-                    viewBox="0 0 1280 720"
-                    className="absolute inset-0 w-full h-full pointer-events-none"
-                  >
-                    {showMaskOverlay && tkMaskSvg && (
-                      <path
-                        d={tkMaskSvg}
-                        fill="rgba(255, 69, 58, 0.35)"
-                        stroke="#FF453A"
-                        strokeWidth="1.5"
-                      />
-                    )}
-                    {showReticle && (
-                      <rect
-                        x={resolvedBox.x}
-                        y={resolvedBox.y}
-                        width={resolvedBox.width}
-                        height={resolvedBox.height}
-                        fill="none"
-                        stroke="#38BDF8"
-                        strokeWidth="2"
-                        strokeDasharray="4 2"
-                      />
-                    )}
-                  </svg>
-                </div>
-              </div>
-            ) : (
-              <div className="relative w-full h-full">
-                <img
-                  src={activeFrameView === 'tk' ? tkImg : t0Img}
-                  alt="Inspection Frame"
-                  className="w-full h-full object-contain"
-                />
-                <svg
-                  aria-hidden="true"
-                  viewBox="0 0 1280 720"
-                  className="absolute inset-0 w-full h-full pointer-events-none"
-                >
-                  {activeFrameView === 'tk' && showMaskOverlay && tkMaskSvg && (
-                    <path
-                      d={tkMaskSvg}
-                      fill="rgba(255, 69, 58, 0.40)"
-                      stroke="#FF453A"
-                      strokeWidth="1.5"
-                    />
-                  )}
-                  {showReticle && (
-                    <g>
-                      <rect
-                        x={resolvedBox.x}
-                        y={resolvedBox.y}
-                        width={resolvedBox.width}
-                        height={resolvedBox.height}
-                        fill="none"
-                        stroke="#38BDF8"
-                        strokeWidth="2"
-                        strokeDasharray="4 2"
-                      />
-                      <circle cx={resolvedBox.x} cy={resolvedBox.y} r="3" fill="#38BDF8" />
-                      <circle
-                        cx={resolvedBox.x + resolvedBox.width}
-                        cy={resolvedBox.y + resolvedBox.height}
-                        r="3"
-                        fill="#38BDF8"
-                      />
-                    </g>
-                  )}
-                </svg>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* 2.5× TARGET ZOOM LOUPE STRIP */}
-        <div className="px-4 py-3 bg-paper-base">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <Maximize2 className="w-3.5 h-3.5 text-signal-cool" />
-              <span className="text-[11px] font-mono text-ink-primary font-medium">
-                2.5× Target Zoom Loupe
-              </span>
-              <span className="text-[10px] font-mono text-ink-muted">
-                BBox [{resolvedBox.x}, {resolvedBox.y}, {resolvedBox.width}, {resolvedBox.height}]
-              </span>
-            </div>
-            <span className="text-[10px] font-mono text-ink-muted">
-              Sub-pixel edge alignment comparison
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            {/* Loupe 1: t0 Baseline */}
-            <div className="border border-rule-border rounded bg-paper-well p-2 space-y-1">
-              <div className="flex items-center justify-between text-[10px] font-mono">
-                <span className="text-ink-muted">Baseline (t_0)</span>
-                <span className="text-signal-emerald">100.0% Visible (0 px clipped)</span>
-              </div>
-              <div className="w-full h-24 bg-black rounded border border-rule-border overflow-hidden flex items-center justify-center">
-                <svg
-                  aria-hidden="true"
-                  viewBox={`${resolvedBox.x - 20} ${resolvedBox.y - 10} ${resolvedBox.width + 40} ${resolvedBox.height + 20}`}
-                  className="w-full h-full object-contain"
-                >
-                  <image href={t0Img} width="1280" height="720" />
-                  <rect
-                    x={resolvedBox.x}
-                    y={resolvedBox.y}
-                    width={resolvedBox.width}
-                    height={resolvedBox.height}
-                    fill="none"
-                    stroke="#38BDF8"
-                    strokeWidth="1.5"
-                    strokeDasharray="3 2"
-                  />
-                </svg>
-              </div>
-            </div>
-
-            {/* Loupe 2: tk Settled + Mask */}
-            <div className="border border-rule-border rounded bg-paper-well p-2 space-y-1">
-              <div className="flex items-center justify-between text-[10px] font-mono">
-                <span className="text-ink-muted">Settled (t_k)</span>
-                <span className={isRejected ? 'text-signal-vermilion' : 'text-signal-emerald'}>
-                  {isRejected
-                    ? `${(Number(result?.visRatio ?? 0.9) * 100).toFixed(1)}% Visible (${result?.pixelLossCount ?? 1700} px clipped)`
-                    : '100.0% Visible'}
+        <div className="relative z-10 space-y-6">
+          {/* Verdict Banner */}
+          {result && (
+            <div className="flex items-center justify-between p-3 bg-[#EAE7DF] border border-[#B8B4A9] rounded-[4px] shadow-sm">
+              <div className="flex items-center gap-2.5">
+                {isRejected ? (
+                  <span className="bg-[#E05246] text-white font-mono text-xs font-semibold px-2.5 py-0.5 rounded-full">
+                    ① REJECTED • {((1 - (result.visRatio ?? 0.9)) * 100).toFixed(2)}% LOSS
+                  </span>
+                ) : (
+                  <span className="bg-[#2E7D52] text-white font-mono text-xs font-semibold px-2.5 py-0.5 rounded-full">
+                    ✓ VERIFIED • 0.00% LOSS
+                  </span>
+                )}
+                <span className="font-mono text-xs text-[#181816]">
+                  {result.notes || `Verdict: ${result.verdict}`}
                 </span>
               </div>
-              <div className="w-full h-24 bg-black rounded border border-rule-border overflow-hidden flex items-center justify-center">
-                <svg
-                  aria-hidden="true"
-                  viewBox={`${resolvedBox.x - 20} ${resolvedBox.y - 10} ${resolvedBox.width + 40} ${resolvedBox.height + 20}`}
-                  className="w-full h-full object-contain"
-                >
-                  <image href={tkImg} width="1280" height="720" />
-                  {tkMaskSvg && (
+
+              <div className="font-mono text-xs text-[#4A4843]">
+                SAM Score: {Number(result.rSam ?? 0.908).toFixed(4)}
+              </div>
+            </div>
+          )}
+
+          {/* Side-by-side Extracted Frames */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Frame t_0 */}
+            <div className="bg-[#EAE7DF] border-[1.5px] border-[#181816] rounded-[4px] p-2.5 space-y-2 shadow-md">
+              <div className="flex items-center justify-between font-mono text-xs">
+                <span className="font-semibold text-[#181816]">BASELINE FRAME t_0</span>
+                <span className="text-[#4A4843]">Unobstructed</span>
+              </div>
+              <div className="aspect-video bg-black rounded-[2px] overflow-hidden relative border border-[#181816]">
+                <img src={t0Img} alt="Baseline Frame t0" className="w-full h-full object-cover" />
+              </div>
+            </div>
+
+            {/* Frame t_k */}
+            <div className="bg-[#EAE7DF] border-[1.5px] border-[#181816] rounded-[4px] p-2.5 space-y-2 shadow-md">
+              <div className="flex items-center justify-between font-mono text-xs">
+                <span className="font-semibold text-[#181816]">EVALUATED FRAME t_k</span>
+                <span className={isRejected ? 'text-[#9E2A22] font-semibold' : 'text-[#1D4D35]'}>
+                  {isRejected ? 'Defect Detected' : 'Verified Pass'}
+                </span>
+              </div>
+              <div className="aspect-video bg-black rounded-[2px] overflow-hidden relative border border-[#181816]">
+                <img src={tkImg} alt="Evaluated Frame tk" className="w-full h-full object-cover" />
+
+                {/* Vector SVG mask overlay */}
+                {tkMaskSvg && (
+                  <svg
+                    viewBox="0 0 1280 720"
+                    className="absolute inset-0 w-full h-full pointer-events-none"
+                    style={{ imageRendering: 'pixelated' }}
+                  >
                     <path
                       d={tkMaskSvg}
-                      fill="rgba(255, 69, 58, 0.40)"
-                      stroke="#FF453A"
-                      strokeWidth="1.5"
+                      fill={isRejected ? 'rgba(224, 82, 70, 0.25)' : 'rgba(46, 125, 82, 0.25)'}
+                      stroke={isRejected ? '#E05246' : '#2E7D52'}
+                      strokeWidth="2.5"
                     />
-                  )}
-                  <rect
-                    x={resolvedBox.x}
-                    y={resolvedBox.y}
-                    width={resolvedBox.width}
-                    height={resolvedBox.height}
-                    fill="none"
-                    stroke="#38BDF8"
-                    strokeWidth="1.5"
-                    strokeDasharray="3 2"
-                  />
-                </svg>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* BOTTOM: STRUCTURED TABULAR VERDICT & CLI/MCP COPIERS */}
-        <div className="p-4 bg-paper-base space-y-3">
-          <div className="flex items-center justify-between p-3 rounded bg-paper-well border border-rule-border">
-            <div className="flex items-center gap-3">
-              {isRejected ? (
-                <ShieldAlert className="w-5 h-5 text-signal-vermilion" />
-              ) : (
-                <ShieldCheck className="w-5 h-5 text-signal-emerald" />
-              )}
-              <div>
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`text-xs font-mono font-bold ${
-                      isRejected ? 'text-signal-vermilion' : 'text-signal-emerald'
-                    }`}
-                  >
-                    {isRejected ? 'REJECTED' : 'VERIFIED'}
-                  </span>
-                  <span className="text-ink-muted text-xs font-mono">·</span>
-                  <span className="text-xs font-mono text-ink-primary">
-                    {isRejected
-                      ? `${((1 - Number(result?.visRatio ?? 0.9)) * 100).toFixed(2)}% Occlusion Detected`
-                      : '0.00% Occlusion (Within Noise Floor)'}
-                  </span>
-                </div>
-                <div className="text-[11px] font-mono text-ink-muted mt-0.5">
-                  {result?.reason ||
-                    (isRejected
-                      ? 'Loss exceeds calibrated 3σ threshold (1.35%). Visual obstruction verified.'
-                      : 'Visibility loss within 3σ calibrated noise floor (0.45%). Element verified clean.')}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4 text-right font-mono text-xs">
-              <div>
-                <div className="text-[10px] text-ink-muted">Pixel Loss</div>
-                <div className="text-ink-primary font-semibold">
-                  {result?.pixelLossCount ?? (isRejected ? '1,700 px' : '0 px')}
-                </div>
-              </div>
-              <div className="border-l border-rule-border pl-4">
-                <div className="text-[10px] text-ink-muted">3σ Floor</div>
-                <div className="text-signal-emerald font-semibold">1.35%</div>
+                    <rect
+                      x={resolvedBox.x}
+                      y={resolvedBox.y}
+                      width={resolvedBox.width}
+                      height={resolvedBox.height}
+                      fill="none"
+                      stroke="#38BDF8"
+                      strokeWidth="2"
+                      strokeDasharray="4 2"
+                    />
+                  </svg>
+                )}
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="p-2.5 rounded bg-paper-well border border-rule-border space-y-1.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono text-ink-muted">CLI Command Equivalent</span>
+          {/* Reproducible CLI & MCP Snippets */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* CLI Snippet */}
+            <div className="bg-[#EAE7DF] border border-[#B8B4A9] rounded-[4px] p-3 space-y-2">
+              <div className="flex items-center justify-between font-mono text-xs">
+                <span className="flex items-center gap-1.5 font-semibold text-[#181816]">
+                  <Terminal className="w-3.5 h-3.5" />
+                  <span>CLI Command</span>
+                </span>
                 <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(cliCommand);
-                    setCopiedCli(true);
-                    setTimeout(() => setCopiedCli(false), 2000);
-                  }}
-                  className="flex items-center gap-1 text-[10px] font-mono text-ink-muted hover:text-ink-primary whitespace-nowrap"
+                  type="button"
+                  onClick={handleCopyCli}
+                  className="text-[#181816] hover:underline flex items-center gap-1 cursor-pointer"
                 >
-                  {copiedCli ? <Check className="w-3 h-3 text-signal-emerald" /> : <Copy className="w-3 h-3" />}
-                  <span className="whitespace-nowrap">{copiedCli ? 'Copied' : 'Copy'}</span>
+                  {copiedCli ? <Check className="w-3 h-3 text-[#2E7D52]" /> : <Copy className="w-3 h-3" />}
+                  <span>{copiedCli ? 'Copied' : 'Copy'}</span>
                 </button>
               </div>
-              <pre className="text-[11px] font-mono text-signal-cool overflow-x-auto whitespace-pre-wrap p-1.5 rounded bg-paper-base border border-rule-border">
+              <pre className="p-2.5 bg-[#D6D3C9] border border-[#B8B4A9] rounded-[3px] font-mono text-[11px] text-[#181816] overflow-x-auto whitespace-pre-wrap">
                 {cliCommand}
               </pre>
             </div>
 
-            <div className="p-2.5 rounded bg-paper-well border border-rule-border space-y-1.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono text-ink-muted">MCP JSON-RPC Tool Call</span>
+            {/* MCP Payload */}
+            <div className="bg-[#EAE7DF] border border-[#B8B4A9] rounded-[4px] p-3 space-y-2">
+              <div className="flex items-center justify-between font-mono text-xs">
+                <span className="flex items-center gap-1.5 font-semibold text-[#181816]">
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>MCP JSON-RPC Payload</span>
+                </span>
                 <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(mcpPayload);
-                    setCopiedMcp(true);
-                    setTimeout(() => setCopiedMcp(false), 2000);
-                  }}
-                  className="flex items-center gap-1 text-[10px] font-mono text-ink-muted hover:text-ink-primary whitespace-nowrap"
+                  type="button"
+                  onClick={handleCopyMcp}
+                  className="text-[#181816] hover:underline flex items-center gap-1 cursor-pointer"
                 >
-                  {copiedMcp ? <Check className="w-3 h-3 text-signal-emerald" /> : <Copy className="w-3 h-3" />}
-                  <span className="whitespace-nowrap">{copiedMcp ? 'Copied' : 'Copy'}</span>
+                  {copiedMcp ? <Check className="w-3 h-3 text-[#2E7D52]" /> : <Copy className="w-3 h-3" />}
+                  <span>{copiedMcp ? 'Copied' : 'Copy'}</span>
                 </button>
               </div>
-              <pre className="text-[10px] font-mono text-ink-muted overflow-x-auto max-h-16 p-1.5 rounded bg-paper-base border border-rule-border">
-                {mcpPayload}
+              <pre className="p-2.5 bg-[#D6D3C9] border border-[#B8B4A9] rounded-[3px] font-mono text-[11px] text-[#181816] overflow-x-auto max-h-24">
+                {JSON.stringify(mcpPayload, null, 2)}
               </pre>
             </div>
           </div>

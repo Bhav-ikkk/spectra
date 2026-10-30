@@ -44,7 +44,6 @@ export const VerticalLedMeter: React.FC<{
   return (
     <div className="inline-flex items-end gap-[2.5px] h-6 select-none" aria-hidden="true">
       {Array.from({ length: barCount }).map((_, idx) => {
-        // Height ramps progressively from 5px to 22px like an audio/optical field meter
         const heightPx = Math.round(5 + (idx / (barCount - 1)) * 17);
         const isLit = idx < activeBars;
         let colorClass = 'bg-[#C8C4B8]';
@@ -70,15 +69,23 @@ export const VerticalLedMeter: React.FC<{
 };
 
 /**
- * 3. Hardware Horizontal Slider Track with Knob (from "Area:" row in Instrument A)
+ * 3. Hardware Horizontal Slider Track with Knob
  */
 export const HardwareMiniSlider: React.FC<{
   value: number; // 0.0 to 1.0
   onChange?: (val: number) => void;
-}> = ({ value, onChange: _onChange }) => {
+}> = ({ value, onChange }) => {
   const clamped = Math.max(0, Math.min(1, value));
   return (
-    <div className="relative w-28 h-4 flex items-center select-none">
+    <div
+      onClick={(e) => {
+        if (!onChange) return;
+        const rect = e.currentTarget.getBoundingClientRect();
+        const next = (e.clientX - rect.left) / rect.width;
+        onChange(Math.max(0, Math.min(1, next)));
+      }}
+      className="relative w-28 h-4 flex items-center select-none cursor-pointer"
+    >
       <div className="w-full h-[3px] bg-[#B8B4A9] rounded-full overflow-hidden">
         <div
           className="h-full bg-[#52504A]"
@@ -94,7 +101,7 @@ export const HardwareMiniSlider: React.FC<{
 };
 
 /**
- * 4. 4-Corner Leica/Technical Rangefinder Brackets + 4-Edge Millimeter Ruler Ticks + Center Crosshair
+ * 4. 4-Corner Leica/Technical Rangefinder Brackets + Millimeter Ticks + Crosshair
  */
 export const RangefinderReticleOverlay: React.FC<{
   showCrosshair?: boolean;
@@ -234,7 +241,7 @@ export const SubPixelMatrixLoupe: React.FC<{
   const rows = 12;
 
   return (
-    <div className="w-[216px] rounded-[6px] bg-[#EAE7DF] border-[1.5px] border-[#181816] shadow-[0_8px_24px_rgba(0,0,0,0.22)] p-2.5 select-none z-30">
+    <div className="w-[220px] rounded-[5px] bg-[#EAE7DF] border-[1.5px] border-[#181816] shadow-[0_10px_28px_rgba(0,0,0,0.22)] p-2.5 select-none z-30">
       {/* Header */}
       <div className="flex items-start justify-between gap-1">
         <div>
@@ -268,7 +275,6 @@ export const SubPixelMatrixLoupe: React.FC<{
             const r = Math.floor(idx / cols);
             const c = idx % cols;
             const isButtonRow = r >= 3 && r <= 7;
-            // Highlight occluded red pixel squares along the boundary when broken
             const isOccludedCell =
               !isRepaired &&
               lossPercent > 0 &&
@@ -317,3 +323,21 @@ export const SubPixelMatrixLoupe: React.FC<{
     </div>
   );
 };
+
+/**
+ * 6. MiniDescendingSparkline: The 28px x 16px SVG slope icon located in the bottom timeline next to Active Frame: t 7
+ */
+export const MiniDescendingSparkline: React.FC<{ className?: string }> = ({
+  className = 'w-7 h-4',
+}) => (
+  <svg viewBox="0 0 28 16" fill="none" className={className} aria-hidden="true">
+    <path
+      d="M2 2L8 4L14 7L20 11L26 14"
+      stroke="#181816"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <circle cx="26" cy="14" r="1.5" fill="#181816" />
+  </svg>
+);

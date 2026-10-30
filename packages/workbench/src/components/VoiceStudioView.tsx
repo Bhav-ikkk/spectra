@@ -8,6 +8,7 @@ import {
   X,
 } from 'lucide-react';
 import { startAudioRecording, type AudioRecordingSession } from '../utils/audio-recorder.js';
+import { VerticalLedMeter } from './FieldMonitorPrimitives.js';
 
 export interface VoiceStudioViewProps {
   invariants: Record<string, unknown>;
@@ -144,28 +145,28 @@ export const VoiceStudioView: React.FC<VoiceStudioViewProps> = ({
   };
 
   return (
-    <div className="flex-1 h-full flex bg-paper-base text-ink-primary overflow-hidden select-none divide-x divide-rule-border">
+    <div className="flex-1 h-full flex bg-[#EAE7DF] text-[#181816] overflow-hidden select-none divide-x divide-[#B8B4A9] font-sans">
       {/* Left Column: Voice Audio Capture & Transcript */}
-      <div className="w-96 shrink-0 h-full flex flex-col justify-between overflow-y-auto divide-y divide-rule-border min-h-0">
-        <div className="divide-y divide-rule-border">
+      <div className="w-96 shrink-0 h-full flex flex-col justify-between overflow-y-auto divide-y divide-[#B8B4A9] bg-[#EAE7DF] min-h-0">
+        <div className="divide-y divide-[#B8B4A9]">
           {/* Header */}
-          <div className="h-10 px-3 bg-paper-surface flex items-center justify-between shrink-0 whitespace-nowrap">
-            <div className="flex items-center gap-1.5 text-xs font-medium text-ink-primary">
-              <Mic className="w-3.5 h-3.5 text-signal-cool" />
-              <span className="whitespace-nowrap">Voice Invariants Compiler</span>
+          <div className="h-10 px-3.5 bg-[#EAE7DF] flex items-center justify-between shrink-0 whitespace-nowrap">
+            <div className="flex items-center gap-1.5 font-mono text-xs font-semibold uppercase tracking-wider text-[#181816]">
+              <Mic className="w-3.5 h-3.5" />
+              <span>Voice Invariants Compiler</span>
             </div>
-            <span className="text-[10px] font-mono text-ink-muted">16kHz Mono WAV</span>
+            <span className="text-[10px] font-mono text-[#4A4843]">16kHz Mono WAV</span>
           </div>
 
           {/* Microphone Recording Action Card */}
-          <div className="p-4 bg-paper-well space-y-3">
+          <div className="p-4 bg-[#DFDCD3] space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-mono text-ink-muted">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-[#4A4843]">
                 Microphone Input
               </span>
               <span
-                className={`text-[10px] font-mono ${
-                  isRecording ? 'text-signal-vermilion' : 'text-ink-muted'
+                className={`text-[10px] font-mono font-semibold ${
+                  isRecording ? 'text-[#9E2A22]' : 'text-[#4A4843]'
                 }`}
               >
                 {isRecording ? `Recording (${recordSeconds}s)` : 'Ready'}
@@ -174,109 +175,105 @@ export const VoiceStudioView: React.FC<VoiceStudioViewProps> = ({
 
             <div className="flex items-center gap-3">
               <button
+                type="button"
                 onClick={toggleRecording}
-                className={`w-12 h-12 rounded border flex items-center justify-center transition-colors shrink-0 whitespace-nowrap ${
+                className={`w-12 h-12 rounded-[4px] border-[1.5px] flex items-center justify-center transition-colors shrink-0 cursor-pointer ${
                   isRecording
-                    ? 'bg-signal-vermilion/20 border-signal-vermilion text-signal-vermilion'
-                    : 'bg-paper-surface border-rule-border hover:border-signal-cool text-ink-primary'
+                    ? 'bg-[#E05246] border-[#181816] text-white shadow-sm'
+                    : 'bg-[#EAE7DF] border-[#B8B4A9] hover:border-[#181816] text-[#181816]'
                 }`}
               >
                 {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
               </button>
+
               <div className="flex-1 space-y-1">
-                <div className="text-xs font-semibold text-ink-primary">
-                  {isRecording ? 'Speak UI Invariant' : 'Record Voice Spec'}
+                <div className="text-xs font-semibold text-[#181816]">
+                  {isRecording ? 'Speak UI Invariant...' : 'Record Voice Spec'}
                 </div>
-                <div className="text-[10px] text-ink-muted">
+                <div className="text-[10px] font-mono text-[#4A4843]">
                   Transcribed by <code>muse-voice-transcribe-1.0</code>
                 </div>
                 {isRecording && (
-                  <div className="w-full h-1.5 rounded bg-paper-base border border-rule-border overflow-hidden mt-1">
-                    <div
-                      className="h-full bg-signal-emerald"
-                      style={{ width: `${Math.min(100, micLevel * 100)}%` }}
-                    />
+                  <div className="pt-1">
+                    <VerticalLedMeter ratio={micLevel || 0.4} variant="emeraldPeak" />
                   </div>
                 )}
               </div>
             </div>
 
             {micError && (
-              <div className="p-2 rounded bg-signal-vermilion/10 border border-signal-vermilion/30 text-signal-vermilion text-[10px] font-mono">
+              <div className="p-2 rounded-[3px] bg-[#F2C6BE] border border-[#DF9B90] text-[#9E2A22] text-[10px] font-mono">
                 {micError}
               </div>
             )}
           </div>
 
-          {/* Transcript Textarea */}
-          <div className="p-4 bg-paper-base space-y-2">
+          {/* Transcript Editor & Invariant Synthesis */}
+          <div className="p-4 bg-[#EAE7DF] space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-mono text-ink-muted">
-                Transcribed Specification
-              </span>
+              <label className="text-[10px] font-mono uppercase tracking-wider text-[#4A4843]">
+                Raw Voice Transcript:
+              </label>
               <button
+                type="button"
                 onClick={handleReplayFixture}
-                className="text-[10px] font-mono text-signal-cool hover:underline flex items-center gap-1 whitespace-nowrap"
+                className="text-[10px] font-mono text-[#181816] hover:underline flex items-center gap-1 cursor-pointer"
               >
-                <RotateCcw className="w-2.5 h-2.5" />
-                <span className="whitespace-nowrap">Replay Fixture ($0.00)</span>
+                <RotateCcw className="w-3 h-3" />
+                <span>Reset Baseline</span>
               </button>
             </div>
+
             <textarea
               rows={4}
               value={promptText}
               onChange={(e) => setPromptText(e.target.value)}
-              className="w-full bg-paper-well border border-rule-border focus:border-rule-active rounded p-2 text-xs text-ink-primary font-mono outline-none resize-none leading-relaxed"
+              className="w-full p-2.5 rounded-[4px] bg-[#D6D3C9] border border-[#B8B4A9] text-xs font-mono text-[#181816] leading-relaxed resize-none focus:outline-none focus:border-[#181816]"
             />
-            <div className="text-[10px] font-mono text-ink-muted truncate">
-              Session: {activeSessionId}
-            </div>
-          </div>
 
-          {/* Compiler Configuration */}
-          <div className="p-4 bg-paper-base space-y-2">
-            <div className="text-[10px] font-mono text-ink-muted">
-              LLM Invariant Compiler
-            </div>
-            <div className="grid grid-cols-2 gap-2">
+            {/* Provider Switcher */}
+            <div className="grid grid-cols-2 gap-2 pt-1">
               <button
+                type="button"
                 onClick={() => setModelProvider('baseten')}
-                className={`p-2 rounded text-xs font-mono border text-left transition-colors whitespace-nowrap ${
+                className={`p-2 rounded-[3px] text-xs font-mono border text-left transition-colors cursor-pointer ${
                   modelProvider === 'baseten'
-                    ? 'bg-paper-surface border-rule-active text-ink-primary'
-                    : 'bg-paper-well border-rule-border text-ink-muted'
+                    ? 'bg-[#181816] text-white border-[#181816]'
+                    : 'bg-[#DFDCD3] border-[#B8B4A9] text-[#181816]'
                 }`}
               >
-                <div className="font-semibold text-[11px] text-ink-primary">Baseten Open</div>
-                <div className="text-[9px] text-ink-muted">Open 1026</div>
+                <div className="font-semibold text-[11px]">Baseten Open</div>
+                <div className="text-[9px] opacity-80">Open 1026</div>
               </button>
               <button
+                type="button"
                 onClick={() => setModelProvider('meta')}
-                className={`p-2 rounded text-xs font-mono border text-left transition-colors whitespace-nowrap ${
+                className={`p-2 rounded-[3px] text-xs font-mono border text-left transition-colors cursor-pointer ${
                   modelProvider === 'meta'
-                    ? 'bg-paper-surface border-rule-active text-ink-primary'
-                    : 'bg-paper-well border-rule-border text-ink-muted'
+                    ? 'bg-[#181816] text-white border-[#181816]'
+                    : 'bg-[#DFDCD3] border-[#B8B4A9] text-[#181816]'
                 }`}
               >
-                <div className="font-semibold text-[11px] text-ink-primary">Meta Hosted</div>
-                <div className="text-[9px] text-ink-muted">Spark 1.3</div>
+                <div className="font-semibold text-[11px]">Meta Hosted</div>
+                <div className="text-[9px] opacity-80">Spark 1.3</div>
               </button>
             </div>
 
             <button
+              type="button"
               onClick={handleCompileText}
               disabled={isCompiling}
-              className="w-full h-8 mt-2 rounded bg-ink-primary hover:bg-white text-paper-base font-medium text-xs flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50 whitespace-nowrap"
+              className="w-full h-9 mt-2 rounded-[3px] bg-[#181816] hover:bg-[#2C2C29] text-white font-mono text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-2xs disabled:opacity-50"
             >
               {isCompiling ? (
                 <>
-                  <span className="w-3 h-3 border-2 border-paper-base border-t-transparent rounded-full animate-spin" />
-                  <span className="whitespace-nowrap">Compiling…</span>
+                  <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Compiling via Spark...</span>
                 </>
               ) : (
                 <>
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span className="whitespace-nowrap">Compile</span>
+                  <span>Compile Invariant Contract ↗</span>
                 </>
               )}
             </button>
@@ -284,26 +281,28 @@ export const VoiceStudioView: React.FC<VoiceStudioViewProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-3 border-t border-rule-border bg-paper-well text-[10px] text-ink-muted font-mono">
-          Model IDs verified per Rule 5 against dev.meta.ai
+        <div className="p-3 border-t border-[#B8B4A9] bg-[#DFDCD3] text-[10px] text-[#4A4843] font-mono">
+          Session ID: {activeSessionId}
         </div>
       </div>
 
       {/* Right Column: Compiled JSON Contract Display */}
-      <div className="flex-1 h-full flex flex-col justify-between overflow-y-auto bg-paper-well min-h-0">
-        <div className="divide-y divide-rule-border">
-          <div className="h-10 px-4 bg-paper-surface border-b border-rule-border flex items-center justify-between shrink-0 whitespace-nowrap">
-            <div className="flex items-center gap-1.5 text-xs font-medium text-ink-primary">
-              <FileCode className="w-3.5 h-3.5 text-signal-emerald" />
-              <span className="whitespace-nowrap">Compiled Contract: .spectra/invariants.json</span>
+      <div className="flex-1 h-full flex flex-col justify-between overflow-y-auto bg-[#DFDCD3] min-h-0">
+        <div className="divide-y divide-[#B8B4A9]">
+          <div className="h-10 px-4 bg-[#EAE7DF] border-b border-[#B8B4A9] flex items-center justify-between shrink-0 whitespace-nowrap">
+            <div className="flex items-center gap-1.5 text-xs font-mono font-semibold text-[#181816]">
+              <FileCode className="w-3.5 h-3.5" />
+              <span>Compiled Contract: .spectra/invariants.json</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono text-signal-emerald">JSON-Schema Valid</span>
+              <span className="text-[10px] font-mono text-[#1D4D35] bg-[#DCE8DF] border border-[#9BB8A5] px-2 py-0.5 rounded-[3px] font-semibold">
+                JSON-Schema Valid
+              </span>
               {onClose && (
                 <button
                   type="button"
                   onClick={onClose}
-                  className="p-1 rounded-lg text-[#86868B] hover:text-[#F5F5F7] hover:bg-white/10 active:scale-95 transition-all cursor-pointer ml-1"
+                  className="p-1 rounded-[3px] text-[#4A4843] hover:text-[#181816] hover:bg-[#D6D3C9] transition-colors cursor-pointer ml-1"
                   title="Close modal (Esc)"
                 >
                   <X className="w-4 h-4" />
@@ -313,15 +312,15 @@ export const VoiceStudioView: React.FC<VoiceStudioViewProps> = ({
           </div>
 
           <div className="p-4">
-            <pre className="p-3 rounded bg-paper-base border border-rule-border text-xs font-mono text-ink-muted overflow-x-auto leading-relaxed">
+            <pre className="p-3.5 rounded-[4px] bg-[#D6D3C9] border border-[#B8B4A9] text-xs font-mono text-[#181816] overflow-x-auto leading-relaxed shadow-inner">
               {JSON.stringify(compiledResult, null, 2)}
             </pre>
           </div>
         </div>
 
-        <div className="p-3 border-t border-rule-border bg-paper-base text-[10px] font-mono text-ink-muted flex items-center justify-between">
+        <div className="p-3 border-t border-[#B8B4A9] bg-[#EAE7DF] text-[10px] font-mono text-[#4A4843] flex items-center justify-between">
           <span>Target Schema: v1.0.0</span>
-          <span className="text-signal-emerald">Saved to repository</span>
+          <span className="text-[#1D4D35] font-semibold">Saved to repository</span>
         </div>
       </div>
     </div>

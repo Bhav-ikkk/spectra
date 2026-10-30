@@ -10,8 +10,9 @@ import {
 } from 'lucide-react';
 import { startAudioRecording, type AudioRecordingSession } from '../utils/audio-recorder.js';
 import type { WorkbenchScenarioBundle, WorkbenchClipAsset } from '../types.js';
+import { RangefinderReticleOverlay } from './FieldMonitorPrimitives.js';
 
-interface SpectraLensOverlayProps {
+export interface SpectraLensOverlayProps {
   isOpen: boolean;
   onClose: () => void;
   scenarioId: 's1' | 's2' | 's3';
@@ -114,7 +115,7 @@ export const SpectraLensOverlay: React.FC<SpectraLensOverlayProps> = ({
     if (scenarioId === 's3' && region.x >= 850 && region.y >= 550) {
       return 'packages/demo-app/src/components/CartDrawer.css';
     }
-    return 'Source mapping: None (Reporting optical verdict only — no file guessed)';
+    return 'Source mapping: None (Optical verdict only — no file guessed)';
   };
 
   const getCanvasCoords = (clientX: number, clientY: number) => {
@@ -282,7 +283,7 @@ export const SpectraLensOverlay: React.FC<SpectraLensOverlayProps> = ({
 
       if (res.ok) {
         const data = await res.json();
-        setLockStatus('Invariant locked to .spectra/invariants.json');
+        setLockStatus('Locked to .spectra/invariants.json');
         if (onInvariantSaved) {
           onInvariantSaved(data.invariant);
         }
@@ -305,145 +306,152 @@ export const SpectraLensOverlay: React.FC<SpectraLensOverlayProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-paper-base/90 flex flex-col select-none overflow-hidden">
-      {/* Top Bar */}
-      <div className="h-12 w-full bg-paper-surface border-b border-rule-border px-4 flex items-center justify-between shrink-0 whitespace-nowrap">
-        <div className="flex items-center gap-2">
-          <Target className="w-4 h-4 text-signal-cool" />
-          <span className="text-xs font-semibold text-ink-primary">
-            Spectra Lens Region Capture HUD
-          </span>
-          <span className="text-rule-active">/</span>
-          <span className="text-[11px] font-mono text-ink-muted">
-            Click and drag over element to evaluate
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <kbd className="px-2 py-0.5 rounded bg-paper-well text-[10px] font-mono text-ink-muted border border-rule-border whitespace-nowrap">
-            Esc to close
-          </kbd>
-          <button
-            onClick={onClose}
-            className="p-1 rounded bg-paper-well border border-rule-border text-ink-muted hover:text-ink-primary whitespace-nowrap"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      {/* Main Optical Canvas Area */}
-      <div className="flex-1 flex items-center justify-center p-3 relative overflow-hidden">
-        <div
-          ref={viewportRef}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          className="relative max-w-5xl w-full aspect-video rounded border border-rule-border cursor-crosshair bg-black overflow-hidden"
-        >
-          <img
-            src={activeImage}
-            alt="Optical Frame"
-            className="w-full h-full object-contain pointer-events-none"
-            draggable={false}
-          />
-
-          {/* Precision Target Selection Reticle */}
-          <div
-            style={boxStyle}
-            className="absolute border border-signal-cool bg-signal-cool/10 pointer-events-none"
-          >
-            <div className="absolute -top-5 left-0 px-1 py-0.2 rounded bg-paper-base border border-rule-border text-signal-cool font-mono text-[9px] whitespace-nowrap">
-              [{selectedRegion.x}, {selectedRegion.y}, {selectedRegion.width}×
-              {selectedRegion.height}]
-            </div>
+    <div className="fixed inset-0 z-50 bg-[#181816]/75 backdrop-blur-sm flex flex-col select-none overflow-hidden items-center justify-center p-4">
+      {/* Field Monitor Shell Container */}
+      <div className="w-full max-w-5xl h-[88vh] bg-[#EAE7DF] border border-[#B8B4A9] shadow-2xl flex flex-col overflow-hidden">
+        {/* Top Header Bar */}
+        <div className="h-10 w-full bg-[#EAE7DF] border-b border-[#B8B4A9] px-3 flex items-center justify-between shrink-0 font-mono">
+          <div className="flex items-center gap-2">
+            <Target className="w-3.5 h-3.5 text-[#181816]" />
+            <span className="text-[11px] font-bold tracking-wider text-[#181816] uppercase">
+              Spectra Lens // Optical Rangefinder Reticle
+            </span>
+            <span className="text-[#B8B4A9]">|</span>
+            <span className="text-[10px] text-[#4A4843]">
+              Drag bounding box to target UI element
+            </span>
           </div>
 
-          {/* Tabular Verdict Card */}
-          {verdictData && (
-            <div className="absolute bottom-3 right-3 w-80 p-3 rounded bg-paper-base border border-rule-border space-y-2 z-30 pointer-events-auto text-xs font-mono">
-              <div className="flex items-center justify-between pb-1.5 border-b border-rule-border">
-                <div className="flex items-center gap-1.5">
-                  <ShieldAlert className="w-4 h-4 text-signal-vermilion" />
-                  <span className="font-bold text-signal-vermilion">REJECTED · 9.60% LOSS</span>
-                </div>
-                <span className="text-[10px] text-ink-muted">Dual Consent</span>
-              </div>
-
-              <div className="space-y-1 text-[11px]">
-                <div className="flex justify-between">
-                  <span className="text-ink-muted">SAM 3.1:</span>
-                  <span className="text-ink-primary">rSam = {verdictData.rSam.toFixed(4)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-ink-muted">Pixel Match:</span>
-                  <span className="text-ink-primary">
-                    visRatio = {verdictData.visRatio.toFixed(4)} ({verdictData.pixelLossCount} px)
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-ink-muted">Source File:</span>
-                  <span className="text-signal-cool truncate max-w-[160px]">
-                    {verdictData.sourceFile}
-                  </span>
-                </div>
-              </div>
-
-              <div className="pt-2 flex items-center gap-2 border-t border-rule-border">
-                <button
-                  onClick={() => {
-                    onClose();
-                    if (onSendRejectionToRepair) onSendRejectionToRepair();
-                  }}
-                  className="flex-1 h-7 rounded bg-ink-primary text-paper-base text-[10px] font-semibold flex items-center justify-center gap-1 whitespace-nowrap"
-                >
-                  <span className="whitespace-nowrap">Send to Repair</span>
-                  <ArrowRight className="w-3 h-3" />
-                </button>
-                <button
-                  onClick={handleLockInvariant}
-                  className="h-7 px-2 rounded bg-paper-surface border border-rule-border text-ink-muted hover:text-ink-primary text-[10px] flex items-center gap-1 whitespace-nowrap"
-                  title="Lock as UI Invariant"
-                >
-                  <BookmarkPlus className="w-3 h-3" />
-                  <span className="whitespace-nowrap">Lock</span>
-                </button>
-              </div>
-              {lockStatus && (
-                <div className="text-[9px] text-signal-emerald truncate">{lockStatus}</div>
-              )}
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <kbd className="px-1.5 py-0.5 bg-[#DFDCD3] text-[10px] text-[#4A4843] border border-[#B8B4A9]">
+              ESC
+            </kbd>
+            <button
+              onClick={onClose}
+              className="p-1 bg-[#DFDCD3] hover:bg-[#D6D3C9] border border-[#B8B4A9] text-[#181816]"
+              title="Close Lens"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
-      </div>
 
-      {/* Bottom Control Bar */}
-      <div className="h-12 px-4 bg-paper-surface border-t border-rule-border flex items-center justify-between shrink-0 whitespace-nowrap text-xs">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleToggleRecord}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-mono border transition-colors whitespace-nowrap ${
-              isRecording
-                ? 'bg-signal-vermilion/20 border-signal-vermilion text-signal-vermilion'
-                : 'bg-paper-well border-rule-border text-ink-primary'
-            }`}
+        {/* Optical Viewport with Dot-Grid Stage */}
+        <div className="flex-1 relative flex items-center justify-center p-3 bg-[#E5E2DA] fm-dot-stage overflow-hidden">
+          <div
+            ref={viewportRef}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            className="relative w-full max-w-4xl aspect-video border border-[#B8B4A9] cursor-crosshair bg-black overflow-hidden shadow-inner"
           >
-            {isRecording ? <MicOff className="w-3 h-3" /> : <Mic className="w-3 h-3" />}
-            <span className="whitespace-nowrap">{isRecording ? `Recording (${recordSeconds}s)` : 'Speak Invariant'}</span>
-          </button>
-          <span className="text-ink-muted text-[11px] font-mono">
-            Target: "{targetLabel}" · Region [{selectedRegion.x}, {selectedRegion.y},{' '}
-            {selectedRegion.width}×{selectedRegion.height}]
-          </span>
+            <img
+              src={activeImage}
+              alt="Optical Frame"
+              className="w-full h-full object-contain pointer-events-none select-none"
+              draggable={false}
+            />
+
+            {/* Rangefinder Overlay (Millimeter ticks, Corner marks, Crosshairs) */}
+            <RangefinderReticleOverlay showCrosshair={true} />
+
+            {/* Target Selection Bounding Reticle */}
+            <div
+              style={boxStyle}
+              className="absolute border-2 border-[#E05246] bg-[#E05246]/10 pointer-events-none"
+            >
+              <div className="absolute -top-5 left-0 px-1 py-0.5 bg-[#181816] text-white font-mono text-[9px] tracking-tight whitespace-nowrap">
+                [{selectedRegion.x}, {selectedRegion.y}, {selectedRegion.width}×{selectedRegion.height}]
+              </div>
+            </div>
+
+            {/* Floating Hardware Verdict Card */}
+            {verdictData && (
+              <div className="absolute bottom-3 right-3 w-80 p-3 bg-[#EAE7DF] border border-[#B8B4A9] shadow-lg space-y-2 z-30 pointer-events-auto font-mono text-xs">
+                <div className="flex items-center justify-between pb-1.5 border-b border-[#B8B4A9]">
+                  <div className="flex items-center gap-1.5">
+                    <ShieldAlert className="w-4 h-4 text-[#E05246]" />
+                    <span className="px-1.5 py-0.5 bg-[#E05246] text-white text-[10px] font-bold tracking-tight">
+                      REJECTED • {verdictData.lossPct.toFixed(2)}% LOSS
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-[#78756E]">Dual-Instrument</span>
+                </div>
+
+                <div className="space-y-1 text-[11px] text-[#181816]">
+                  <div className="flex justify-between">
+                    <span className="text-[#4A4843]">SAM 3.1:</span>
+                    <span className="font-semibold">rSam = {verdictData.rSam.toFixed(4)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[#4A4843]">Pixel Match:</span>
+                    <span className="font-semibold">
+                      visRatio = {verdictData.visRatio.toFixed(4)} ({verdictData.pixelLossCount} px)
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[#4A4843]">Source File:</span>
+                    <span className="font-mono text-[10px] text-[#181816] truncate max-w-[160px]" title={verdictData.sourceFile}>
+                      {verdictData.sourceFile}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="pt-2 flex items-center gap-2 border-t border-[#B8B4A9]">
+                  <button
+                    onClick={() => {
+                      onClose();
+                      if (onSendRejectionToRepair) onSendRejectionToRepair();
+                    }}
+                    className="flex-1 h-7 bg-[#181816] text-[#EAE7DF] hover:bg-[#2C2B28] active:translate-y-px text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 transition-transform"
+                  >
+                    <span>Send to Repair</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </button>
+                  <button
+                    onClick={handleLockInvariant}
+                    className="h-7 px-2.5 bg-[#DFDCD3] hover:bg-[#D6D3C9] border border-[#B8B4A9] text-[#181816] text-[10px] font-medium flex items-center gap-1 transition-colors"
+                    title="Lock as UI Invariant"
+                  >
+                    <BookmarkPlus className="w-3 h-3" />
+                    <span>Lock</span>
+                  </button>
+                </div>
+                {lockStatus && (
+                  <div className="text-[9px] text-[#1D4D35] font-semibold truncate">{lockStatus}</div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
-        <button
-          onClick={handleCachedReplay}
-          disabled={isVerifying}
-          className="px-3 py-1 rounded bg-ink-primary text-paper-base font-medium text-xs flex items-center gap-1 whitespace-nowrap"
-        >
-          <span className="whitespace-nowrap">{isVerifying ? 'Measuring…' : 'Re-verify Region'}</span>
-        </button>
+        {/* Bottom Hardware Control Bar */}
+        <div className="h-11 px-3 bg-[#EAE7DF] border-t border-[#B8B4A9] flex items-center justify-between shrink-0 font-mono text-xs">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleToggleRecord}
+              className={`flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-mono border transition-colors ${
+                isRecording
+                  ? 'bg-[#E05246] border-[#E05246] text-white font-bold'
+                  : 'bg-[#DFDCD3] hover:bg-[#D6D3C9] border-[#B8B4A9] text-[#181816]'
+              }`}
+            >
+              {isRecording ? <MicOff className="w-3 h-3" /> : <Mic className="w-3 h-3" />}
+              <span>{isRecording ? `Recording (${recordSeconds}s)` : 'Speak Invariant'}</span>
+            </button>
+            <span className="text-[#4A4843] text-[11px]">
+              Target: <span className="text-[#181816] font-semibold">"{targetLabel}"</span> · Coords: [{selectedRegion.x}, {selectedRegion.y}, {selectedRegion.width}×{selectedRegion.height}]
+            </span>
+          </div>
+
+          <button
+            onClick={handleCachedReplay}
+            disabled={isVerifying}
+            className="px-3 py-1 bg-[#181816] text-[#EAE7DF] hover:bg-[#2C2B28] active:translate-y-px font-mono text-[11px] uppercase tracking-wider font-bold transition-transform disabled:opacity-50"
+          >
+            {isVerifying ? 'Measuring…' : 'Re-verify Region ↗'}
+          </button>
+        </div>
       </div>
     </div>
   );

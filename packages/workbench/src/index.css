@@ -1,105 +1,80 @@
-/* Field Monitor UI · Teenage Engineering / Leica Optical Rangefinder Grid */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --color-paper: #EAE7DF;
-  --color-paper-2: #DFDCD3;
-  --color-paper-3: #D6D3C9;
-  --color-ink: #181816;
-  --color-ink-2: #4A4843;
-  --color-muted: #6E6B64;
-  --color-rule: #B8B4A9;
-  --color-rule-2: #8C887E;
-  --color-accent: #181816;
-  --color-ok: #2E7D52;
-  --color-bad: #E05246;
-  --color-cool: #181816;
-
-  --font-display: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-body: var(--font-display);
-  --font-outlier: 'JetBrains Mono', 'SF Mono', 'Atkinson Hyperlegible Mono', ui-monospace, Menlo, monospace;
+  --fm-bg-surface: #EAE7DF;
+  --fm-bg-elevated: #DFDCD3;
+  --fm-bg-well: #D6D3C9;
+  --fm-bg-stage: #E5E2DA;
+  --fm-dot-color: #B5B1A6;
+  --fm-border: #B8B4A9;
+  --fm-border-strong: #181816;
+  --fm-ink: #181816;
+  --fm-ink-secondary: #4A4843;
+  --fm-ink-muted: #78756E;
+  --fm-danger-pill: #E05246;
+  --fm-danger-soft-bg: #F2C6BE;
+  --fm-danger-soft-text: #9E2A22;
+  --fm-danger-soft-border: #DF9B90;
+  --fm-verified-bg: #DCE8DF;
+  --fm-verified-text: #1D4D35;
+  --fm-verified-border: #9BB8A5;
+  --fm-verified-led: #2E7D52;
 }
 
-@layer base {
-  * {
-    box-sizing: border-box;
-  }
-
-  html,
-  body,
-  #root {
-    width: 100vw;
-    height: 100vh;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    background-color: var(--color-paper);
-    color: var(--color-ink);
-    font-family: var(--font-display);
-    font-variant-numeric: tabular-nums;
-  }
-
-  ::selection {
-    background-color: var(--color-paper-3);
-    color: var(--color-ink);
-  }
-
-  :focus-visible {
-    outline: 2px solid var(--color-ink);
-    outline-offset: 1px;
-  }
-
-  button:active:not([disabled]) {
-    transform: translateY(1px);
-  }
+* {
+  box-sizing: border-box;
 }
 
-button {
-  white-space: nowrap;
-}
-
-/* Precision Instrument Hairline Scrollbars */
-::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--color-paper);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--color-rule);
-  border-radius: 2px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-rule-2);
-}
-
-/* Precision Flat Hairline Panes */
-.panel-hairline {
-  background-color: var(--color-paper);
-  border: 1px solid var(--color-rule);
-  color: var(--color-ink);
-}
-
-.well-hairline {
-  background-color: var(--color-paper-3);
-  border: 1px solid var(--color-rule);
-  color: var(--color-ink);
-}
-
-.whitespace-nowrap {
-  white-space: nowrap;
-}
-
-/* High-Precision Tabular Monospace Data Rows */
-.tabular-data {
-  font-family: var(--font-outlier);
+html,
+body,
+#root {
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: var(--fm-bg-surface);
+  color: var(--fm-ink);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Architectural 12px Dot-Grid Stage Background */
+.fm-dot-stage {
+  background-color: var(--fm-bg-stage);
+  background-image: radial-gradient(var(--fm-dot-color) 1px, transparent 1px);
+  background-size: 12px 12px;
+}
+
+/* 45-Degree Red Diagonal Occlusion Hatch Pattern */
+.fm-red-hatch {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(224, 82, 70, 0.28),
+    rgba(224, 82, 70, 0.28) 4px,
+    rgba(217, 56, 41, 0.72) 4px,
+    rgba(217, 56, 41, 0.72) 7px
+  );
+  border: 1.5px solid #D93829;
+}
+
+/* Industrial Thin Scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: #E2DFD7;
+}
+::-webkit-scrollbar-thumb {
+  background: #B8B4A9;
+  border-radius: 0px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #8C887E;
 }
 
 @media (prefers-reduced-motion: reduce) {
