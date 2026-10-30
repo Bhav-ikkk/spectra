@@ -9,12 +9,17 @@ import {
   type EvaluatorSummariesRecord,
   type EvaluatorType,
   type EvaluatorResult,
+  type CalibrationData,
   getCalibration,
+  assertCalibrated,
+  UncalibratedError,
   computeTemplateMatchVisibility,
 } from '@spectra/core';
 import { buildObjectPrompt } from '@spectra/sam-client';
 import { evaluateWithVlmJudge } from '@spectra/invariant-compiler';
 import { SpectraClient } from './client.js';
+
+export { UncalibratedError };
 
 function findProjectRoot(): string {
   let dir = process.cwd();
@@ -53,6 +58,7 @@ export interface BenchmarkRunnerOptions {
   basetenApiKey?: string;
   basetenBaseUrl?: string;
   skipLiveCalls?: boolean;
+  calibration?: CalibrationData;
   onProgress?: (progress: {
     stage: string;
     current: number;
@@ -83,6 +89,11 @@ interface ManifestClip {
 export async function runRefereeBenchmark(
   options: BenchmarkRunnerOptions = {},
 ): Promise<RefereeBenchmarkReport> {
+  const calibration = options.calibration ?? getCalibration();
+  assertCalibrated(calibration);
+  const threeSigmaThreshold = 3 * calibration.sigma_noise;
+  const deltaLimit = calibration.delta;
+
   const root = findProjectRoot();
   const manifestPath = options.manifestPath
     ? path.resolve(options.manifestPath)
@@ -136,7 +147,7 @@ export async function runRefereeBenchmark(
     return a.groundTruthOcclusion - b.groundTruthOcclusion;
   });
 
-  const client = new SpectraClient();
+  const client = new SpectraClient({ calibration });
   const v1Results: ClipBenchmarkResult[] = [];
 
   // =========================================================================
@@ -445,7 +456,7 @@ export async function runRefereeBenchmark(
     }
 
     const tpl = computeTemplateMatchVisibility(t0Abs, tkAbs, clip.targetBBox);
-    const instBVerdict: 'pass' | 'fail' = tpl.measuredLoss > 0.0135 ? 'fail' : 'pass';
+    const instBVerdict: 'pass' | 'fail' = tpl.measuredLoss > threeSigmaThreshold ? 'fail' : 'pass';
 
     full45Results.push({
       clipId: clip.clipId,
@@ -591,16 +602,14 @@ export async function runRefereeBenchmark(
     domClips.map((r) => r.evaluators.spectra_referee.absoluteError).reduce((sum, e) => sum + e, 0) /
     (domClips.length || 1);
 
-  const calibration = getCalibration();
-
   const report: RefereeBenchmarkReport = {
     version: '1.0',
     generatedAt: new Date().toISOString(),
     runId: `run_referee_benchmark_${Date.now()}`,
     calibration: {
-      sigma_noise: calibration.sigma_noise ?? 0.0045,
-      delta: calibration.delta ?? 0.041,
-      threshold: 3 * (calibration.sigma_noise ?? 0.0045),
+      sigma_noise: calibration.sigma_noise,
+      delta: deltaLimit,
+      threshold: threeSigmaThreshold,
     },
     summary: {
       totalClips: allClips.length,

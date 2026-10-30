@@ -11,10 +11,14 @@ import {
 export function recomputeStaticCalibration() {
   console.log('=== Recomputing UI Baseline Jitter & Calibration (Offline — Zero API Calls) ===\n');
 
-  const uiFixturePath = path.resolve('benchmark/responses/phase2-smoke/canvas_000_v1_sam.json');
-  const spike1FixturePath = path.resolve('benchmark/responses/spike-1/response.json');
+  const canonicalFixturePath = path.resolve('benchmark/responses/phase2-smoke/canvas_000_v1_sam.json');
+  if (!fs.existsSync(canonicalFixturePath)) {
+    throw new Error(
+      `Canonical calibration fixture missing at ${canonicalFixturePath}. Refusing to fall back to legacy 320x176 spike-1 fixture. Restore benchmark/responses/phase2-smoke/canvas_000_v1_sam.json before recomputing calibration.`
+    );
+  }
 
-  const fixturePath = fs.existsSync(uiFixturePath) ? uiFixturePath : spike1FixturePath;
+  const fixturePath = canonicalFixturePath;
   console.log(`Loading fixture from: ${fixturePath}`);
 
   const rawJson = JSON.parse(fs.readFileSync(fixturePath, 'utf-8'));
