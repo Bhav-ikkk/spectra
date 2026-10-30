@@ -1,3 +1,8 @@
+---
+name: field-monitor-ui
+description: "Teenage Engineering and Leica optical rangefinder Swiss industrial grid design system for the Spectra Workbench UI, mechanical controls, and optical telemetry."
+---
+
 # Skill: Spectra Field Monitor UI (Swiss Industrial Technical Grid)
 
 ## 1. Exact Color & Surface Tokens (Hex Lock)
