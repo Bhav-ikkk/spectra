@@ -667,7 +667,7 @@ export async function handleCompileVoice(req: IncomingMessage, res: ServerRespon
         sessionId,
         transcript: transcriptText,
         document: compiled,
-        invariants: compiled.invariants,
+        invariants: compiled?.invariants,
       });
       return;
     }

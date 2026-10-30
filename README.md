@@ -2,7 +2,7 @@
 
 > _"Don't trust 'done.' Measure it."_
 
-[![Build & Test](<https://img.shields.io/badge/CI%20Status-Passing%20(94%20tests)-emerald?style=for-the-badge&logo=githubactions>)](https://github.com/Bhav-ikkk/spectra/actions)
+[![Build & Test](<https://img.shields.io/badge/CI%20Status-Passing%20(130%20tests)-emerald?style=for-the-badge&logo=githubactions>)](https://github.com/Bhav-ikkk/spectra/actions)
 [![Rule 1 Verified](https://img.shields.io/badge/Rule%201-100%25%20Non--Fabricated%20Data-blue?style=for-the-badge)](file:///d:/Bhavik/Spectra/AGENTS.md)
 [![Rule 2 Calibrated](https://img.shields.io/badge/Rule%202%20Calibrated-σ_noise%200.45%25%20%7C%203σ%201.35%25-purple?style=for-the-badge)](file:///d:/Bhavik/Spectra/packages/core/src/calibration.json)
 [![Meta AI Models](https://img.shields.io/badge/Meta%20AI-SAM%203.1%20%7C%20Muse%20Spark%20%7C%20Muse%20Voice-indigo?style=for-the-badge)](https://dev.meta.ai)
@@ -75,7 +75,7 @@ Spectra integrates 5 specialized Meta AI models and developer surfaces across an
 
 ## Empirical 4-Evaluator Referee Benchmark Results
 
-We evaluated 4 evaluators across **45 benchmark video clips** covering 3 application environments (`HTML5 Canvas`, `Raw Mobile MP4`, `DOM Catch`) across 7 occlusion levels ($0\%$, $5\%$, $10\%$, $15\%$, $25\%$, $40\%$, $60\%$).
+Evaluated across 21 canonical `v1` clips (18 occluded failure clips + 3 clean controls) for all 4 evaluators (DOM Center Hit-Test: 94.4% false-pass, Muse Spark 1.3: 61.1% false-pass, Muse Spark Open 1026: 44.4% false-pass, Spectra Referee: 0.0% false-pass, 1.11% MAE); Instrument B + DOM additionally swept across all 45 clips (`v1`–`v3`).
 
 All measurements below are **100% genuine and reproducible** from [`benchmark/results/referee_benchmark_report.json`](file:///d:/Bhavik/Spectra/benchmark/results/referee_benchmark_report.json) (Rule 1 Non-Fabrication Compliance):
 
@@ -171,9 +171,13 @@ pnpm --filter @spectra/cli check \
 }
 ```
 
-Exposes 3 bounded tools: `spectra_verify`, `spectra_compile_invariant`, and `spectra_check`.
+Exposes 4 bounded tools:
+1. `spectra_verify` — Dual-instrument optical verification on a video clip or frame pair (with zero-bbox SAM Frame-0 auto-detection).
+2. `spectra_check` — Batch verification of `.spectra/invariants.json` across a clip manifest.
+3. `spectra_compile_invariant` — Voice `.wav` (`muse-voice-transcribe-1.0`) or text compilation (`muse-spark-1.3` / `meta-models/muse-spark-open-1026`) into Zod-validated `.spectra/invariants.json`.
+4. `spectra_closed_loop` — Autonomous 4-phase Closed-Loop Referee & Repair execution across scenarios `s1`, `s2`, `s3`, or `all`.
 
-### 5. Run Monorepo Test Suites (94 Tests Passing)
+### 5. Run Monorepo Test Suites (130 Tests Passing)
 
 ```bash
 # Offline unit, integration, and contract tests (zero API spend)

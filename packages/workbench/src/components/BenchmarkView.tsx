@@ -196,6 +196,19 @@ export const BenchmarkView: React.FC<BenchmarkViewProps> = ({ report, onClose })
         </div>
       </div>
 
+      {/* Scope Subtitle & Telemetry Strip */}
+      <div className="px-4 py-2 bg-[#DFDCD3] border-b border-[#B8B4A9] flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono">
+        <span className="text-[#181816] font-semibold">
+          21 Canonical v1 Clips (18 Occluded, 3 Clean) Across All 4 Evaluators · 45-Clip Full Sweep for Instrument B + DOM
+        </span>
+        <div className="flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#2E7D52]" />
+          <span className="px-2 py-0.5 rounded-[3px] border border-[#B8B4A9] bg-[#EAE7DF] text-[#181816] font-semibold text-[10px]">
+            8f @ 4FPS · ~480ms · CACHED ($0.00)
+          </span>
+        </div>
+      </div>
+
       {/* Main Content Area */}
       <div className="p-4 space-y-4">
         {/* Top 4 Evaluator KPI Scoreboard */}

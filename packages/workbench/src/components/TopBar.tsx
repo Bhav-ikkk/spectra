@@ -121,8 +121,16 @@ export const TopBar: React.FC<TopBarProps> = ({
         })}
       </nav>
 
-      {/* Right: Lens Overlay Trigger + Calibration Pill */}
+      {/* Right: Lens Overlay Trigger + Calibration Pill + Economy Badge */}
       <div className="flex items-center gap-2 shrink-0">
+        <div
+          title="Rule 6 Credit Protection & 8-Frame Cap: Minimal SAM 3.1 Token Economy"
+          className="border border-[#B8B4A9] bg-[#DFDCD3] text-[#181816] font-mono text-[11px] px-2 py-0.5 rounded-[4px] flex items-center gap-1.5 select-none"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-[#2E7D52]" />
+          <span>8f @ 4FPS · ~480ms · CACHED ($0.00)</span>
+        </div>
+
         <button
           type="button"
           onClick={onOpenLens}

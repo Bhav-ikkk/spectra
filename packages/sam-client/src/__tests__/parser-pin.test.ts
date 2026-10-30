@@ -146,3 +146,4 @@ describe('@meta-sam/parser@0.1.0 Wire-Grammar Pin Invariants (Spike 1 / Phase 2)
     expect(svgPath.endsWith('Z')).toBe(true);
   });
 });
+

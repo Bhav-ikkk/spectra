@@ -49,19 +49,21 @@ sloplint summary: 16 FAIL, 3 WARN across packages/workbench/src/
 Under **Spectra Agent Rule 1 (No Fabricated Data)** and **Rule 2 (Noise-Floor from Measurements Only)**, all numbers are permanently locked from real measurements:
 
 ### Benchmark Disagreement & False-Pass Rates
+Evaluated across 21 canonical `v1` clips (18 occluded failure clips + 3 clean controls) for all 4 evaluators (DOM Center Hit-Test: 94.4% false-pass, Muse Spark 1.3: 61.1% false-pass, Muse Spark Open 1026: 44.4% false-pass, Spectra Referee: 0.0% false-pass, 1.11% MAE); Instrument B + DOM additionally swept across all 45 clips (`v1`–`v3`).
+
 | Evaluator Strategy | Ground Truth False-Pass Rate | Status |
 | :--- | :--- | :--- |
 | **DOM Hit-Testing** | **94.4%** (17/18 false passes) | Fails on visual layering, canvas, and transforms |
 | **VLM Open-Weight (`muse-spark-1.3` / `open-1026`)** | **44.4%** (8/18 false passes) | Misses boundary edge-cases and partial drawer overlaps |
 | **VLM Flagship** | **61.1%** (11/18 false passes) | Hallucinates button visibility behind translucent scrims |
-| **SPECTRA Referee (Dual-Instrument)** | **0.0%** (0/18 false passes) | Zero false passes across all 45 benchmark clips |
+| **SPECTRA Referee (Dual-Instrument)** | **0.0%** (0/18 false passes) | Zero false passes on canonical v1 occluded clips |
 
 ### Empirical Precision & Calibration Values
-- **Spectra MAE:** `1.11%` (Mean Absolute Error against ground-truth occlusion)
+- **Spectra MAE:** `1.11%` (Mean Absolute Error against ground-truth occlusion across canonical v1 clips)
 - **$\sigma_{\text{noise}}$ (Noise Floor):** `0.0045` (`0.45%`)
 - **$3\sigma$ Rejection Threshold:** `0.0135` (`1.35%` visibility loss)
 - **$\Delta$ Disagreement Limit:** `0.0410` (`4.10%`)
-- **Calibration Citation:** `run-2026-10-26-45clips-10reps`
+- **Calibration Citation:** `live SAM 3.1 calibration run resp_6ae03ef78bd3db0853c642af on canonical clip canvas_000_v1 (2026-10-27T11:46:46.842Z)`
 - **Clip Specification:** Exactly 8 frames @ 4.0 FPS (2.0s duration, 1280×720)
 
 ### Preserved API Endpoints & State Handlers
