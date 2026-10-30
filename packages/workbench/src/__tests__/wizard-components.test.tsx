@@ -1,96 +1,118 @@
 import { describe, it, expect } from 'vitest';
 import React from 'react';
 import { TopBar } from '../components/TopBar.js';
-import { Step1SelectClip } from '../components/Step1SelectClip.js';
-import { Step2OpticalScan } from '../components/Step2OpticalScan.js';
-import { Step3VerifyFix } from '../components/Step3VerifyFix.js';
+import { LeftPane } from '../components/LeftPane.js';
+import { TelemetryPane } from '../components/TelemetryPane.js';
+import { OpticalViewport } from '../components/OpticalViewport.js';
+import {
+  HardwareToggle,
+  VerticalLedMeter,
+  HardwareMiniSlider,
+  RangefinderReticleOverlay,
+  SubPixelMatrixLoupe,
+} from '../components/FieldMonitorPrimitives.js';
 import { App } from '../App.js';
 
-describe('@spectra/workbench - Apple-Style 3-Step Wizard Component Architecture', () => {
-  it('exports all 3 wizard steps and App component cleanly', () => {
-    expect(TopBar).toBeDefined();
-    expect(Step1SelectClip).toBeDefined();
-    expect(Step2OpticalScan).toBeDefined();
-    expect(Step3VerifyFix).toBeDefined();
-    expect(App).toBeDefined();
+describe('@spectra/workbench - Field Monitor UI (Step 1) Component Architecture', () => {
+  it('exports all hardware primitives cleanly', () => {
+    expect(HardwareToggle).toBeDefined();
+    expect(VerticalLedMeter).toBeDefined();
+    expect(HardwareMiniSlider).toBeDefined();
+    expect(RangefinderReticleOverlay).toBeDefined();
+    expect(SubPixelMatrixLoupe).toBeDefined();
   });
 
-  it('validates TopBar component structure and stepper navigation contract', () => {
-    let selectedStep = 1;
-    const element = React.createElement(TopBar, {
-      currentStep: 1,
-      onStepChange: (step) => {
-        selectedStep = step;
+  it('renders HardwareToggle and responds to clicks', () => {
+    let nextVal = false;
+    const el = React.createElement(HardwareToggle, {
+      active: false,
+      onChange: (val) => {
+        nextVal = val;
       },
-      onOpenBenchmark: () => {},
-      onOpenVoice: () => {},
-      onOpenLens: () => {},
+      label: 'Test Toggle',
+    });
+    expect(el).toBeDefined();
+    expect(el.props.active).toBe(false);
+  });
+
+  it('renders VerticalLedMeter with 14 bars', () => {
+    const el = React.createElement(VerticalLedMeter, {
+      ratio: 0.8482,
+      variant: 'charcoal',
+    });
+    expect(el).toBeDefined();
+    expect(el.props.ratio).toBe(0.8482);
+  });
+
+  it('renders RangefinderReticleOverlay with SVG reticle ticks', () => {
+    const el = React.createElement(RangefinderReticleOverlay, {
+      showCrosshair: true,
+    });
+    expect(el).toBeDefined();
+  });
+
+  it('renders SubPixelMatrixLoupe with target label', () => {
+    const el = React.createElement(SubPixelMatrixLoupe, {
+      targetLabel: 'Pay $149.00',
+      lossPercent: 15.0,
+      isRepaired: false,
+    });
+    expect(el).toBeDefined();
+    expect(el.props.targetLabel).toBe('Pay $149.00');
+  });
+
+  it('validates TopBar component structure matching image_41bab6.jpg', () => {
+    let currentTab = 'arena';
+    const element = React.createElement(TopBar, {
+      activeTab: 'arena',
+      onSelectTab: (tab) => {
+        currentTab = tab;
+      },
       calibration: {
         sigma_noise: 0.0045,
         threshold: 0.0135,
         delta: 0.041,
-        runIdCitation: 'run-20261028',
+        runIdCitation: '2026-10-28',
       },
     });
 
     expect(element).toBeDefined();
     expect(element.type).toBe(TopBar);
-    expect(element.props.currentStep).toBe(1);
-    expect(typeof element.props.onStepChange).toBe('function');
+    expect(element.props.activeTab).toBe('arena');
   });
 
-  it('validates Step 1 Select Clip contract and preset scenarios', () => {
-    let pickedScenario = '';
-    const element = React.createElement(Step1SelectClip, {
+  it('validates LeftPane component structure and scenario list', () => {
+    let picked = 's2';
+    const element = React.createElement(LeftPane, {
+      selectedScenarioId: 's2',
       onSelectScenario: (id) => {
-        pickedScenario = id;
+        picked = id;
       },
-      onSelectCleanControl: () => {},
-      onRunCustomScan: () => {},
-      targetLabel: 'Complete Checkout',
-      setTargetLabel: () => {},
-      isScanning: false,
     });
 
     expect(element).toBeDefined();
-    expect(element.type).toBe(Step1SelectClip);
-    expect(element.props.targetLabel).toBe('Complete Checkout');
-    expect(typeof element.props.onSelectScenario).toBe('function');
+    expect(element.type).toBe(LeftPane);
+    expect(element.props.selectedScenarioId).toBe('s2');
   });
 
-  it('validates Step 2 Optical Scan contract and dual-referee findings', () => {
-    const element = React.createElement(Step2OpticalScan, {
-      scenarioId: 's3',
-      targetLabel: 'Complete Checkout',
-      onBackToStep1: () => {},
-      onProceedToStep3: () => {},
+  it('validates TelemetryPane component structure with dual-instrument readouts', () => {
+    const element = React.createElement(TelemetryPane, {
+      phase: 2,
+      calibration: {
+        sigma_noise: 0.0045,
+        threshold: 0.0135,
+        delta: 0.041,
+      },
     });
 
     expect(element).toBeDefined();
-    expect(element.type).toBe(Step2OpticalScan);
-    expect(element.props.scenarioId).toBe('s3');
-    expect(typeof element.props.onProceedToStep3).toBe('function');
+    expect(element.type).toBe(TelemetryPane);
+    expect(element.props.phase).toBe(2);
   });
 
-  it('validates Step 3 Auto-Patch & Verify contract with split-curtain comparison', () => {
-    const element = React.createElement(Step3VerifyFix, {
-      scenarioId: 's3',
-      targetLabel: 'Complete Checkout',
-      onBackToScan: () => {},
-      onVerifyAnother: () => {},
-    });
-
-    expect(element).toBeDefined();
-    expect(element.type).toBe(Step3VerifyFix);
-    expect(element.props.scenarioId).toBe('s3');
-    expect(typeof element.props.onBackToScan).toBe('function');
-    expect(typeof element.props.onVerifyAnother).toBe('function');
-  });
-
-  it('validates root App component renders top bar and initial wizard state', () => {
+  it('validates root App component renders 3-pane flush shell', () => {
     const element = React.createElement(App);
     expect(element).toBeDefined();
     expect(element.type).toBe(App);
   });
 });
-

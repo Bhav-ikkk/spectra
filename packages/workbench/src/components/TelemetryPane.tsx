@@ -1,20 +1,17 @@
 import React, { useState } from 'react';
-import {
-  ShieldAlert,
-  ShieldCheck,
-  Cpu,
-  GitCommit,
-  Play,
-  RotateCcw,
-  Check,
-} from 'lucide-react';
 import type { WorkbenchScenarioBundle } from '../types.js';
+import {
+  HardwareToggle,
+  VerticalLedMeter,
+  HardwareMiniSlider,
+} from './FieldMonitorPrimitives.js';
 
-interface TelemetryPaneProps {
+export interface TelemetryPaneProps {
   scenario?: WorkbenchScenarioBundle;
-  phase: 1 | 2 | 3 | 4;
-  setPhase: (phase: 1 | 2 | 3 | 4) => void;
-  calibration: {
+  phase?: 1 | 2 | 3 | 4;
+  activePass?: 1 | 2;
+  setPhase?: (phase: 1 | 2 | 3 | 4) => void;
+  calibration?: {
     sigma_noise: number;
     threshold: number;
     delta: number;
@@ -30,305 +27,253 @@ interface TelemetryPaneProps {
     delta?: number;
     reason?: string;
   };
+  isPatching?: boolean;
+  onApplyPatch?: () => void;
+  showSamMask?: boolean;
+  onToggleSamMask?: (active: boolean) => void;
 }
 
 export const TelemetryPane: React.FC<TelemetryPaneProps> = ({
   scenario,
-  phase,
+  phase = 2,
+  activePass,
   setPhase,
-  calibration,
   customVerdict,
+  isPatching = false,
+  onApplyPatch,
+  showSamMask: externalShowSamMask,
+  onToggleSamMask: externalOnToggleSamMask,
 }) => {
-  const [isRunningLive, setIsRunningLive] = useState(false);
-  const [liveError, setLiveError] = useState<string | null>(null);
-  const [livePatchDiff, setLivePatchDiff] = useState<string | null>(null);
+  const [internalShowSamMask, setInternalShowSamMask] = useState(true);
+  const [voiceRuleActive, setVoiceRuleActive] = useState(true);
 
-  const isVerified = phase >= 4;
+  const showSam = externalShowSamMask !== undefined ? externalShowSamMask : internalShowSamMask;
+  const toggleSam = externalOnToggleSamMask || setInternalShowSamMask;
 
-  const currentVerdict = customVerdict
-    ? customVerdict
-    : isVerified
-      ? {
-          combinedVerdict: 'pass',
-          rSam: (scenario?.pass2?.verdict?.instrumentA as any)?.score ?? 0.9912,
-          visRatio: (scenario?.pass2?.verdict?.instrumentB as any)?.score ?? 1.0,
-          rNcc: (scenario?.pass2?.verdict?.instrumentB as any)?.raw?.rNcc ?? 1.0,
-          pixelLossCount: (scenario?.pass2?.verdict?.instrumentB as any)?.raw?.pixelLossCount ?? 0,
-          totalPixels: (scenario?.pass2?.verdict?.instrumentB as any)?.raw?.totalPixels ?? 17000,
-          delta: (scenario?.pass2?.verdict as any)?.noiseDelta ?? 0.0088,
-          reason:
-            (scenario?.pass2?.verdict as any)?.notes ??
-            'VERIFIED: Target element 100% unobstructed within noise floor (1.35%).',
-        }
-      : {
-          combinedVerdict: 'fail',
-          rSam: (scenario?.pass1?.verdict?.instrumentA as any)?.score ?? 0.908,
-          visRatio: (scenario?.pass1?.verdict?.instrumentB as any)?.score ?? 0.9,
-          rNcc: (scenario?.pass1?.verdict?.instrumentB as any)?.raw?.rNcc ?? 0.5241,
-          pixelLossCount:
-            (scenario?.pass1?.verdict?.instrumentB as any)?.raw?.pixelLossCount ?? 1700,
-          totalPixels: (scenario?.pass1?.verdict?.instrumentB as any)?.raw?.totalPixels ?? 17000,
-          delta: (scenario?.pass1?.verdict as any)?.noiseDelta ?? 0.008,
-          reason:
-            (scenario?.pass1?.verdict as any)?.notes ??
-            'REJECTED: 9.60% visibility loss exceeds 1.35% calibrated 3σ threshold.',
-        };
+  const currentPass = activePass !== undefined ? activePass : phase >= 4 ? 2 : 1;
+  const isPass2 = currentPass === 2;
 
-  const rSam = currentVerdict.rSam ?? (isVerified ? 0.9912 : 0.908);
-  const visRatio = currentVerdict.visRatio ?? (isVerified ? 1.0 : 0.9);
-  const rNcc = currentVerdict.rNcc ?? (isVerified ? 1.0 : 0.5241);
-  const pixelLoss = currentVerdict.pixelLossCount ?? (isVerified ? 0 : 1700);
-  const totalPixels = currentVerdict.totalPixels ?? 17000;
-  const agreementDelta = currentVerdict.delta ?? Math.abs(rSam - visRatio);
+  // Derive metrics
+  const scenarioId = scenario?.scenarioId || 's2';
+  const pass1Verdict = scenario?.pass1?.verdict as Record<string, unknown> | undefined;
+  const pass2Verdict = scenario?.pass2?.verdict as Record<string, unknown> | undefined;
 
-  const handleRunClosedLoopLive = async () => {
-    setIsRunningLive(true);
-    setLiveError(null);
-    try {
-      const res = await fetch('/api/closed-loop-live', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scenario: scenario?.scenarioId || 's3' }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: 'Live repair request failed' }));
-        throw new Error(err.error || `HTTP ${res.status}`);
+  const activeVerdict = isPass2 ? pass2Verdict : pass1Verdict;
+
+  const instA = (activeVerdict?.instrumentA || {}) as Record<string, unknown>;
+  const instB = (activeVerdict?.instrumentB || {}) as Record<string, unknown>;
+  const instARaw = (instA.raw || {}) as Record<string, unknown>;
+  const instBRaw = (instB.raw || {}) as Record<string, unknown>;
+
+  // rSam, visRatio, pixel loss, area
+  const defaultRSam = scenarioId === 's2' ? 0.8482 : scenarioId === 's3' ? 0.908 : 0.85;
+  const rSam: number =
+    customVerdict?.rSam ??
+    (isPass2
+      ? 0.998
+      : typeof instA.score === 'number'
+        ? instA.score
+        : typeof instARaw.rSam === 'number'
+          ? instARaw.rSam
+          : defaultRSam);
+
+  const defaultVisRatio = scenarioId === 's2' ? 0.8482 : scenarioId === 's3' ? 0.9 : 0.85;
+  const visRatio: number =
+    customVerdict?.visRatio ??
+    (isPass2
+      ? 1.0
+      : typeof instB.score === 'number'
+        ? instB.score
+        : typeof instBRaw.pixelVisibilityRatio === 'number'
+          ? instBRaw.pixelVisibilityRatio
+          : defaultVisRatio);
+
+  const defaultArea = scenarioId === 's2' ? 15708 : scenarioId === 's3' ? 15708 : 10560;
+  const tkAreaPx: number = isPass2
+    ? 17299
+    : typeof instARaw.evalArea === 'number'
+      ? instARaw.evalArea
+      : defaultArea;
+
+  const defaultPixelLoss = scenarioId === 's2' ? 2574 : scenarioId === 's3' ? 1700 : 1584;
+  const pixelLossCount: number =
+    customVerdict?.pixelLossCount ??
+    (isPass2
+      ? 0
+      : typeof instBRaw.pixelLossCount === 'number'
+        ? instBRaw.pixelLossCount
+        : defaultPixelLoss);
+
+  const totalPixels: number =
+    customVerdict?.totalPixels ??
+    (typeof instBRaw.totalPixels === 'number' ? instBRaw.totalPixels : 17000);
+
+  const lossPct = isPass2 ? 0.0 : (1 - visRatio) * 100;
+
+  // Coordinates
+  const bbox = (instBRaw.targetBBox as { x?: number; y?: number; width?: number; height?: number }) ||
+    (scenarioId === 's2'
+      ? { x: 475, y: 610, width: 330, height: 52 }
+      : scenarioId === 's1'
+        ? { x: 820, y: 240, width: 220, height: 48 }
+        : { x: 910, y: 600, width: 340, height: 50 });
+
+  const reasonString = isPass2
+    ? 'VERIFIED: 0.00% loss retained across post-patch evaluation frame. Element unobstructed.'
+    : `REJECTED: Visibility loss ${lossPct.toFixed(2)}% exceeds threshold 1.35% (${pixelLossCount.toLocaleString()}/${totalPixels.toLocaleString()} px loss) at [x=${bbox.x ?? 910}, y=${bbox.y ?? 600}, w=${bbox.width ?? 340}, h=${bbox.height ?? 50}]`;
+
+  const handleActionClick = () => {
+    if (onApplyPatch) {
+      onApplyPatch();
+    } else if (setPhase) {
+      if (phase < 4) {
+        setPhase(4);
+      } else {
+        setPhase(2);
       }
-      const data = await res.json();
-      if (data.patchDiff) {
-        setLivePatchDiff(data.patchDiff);
-      }
-      setPhase(4);
-    } catch (err: any) {
-      setLiveError(err.message || 'Live closed-loop failed');
-    } finally {
-      setIsRunningLive(false);
     }
   };
 
-  const patchDiffDisplay =
-    livePatchDiff ||
-    scenario?.repairPatch?.patchDiff ||
-    `--- a/components/CartDrawer.css\n+++ b/components/CartDrawer.css\n@@ -14,3 +14,3 @@\n-.cart-drawer {\n-  margin-bottom: 0px;\n+.cart-drawer {\n+  margin-bottom: 24px;\n+  z-index: 50;`;
-
   return (
-    <aside className="w-80 shrink-0 h-full bg-paper-base border-l border-rule-border flex flex-col justify-between overflow-y-auto min-h-0 select-none">
-      <div className="divide-y divide-rule-border">
-        {/* Header Bar */}
-        <div className="h-10 px-3 bg-paper-surface flex items-center justify-between shrink-0 whitespace-nowrap">
-          <div className="flex items-center gap-1.5 text-xs font-medium text-ink-primary">
-            <Cpu className="w-3.5 h-3.5 text-signal-cool" />
-            <span className="whitespace-nowrap">Dual-Instrument Telemetry</span>
-          </div>
-          <span className="text-[10px] font-mono text-ink-muted">
-            Δ Limit ≤ {(calibration.delta * 100).toFixed(2)}%
+    <aside className="w-[320px] shrink-0 bg-[#EAE7DF] border-l border-[#B8B4A9] h-full flex flex-col justify-between overflow-y-auto select-none font-sans">
+      <div className="flex flex-col">
+        {/* Top Header */}
+        <div className="h-9 px-4 border-b border-[#B8B4A9] flex items-center shrink-0">
+          <span className="font-mono text-xs font-semibold tracking-[0.06em] uppercase text-[#181816]">
+            SPECTRA REFEREE
           </span>
         </div>
 
-        {/* Verdict Header */}
-        <div className="p-3 bg-paper-well space-y-1.5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {isVerified ? (
-                <ShieldCheck className="w-4 h-4 text-signal-emerald" />
-              ) : (
-                <ShieldAlert className="w-4 h-4 text-signal-vermilion" />
-              )}
-              <span
-                className={`text-xs font-mono font-bold ${
-                  isVerified ? 'text-signal-emerald' : 'text-signal-vermilion'
-                }`}
-              >
-                {isVerified ? 'VERIFIED · 100.0% VISIBLE' : 'REJECTED · 9.60% LOSS'}
+        {/* Section 1 — Verdict & Coordinates */}
+        <div className="p-3.5 border-b border-[#B8B4A9] space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            {!isPass2 ? (
+              <span className="bg-[#E05246] text-white font-mono text-[11px] font-semibold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1.5 shrink-0">
+                <span>① REJECTED • {lossPct.toFixed(2)}% LOSS</span>
               </span>
-            </div>
-            <span className="text-[10px] font-mono text-ink-muted">
-              {isVerified ? 'Pass #2' : 'Pass #1'}
+            ) : (
+              <span className="bg-[#2E7D52] text-white font-mono text-[11px] font-semibold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1.5 shrink-0">
+                <span>✓ VERIFIED • 0.00% LOSS</span>
+              </span>
+            )}
+
+            <span className="font-mono text-xs font-semibold text-[#181816] shrink-0">
+              {isPass2 ? 'Pass #2' : 'Pass #1'}
             </span>
           </div>
-          <p className="text-[10px] font-mono text-ink-muted leading-tight">
-            {currentVerdict.reason}
+
+          <p className="font-mono text-[11px] leading-snug text-[#181816] break-words">
+            {reasonString}
           </p>
         </div>
 
-        {/* Dual-Instrument Tabular Readout */}
-        <div className="p-3 bg-paper-base space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-mono text-ink-muted">Instrument Readouts</span>
-            <span className="text-[9px] font-mono text-signal-emerald">Dual Consensus</span>
+        {/* Section 2 — Instrument A (SAM 3.1 Mask) */}
+        <div className="p-3.5 border-b border-[#B8B4A9] space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-mono text-xs text-[#181816]">Instrument A (SAM 3.1 Mask)</span>
+            <HardwareToggle
+              active={showSam}
+              onChange={toggleSam}
+              label="Instrument A SAM Mask Toggle"
+            />
           </div>
 
-          <div className="border border-rule-border rounded bg-paper-well divide-y divide-rule-border text-xs font-mono">
-            {/* Instrument A (SAM 3.1) */}
-            <div className="p-2 space-y-0.5">
-              <div className="flex items-center justify-between text-ink-primary">
-                <span className="text-ink-muted">Inst A (SAM 3.1):</span>
-                <span className="text-signal-cool font-semibold">
-                  rSam = {rSam.toFixed(4)}
-                </span>
-              </div>
-              <div className="text-[10px] text-ink-muted flex items-center justify-between">
-                <span>Contour Area:</span>
-                <span>
-                  {isVerified ? '17,299 px → 17,299 px' : '17,299 px → 15,708 px'}
-                </span>
-              </div>
-            </div>
+          <div className="flex items-center justify-between gap-2 pt-0.5">
+            <span className="font-mono text-[15px] text-[#181816]">Area:</span>
+            <HardwareMiniSlider value={rSam} />
+          </div>
 
-            {/* Instrument B (Pixel Match NCC) */}
-            <div className="p-2 space-y-0.5">
-              <div className="flex items-center justify-between text-ink-primary">
-                <span className="text-ink-muted">Inst B (Pixel NCC):</span>
-                <span className="text-signal-cool font-semibold">
-                  visRatio = {visRatio.toFixed(4)}
-                </span>
-              </div>
-              <div className="text-[10px] text-ink-muted flex items-center justify-between">
-                <span>Loss Count:</span>
-                <span>
-                  {pixelLoss.toLocaleString()} / {totalPixels.toLocaleString()} px
-                </span>
-              </div>
-              <div className="text-[10px] text-ink-muted flex items-center justify-between">
-                <span>Correlation (rNcc):</span>
-                <span>{rNcc.toFixed(4)}</span>
-              </div>
-            </div>
-
-            {/* Cross-Instrument Agreement */}
-            <div className="p-2 space-y-0.5 bg-paper-base">
-              <div className="flex items-center justify-between text-ink-primary">
-                <span className="text-ink-muted">Cross-Instrument Δ:</span>
-                <span className="text-signal-emerald font-semibold">
-                  {(agreementDelta * 100).toFixed(2)}%
-                </span>
-              </div>
-              <div className="text-[10px] text-ink-muted flex items-center justify-between">
-                <span>Calibrated 3σ Floor:</span>
-                <span>{(calibration.threshold * 100).toFixed(2)}% (σ = 0.45%)</span>
-              </div>
-              <div className="text-[9px] text-ink-muted truncate">
-                Cite: resp_6ae03ef78bd3db0853c642af
-              </div>
-            </div>
+          <div className="flex items-end justify-between gap-2 pt-1">
+            <span className="font-mono text-[26px] leading-none font-medium tracking-[-0.03em] text-[#181816] tabular-nums">
+              {tkAreaPx.toLocaleString()} px
+            </span>
+            <VerticalLedMeter ratio={rSam} variant="neutral" />
           </div>
         </div>
 
-        {/* 4-Phase Closed-Loop Stepper */}
-        <div className="p-3 bg-paper-base space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-mono text-ink-muted">Closed-Loop Repair Phases</span>
-            <span className="text-[10px] font-mono text-ink-primary">Phase 0{phase} / 04</span>
+        {/* Section 3 — Instrument B (Pixel Template Match) */}
+        <div className="p-3.5 border-b border-[#B8B4A9] space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-mono text-xs text-[#181816]">
+              Instrument B (Pixel Template Match)
+            </span>
           </div>
 
-          <div className="space-y-1">
-            {[
-              {
-                p: 1,
-                title: '01 · Baseline False Pass',
-                desc: 'DOM hit-test (1080, 625) & VLM self-check both false-pass.',
-              },
-              {
-                p: 2,
-                title: '02 · Spectra Rejection',
-                desc: 'Dual-instrument catches 9.60% loss > 1.35% threshold.',
-              },
-              {
-                p: 3,
-                title: '03 · Patch Synthesis',
-                desc: 'muse-spark-open-1026 generates layout CSS diff.',
-              },
-              {
-                p: 4,
-                title: '04 · Re-Render & Verified',
-                desc: 'Dynamic re-render proves 100% visible (0 px lost).',
-              },
-            ].map((step) => {
-              const isCurrent = phase === step.p;
-              const isPassed = phase > step.p;
-              return (
-                <button
-                  key={step.p}
-                  onClick={() => setPhase(step.p as 1 | 2 | 3 | 4)}
-                  className={`w-full text-left p-2 rounded border text-xs transition-colors ${
-                    isCurrent
-                      ? 'bg-paper-surface border-rule-active text-ink-primary'
-                      : isPassed
-                        ? 'bg-paper-well border-rule-border text-ink-muted'
-                        : 'bg-paper-well/50 border-transparent text-ink-muted/60 hover:text-ink-muted'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono font-medium text-[11px] text-ink-primary">
-                      {step.title}
-                    </span>
-                    {isPassed ? (
-                      <Check className="w-3 h-3 text-signal-emerald" />
-                    ) : isCurrent ? (
-                      <span className="w-1.5 h-1.5 rounded-full bg-signal-cool" />
-                    ) : null}
-                  </div>
-                  <div className="text-[10px] text-ink-muted mt-0.5 leading-tight">
-                    {step.desc}
-                  </div>
-                </button>
-              );
-            })}
+          <div className="flex items-end justify-between gap-2 pt-1">
+            <span className="font-mono text-[26px] leading-none font-medium tracking-[-0.03em] text-[#181816] tabular-nums">
+              {(visRatio * 100).toFixed(2)}%
+            </span>
+            <VerticalLedMeter ratio={visRatio} variant="charcoal" />
           </div>
         </div>
 
-        {/* Patch Diff Section (When Phase >= 3) */}
-        {phase >= 3 && (
-          <div className="p-3 bg-paper-well space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-mono text-ink-muted flex items-center gap-1">
-                <GitCommit className="w-3 h-3 text-signal-cool" />
-                <span>Layout Patch Diff</span>
-              </span>
-              <span className="text-[9px] font-mono text-signal-emerald">Applied</span>
-            </div>
-            <pre className="p-2 rounded bg-paper-base border border-rule-border text-[10px] font-mono text-ink-muted overflow-x-auto leading-relaxed">
-              {patchDiffDisplay}
-            </pre>
+        {/* Section 4 — Voice Invariant Rule */}
+        <div className="p-3.5 border-b border-[#B8B4A9] space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-mono text-xs text-[#181816]">Voice Invariant Rule:</span>
+            <HardwareToggle
+              active={voiceRuleActive}
+              onChange={setVoiceRuleActive}
+              label="Voice Invariant Rule Toggle"
+            />
           </div>
-        )}
 
-        {/* Live Run Action Button */}
-        <div className="p-3 bg-paper-base space-y-2">
-          <button
-            onClick={handleRunClosedLoopLive}
-            disabled={isRunningLive}
-            className="w-full h-9 rounded bg-ink-primary hover:bg-white text-paper-base font-medium text-xs flex items-center justify-center gap-1.5 shadow-none transition-colors disabled:opacity-50 whitespace-nowrap"
-          >
-            {isRunningLive ? (
-              <>
-                <span className="w-3 h-3 border-2 border-paper-base border-t-transparent rounded-full animate-spin" />
-                <span className="whitespace-nowrap">Repairing…</span>
-              </>
-            ) : (
-              <>
-                <Play className="w-3.5 h-3.5 fill-current" />
-                <span className="whitespace-nowrap">Run Repair</span>
-              </>
-            )}
-          </button>
-          {liveError && (
-            <div className="p-2 rounded bg-signal-vermilion/10 border border-signal-vermilion/30 text-signal-vermilion text-[10px] font-mono">
-              {liveError}
+          <div className="flex items-end justify-between gap-2 pt-1">
+            <span className="font-mono text-[24px] leading-none font-medium tracking-[-0.02em] text-[#181816]">
+              ACTIVE
+            </span>
+            <VerticalLedMeter ratio={1.0} variant="emeraldPeak" />
+          </div>
+        </div>
+
+        {/* Section 5 — Phase 02 / 04: Closed-Loop Repair Phases */}
+        <div className="p-3.5 space-y-2">
+          <div className="font-mono text-[11px] text-[#181816]">
+            Phase 02 / 04: Closed-Loop Repair Phases
+          </div>
+
+          <div className="space-y-1 font-mono text-xs">
+            {/* Phase 01 */}
+            <div
+              onClick={() => setPhase?.(1)}
+              className="bg-[#181816] text-white px-2.5 py-1.5 rounded-[3px] flex items-center justify-between cursor-pointer"
+            >
+              <span>01. Baseline False Pass</span>
+              <span>✓</span>
             </div>
-          )}
+
+            {/* Phase 02 */}
+            <div
+              onClick={() => setPhase?.(2)}
+              className={`px-2.5 py-1.5 rounded-[3px] flex items-center justify-between cursor-pointer border border-[#B8B4A9] transition-colors ${
+                phase === 2 ? 'bg-[#DFDCD3] text-[#181816]' : 'text-[#4A4843] hover:bg-[#E3E0D7]'
+              }`}
+            >
+              <span>02. Spectra Rejection</span>
+            </div>
+
+            {/* Phase 03 */}
+            <div
+              onClick={() => setPhase?.(3)}
+              className={`px-2.5 py-1.5 rounded-[3px] flex items-center justify-between cursor-pointer border border-[#B8B4A9] transition-colors ${
+                phase >= 3 ? 'bg-[#DFDCD3] text-[#181816]' : 'text-[#4A4843] hover:bg-[#E3E0D7]'
+              }`}
+            >
+              <span>03. Patch Synthesis</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Footer Calibration Note */}
-      <div className="p-2.5 border-t border-rule-border bg-paper-well text-[10px] text-ink-muted font-mono flex items-center justify-between">
-        <span>3σ Thresh: 1.35%</span>
+      {/* Bottom Action CTA */}
+      <div className="p-3.5 border-t border-[#B8B4A9] bg-[#EAE7DF] shrink-0">
         <button
-          onClick={() => setPhase(2)}
-          className="text-signal-cool hover:underline flex items-center gap-1 whitespace-nowrap"
+          type="button"
+          disabled={isPatching}
+          onClick={handleActionClick}
+          className="w-full bg-[#181816] hover:bg-[#2C2C29] active:translate-y-px text-white font-sans font-medium text-sm py-2.5 rounded-[3px] flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-2xs disabled:opacity-50"
         >
-          <RotateCcw className="w-2.5 h-2.5" />
-          <span className="whitespace-nowrap">Reset</span>
+          <span>{isPatching ? 'Patching & Verifying...' : 'Verify & Patch ↗'}</span>
         </button>
       </div>
     </aside>

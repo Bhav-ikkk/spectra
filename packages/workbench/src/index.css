@@ -1,25 +1,25 @@
-/* Hallmark · theme: console · genre: modern-minimal · v2.0.0 */
+/* Field Monitor UI · Teenage Engineering / Leica Optical Rangefinder Grid */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --color-paper: #090a0c;
-  --color-paper-2: #111318;
-  --color-paper-3: #171a21;
-  --color-ink: #f5f5f7;
-  --color-ink-2: #cbced4;
-  --color-muted: #86868b;
-  --color-rule: rgba(255, 255, 255, 0.08);
-  --color-rule-2: rgba(255, 255, 255, 0.15);
-  --color-accent: #0071e3;
-  --color-ok: #30d158;
-  --color-bad: #ff453a;
-  --color-cool: #38bdf8;
+  --color-paper: #EAE7DF;
+  --color-paper-2: #DFDCD3;
+  --color-paper-3: #D6D3C9;
+  --color-ink: #181816;
+  --color-ink-2: #4A4843;
+  --color-muted: #6E6B64;
+  --color-rule: #B8B4A9;
+  --color-rule-2: #8C887E;
+  --color-accent: #181816;
+  --color-ok: #2E7D52;
+  --color-bad: #E05246;
+  --color-cool: #181816;
 
-  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Inter, system-ui, sans-serif;
+  --font-display: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-body: var(--font-display);
-  --font-outlier: "SF Mono", "Atkinson Hyperlegible Mono", ui-monospace, Menlo, monospace;
+  --font-outlier: 'JetBrains Mono', 'SF Mono', 'Atkinson Hyperlegible Mono', ui-monospace, Menlo, monospace;
 }
 
 @layer base {
@@ -30,24 +30,24 @@
   html,
   body,
   #root {
-    width: 100%;
+    width: 100vw;
     height: 100vh;
     margin: 0;
     padding: 0;
-    overflow-x: clip;
-    overflow-y: hidden;
+    overflow: hidden;
     background-color: var(--color-paper);
     color: var(--color-ink);
     font-family: var(--font-display);
+    font-variant-numeric: tabular-nums;
   }
 
   ::selection {
-    background-color: var(--color-rule-2);
+    background-color: var(--color-paper-3);
     color: var(--color-ink);
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-cool);
+    outline: 2px solid var(--color-ink);
     outline-offset: 1px;
   }
 
@@ -67,7 +67,7 @@ button {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-paper-3);
+  background: var(--color-paper);
 }
 
 ::-webkit-scrollbar-thumb {
@@ -79,9 +79,9 @@ button {
   background: var(--color-rule-2);
 }
 
-/* Precision Flat Hairline Panes (Zero Blurs, Zero Slop) */
+/* Precision Flat Hairline Panes */
 .panel-hairline {
-  background-color: var(--color-paper-2);
+  background-color: var(--color-paper);
   border: 1px solid var(--color-rule);
   color: var(--color-ink);
 }
@@ -100,11 +100,6 @@ button {
 .tabular-data {
   font-family: var(--font-outlier);
   font-variant-numeric: tabular-nums;
-}
-
-/* Sub-pixel reticle crosshairs */
-.reticle-hairline {
-  box-shadow: 0 0 0 1px var(--color-rule);
 }
 
 @media (prefers-reduced-motion: reduce) {
