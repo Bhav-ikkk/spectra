@@ -10,6 +10,8 @@ export const HardwareToggle: React.FC<{
 }> = ({ active, onChange, label }) => (
   <button
     type="button"
+    role="switch"
+    aria-checked={active}
     aria-label={label ?? 'Hardware Toggle'}
     onClick={() => onChange?.(!active)}
     className="inline-flex items-center gap-2 cursor-pointer select-none group"

@@ -23,7 +23,7 @@ export const VoiceStudioView: React.FC<VoiceStudioViewProps> = ({
 }) => {
   const defaultTranscript =
     (voiceTranscript?.transcript as string) ||
-    'When the cart drawer opens, the complete checkout button must never be covered, and the revenue series legend must stay visible.';
+    'Spectra, verify that the mobile pay button stays fully visible throughout checkout';
 
   const defaultSessionId =
     (voiceTranscript?.sessionId as string) ||
@@ -128,6 +128,7 @@ export const VoiceStudioView: React.FC<VoiceStudioViewProps> = ({
         body: JSON.stringify({
           transcript: promptText,
           provider: modelProvider,
+          outPath: '.spectra/invariants.json',
         }),
       });
 
@@ -211,7 +212,7 @@ export const VoiceStudioView: React.FC<VoiceStudioViewProps> = ({
           {/* Transcript Editor & Invariant Synthesis */}
           <div className="p-4 bg-[#EAE7DF] space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-[10px] font-mono uppercase tracking-wider text-[#4A4843]">
+              <label htmlFor="voice-transcript-input" className="text-[10px] font-mono uppercase tracking-wider text-[#4A4843]">
                 Raw Voice Transcript:
               </label>
               <button
@@ -224,7 +225,34 @@ export const VoiceStudioView: React.FC<VoiceStudioViewProps> = ({
               </button>
             </div>
 
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <button
+                type="button"
+                onClick={() =>
+                  setPromptText(
+                    'Spectra, verify that the mobile pay button stays fully visible throughout checkout',
+                  )
+                }
+                className="text-[9px] font-mono px-2 py-0.5 rounded-[3px] bg-[#DFDCD3] hover:bg-[#D6D3C9] text-[#181816] border border-[#B8B4A9] cursor-pointer"
+              >
+                Mobile Pay Button
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setPromptText(
+                    'When the cart drawer opens, the complete checkout button must never be covered, and the revenue series legend must stay visible.',
+                  )
+                }
+                className="text-[9px] font-mono px-2 py-0.5 rounded-[3px] bg-[#DFDCD3] hover:bg-[#D6D3C9] text-[#181816] border border-[#B8B4A9] cursor-pointer"
+              >
+                Cart Drawer + Legend
+              </button>
+            </div>
+
             <textarea
+              id="voice-transcript-input"
+              name="voiceTranscript"
               rows={4}
               value={promptText}
               onChange={(e) => setPromptText(e.target.value)}
