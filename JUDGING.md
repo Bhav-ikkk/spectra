@@ -14,7 +14,7 @@
 2. **Category / Bonus Tracks:**
    - **Best Use of Meta AI:** End-to-end integration of 4 Meta AI models/developer surfaces: `sam-3.1` (video segmentation via `@meta-sam/parser@0.1.0`), `muse-spark-1.3` (multimodal VLM judge), `muse-voice-transcribe-1.0` (spoken invariant ingestion), and `meta-models/muse-spark-open-1026` (open-weight patch generation on Baseten).
    - **Best Dev Tool / Agent Infrastructure:** Model Context Protocol (MCP) stdio server exposing 4 bounded tools (`spectra_verify`, `spectra_check`, `spectra_compile_invariant`, `spectra_closed_loop`) to Muse Code, Claude Code, and Cursor.
-   - **Open Source / Technical Achievement:** Dual-instrument optical consensus engine with calibrated noise floor ($3\sigma = 1.35\%$, $\delta = 4.10\%$, MAE $1.11\%$), 130 passing offline tests, zero live API spend ($0.00), and Rule 1 non-fabrication guarantee.
+   - **Open Source / Technical Achievement:** Dual-instrument optical consensus engine with calibrated noise floor ($3\sigma = 1.35\%$, $\delta = 4.10\%$, MAE $1.11\%$), 133 passing offline tests, zero live API spend ($0.00), and Rule 1 non-fabrication guarantee.
 
 ---
 
@@ -27,7 +27,7 @@ Spectra is built **offline-first**. All benchmark clips, live response JSONs, an
 pnpm install
 pnpm -r build
 
-# 2. Verify all 130 Unit & Contract Tests Pass Offline ($0.00 Spend)
+# 2. Verify all 133 Unit & Contract Tests Pass Offline ($0.00 Spend)
 pnpm -r test
 
 # 3. Run Zero-BBox Auto-Resolution Optical Verification via Production CLI
@@ -90,11 +90,11 @@ pnpm start
 | :--- | :--- | :--- |
 | **Dual-Instrument Referee Math** | [`packages/core/src/referee.ts`](file:///d:/Bhavik/Spectra/packages/core/src/referee.ts) | Strict $3\sigma$ noise gating, $\delta$ cross-instrument thresholding, and refusal to guess (`INCONCLUSIVE`). |
 | **Rule 2 Calibration Contract** | [`packages/core/src/calibration.ts`](file:///d:/Bhavik/Spectra/packages/core/src/calibration.ts) & [`calibration.json`](file:///d:/Bhavik/Spectra/packages/core/src/calibration.json) | `assertCalibrated()`, $\sigma_{\text{noise}} = 0.0045$, $\delta = 0.0410$, and live run citation `resp_6ae03ef78bd3db0853c642af`. |
-| **Calibration Derivation Note** | [`packages/core/CALIBRATION_NOTE.md`](file:///d:/Bhavik/Spectra/packages/core/CALIBRATION_NOTE.md) | Full mathematical writeup of temporal mask variance ($s = 46.5\text{ px}$) and cross-instrument residual bounds. |
+| **Calibration Derivation Note** | [`packages/core/CALIBRATION_NOTE.md`](file:///d:/Bhavik/Spectra/packages/core/CALIBRATION_NOTE.md) | Full mathematical writeup of temporal mask variance ($s = 47.06\text{ px}$) and cross-instrument residual bounds. |
 | **Model Verification Proofs** | [`docs/MODEL_VERIFICATION.md`](file:///d:/Bhavik/Spectra/docs/MODEL_VERIFICATION.md) | Official Meta documentation links, live API endpoints, and saved response JSON proofs for all 4 models. |
 | **Full Benchmark Report** | [`benchmark/results/referee_benchmark_report.json`](file:///d:/Bhavik/Spectra/benchmark/results/referee_benchmark_report.json) | Raw JSON report containing per-clip latencies, verdicts, and occlusion curves for all 4 evaluators. |
 | **MCP Integration Server** | [`packages/mcp-server/src/index.ts`](file:///d:/Bhavik/Spectra/packages/mcp-server/src/index.ts) | 4 exposed tools with zero-bbox auto-resolution from SAM Frame-0 masks. |
-| **SAM 3.1 Stream Parser** | [`packages/sam-client/src/parser.ts`](file:///d:/Bhavik/Spectra/packages/sam-client/src/parser.ts) & [`parser-pin.test.ts`](file:///d:/Bhavik/Spectra/packages/sam-client/src/__tests__/parser-pin.test.ts) | Stream chunk parsing, COCO RLE, SVG polygon generation, and parser wire-grammar pin tests. |
+| **SAM 3.1 Stream Parser** | [`packages/sam-client/src/index.ts`](file:///d:/Bhavik/Spectra/packages/sam-client/src/index.ts) & [`parser-pin.test.ts`](file:///d:/Bhavik/Spectra/packages/sam-client/src/__tests__/parser-pin.test.ts) | Stream chunk parsing, COCO RLE, SVG polygon generation, and parser wire-grammar pin tests. |
 | **Agent Guardrails Policy** | [`AGENTS.md`](file:///d:/Bhavik/Spectra/AGENTS.md) | Strict, non-negotiable rules for AI agents: Rule 1 (No Fabrication), Rule 2 (Measured Noise Floor), Rule 6 (8-Frame Cap). |
 
 ---
@@ -105,3 +105,4 @@ Spectra enforces a strict **8-frame cap at 4 FPS** ($1280 \times 720$, 2.0s dura
 - Minimal token consumption on Meta's SAM 3.1 API.
 - ~480ms optical verification latency on cached responses ($0.00 spend).
 - Live API calls only when explicitly requested via `--live` flag.
+

@@ -156,7 +156,12 @@ export const VoiceStudioView: React.FC<VoiceStudioViewProps> = ({
               <Mic className="w-3.5 h-3.5" />
               <span>Voice Invariants Compiler</span>
             </div>
-            <span className="text-[10px] font-mono text-[#4A4843]">16kHz Mono WAV</span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[9px] font-mono px-1.5 py-0.5 bg-[#DFDCD3] border border-[#B8B4A9] text-[#4A4843]">
+                CACHED REPLAY ($0.00)
+              </span>
+              <span className="text-[10px] font-mono text-[#4A4843]">16kHz Mono WAV</span>
+            </div>
           </div>
 
           {/* Microphone Recording Action Card */}
@@ -323,6 +328,9 @@ export const VoiceStudioView: React.FC<VoiceStudioViewProps> = ({
               <span>Compiled Contract: .spectra/invariants.json</span>
             </div>
             <div className="flex items-center gap-2">
+              <span className="text-[9px] font-mono px-1.5 py-0.5 bg-[#DFDCD3] border border-[#B8B4A9] text-[#4A4843]">
+                CACHED REPLAY ($0.00)
+              </span>
               <span className="text-[10px] font-mono text-[#1D4D35] bg-[#DCE8DF] border border-[#9BB8A5] px-2 py-0.5 rounded-[3px] font-semibold">
                 JSON-Schema Valid
               </span>

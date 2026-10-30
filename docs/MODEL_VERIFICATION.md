@@ -18,6 +18,7 @@ This document serves as the formal audit trail proving that all 4 models used by
 | **Response Wire Grammar** | Streaming deltas with `<Nf>ID<\|box;...\|><\|mask;x=...;data=...\|>` |
 | **Parser Dependency** | `@meta-sam/parser@0.1.0` (`parseVideoStream`, `decodeMaskToRaster`, `decodeMaskToSVGPath`) |
 | **Live Response Proofs** | • `benchmark/responses/phase2-smoke/canvas_000_v1_sam.json` (`id: "resp_6ae03ef78bd3db0853c642af"`)<br>• `benchmark/responses/phase2-smoke/dom_catch_010_v1_sam.json`<br>• `benchmark/responses/phase2-smoke/canvas_015_v1_sam.json`<br>• `benchmark/responses/phase2-smoke/mobile_mp4_015_v1_sam.json` |
+| **Parser Pin Test** | `packages/sam-client/src/__tests__/parser-pin.test.ts` |
 | **Date Verified** | `2026-10-27` |
 
 ```bash
@@ -36,7 +37,8 @@ pnpm --filter @spectra/sam-client test run src/__tests__/parser-pin.test.ts
 | **Live API Endpoint** | `POST https://api.meta.ai/v1/responses` |
 | **Input Format** | Multimodal user turn with `input_image` (PNG base64) and prompt text |
 | **Output Format** | Structured JSON schema with visual invariant definitions |
-| **Live Response Proofs** | • `benchmark/responses/phase3-voice/compile_spark_live.json`<br>• `benchmark/responses/benchmark-vlm/*_flagship.json` |
+| **Implementation Path** | `packages/invariant-compiler/src/compile.ts` |
+| **Live Response Proofs** | • `benchmark/responses/phase3-voice/compile_spark_live.json`<br>• `benchmark/responses/voice-smoke/raw_spark_response.json`<br>• `benchmark/responses/benchmark-vlm/canvas_000_v1_flagship.json`<br>• `benchmark/responses/benchmark-vlm/dom_catch_010_v1_flagship.json` |
 | **Date Verified** | `2026-10-27` |
 
 ---
@@ -50,7 +52,8 @@ pnpm --filter @spectra/sam-client test run src/__tests__/parser-pin.test.ts
 | **Live API Endpoint** | `POST https://api.meta.ai/v1/asr/transcribe` |
 | **Input Format** | `multipart/form-data` with 16kHz mono PCM `.wav` audio stream |
 | **Output Format** | `{ "transcript": "...", "session_id": "..." }` |
-| **Live Response Proof** | `benchmark/responses/phase3-voice/transcribe_live.json` |
+| **Implementation Path** | `packages/invariant-compiler/src/transcribe.ts` |
+| **Live Response Proofs** | • `benchmark/responses/phase3-voice/transcribe_live.json`<br>• `benchmark/responses/voice-smoke/raw_transcribe_response.json`<br>• `benchmark/responses/voice-smoke/spoken_invariant.wav` |
 | **Date Verified** | `2026-10-27` |
 
 ---
@@ -65,7 +68,8 @@ pnpm --filter @spectra/sam-client test run src/__tests__/parser-pin.test.ts
 | **Role in Spectra** | High-volume open-weight VLM evaluation and Closed-Loop CSS layout patch synthesis |
 | **Input Format** | OpenAI-compatible multimodal chat completions (`image_url` data URI + system prompt) |
 | **Output Format** | JSON object with `{ "clipped": boolean, "confidence": number, "reasoning": string }` or CSS patch |
-| **Live Response Proofs** | • `benchmark/responses/phase3-voice/compile_baseten_live.json`<br>• `benchmark/responses/closed-loop-s3/baseten_repair_patch.json`<br>• `benchmark/responses/benchmark-vlm/*_open_weight.json` |
+| **Implementation Path** | `packages/sdk/src/closed-loop.ts` |
+| **Live Response Proofs** | • `benchmark/responses/phase3-voice/compile_baseten_live.json`<br>• `benchmark/responses/baseten-smoke/compile_response.json`<br>• `benchmark/responses/baseten-smoke/vlm_judge_response.json`<br>• `benchmark/responses/closed-loop-s3/agent_repair_patch.json`<br>• `benchmark/responses/closed-loop-s3/closed_loop_summary.json`<br>• `benchmark/responses/benchmark-vlm/canvas_000_v1_open_weight.json`<br>• `benchmark/responses/benchmark-vlm/dom_catch_010_v1_open_weight.json` |
 | **Date Verified** | `2026-10-27` |
 
 ---

@@ -2,7 +2,7 @@
 
 > _"Don't trust 'done.' Measure it."_
 
-[![Build & Test](<https://img.shields.io/badge/CI%20Status-Passing%20(130%20tests)-emerald?style=for-the-badge&logo=githubactions>)](https://github.com/Bhav-ikkk/spectra/actions)
+[![Build & Test](<https://img.shields.io/badge/CI%20Status-Passing%20(133%20tests)-emerald?style=for-the-badge&logo=githubactions>)](https://github.com/Bhav-ikkk/spectra/actions)
 [![Rule 1 Verified](https://img.shields.io/badge/Rule%201-100%25%20Non--Fabricated%20Data-blue?style=for-the-badge)](file:///d:/Bhavik/Spectra/AGENTS.md)
 [![Rule 2 Calibrated](https://img.shields.io/badge/Rule%202%20Calibrated-σ_noise%200.45%25%20%7C%203σ%201.35%25-purple?style=for-the-badge)](file:///d:/Bhavik/Spectra/packages/core/src/calibration.json)
 [![Meta AI Models](https://img.shields.io/badge/Meta%20AI-SAM%203.1%20%7C%20Muse%20Spark%20%7C%20Muse%20Voice-indigo?style=for-the-badge)](https://dev.meta.ai)
@@ -65,10 +65,10 @@ Spectra integrates 5 specialized Meta AI models and developer surfaces across an
 | Tool / Model                                                  | Role in Spectra                                                                                                                                                                         | Implementation Location                                                                                                                |
 | :------------------------------------------------------------ | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------- |
 | **SAM 3.1** (`sam-3.1`)                                       | **Instrument A Optical Segmenter**: Segments target UI elements across video frames ($t_0 \dots t_7$ at 4 FPS), outputting high-precision polygon masks.                                | [`packages/sam-client`](file:///d:/Bhavik/Spectra/packages/sam-client)                                                                 |
-| **`@meta-sam/parser`**                                        | **Mask Stream Parser**: Decodes raw SAM 3.1 chunked streaming responses into SVG polygon paths and rasterized bitmask pixel counts.                                                     | [`packages/sam-client/src/parser.ts`](file:///d:/Bhavik/Spectra/packages/sam-client/src/parser.ts)                                     |
+| **`@meta-sam/parser`**                                        | **Mask Stream Parser**: Decodes raw SAM 3.1 chunked streaming responses into SVG polygon paths and rasterized bitmask pixel counts.                                                     | [`packages/sam-client/src/index.ts`](file:///d:/Bhavik/Spectra/packages/sam-client/src/index.ts)                                       |
 | **Muse Voice Transcribe** (`muse-voice-transcribe-1.0`)       | **Audio Invariant Ingestion**: Converts spoken user instructions (_"When cart drawer opens, checkout must never be covered"_) into text.                                                | [`packages/invariant-compiler/src/transcribe.ts`](file:///d:/Bhavik/Spectra/packages/invariant-compiler/src/transcribe.ts)             |
 | **Muse Spark 1.3** (`muse-spark-1.3`)                         | **VLM Judge & Compiler**: Evaluates natural language transcripts into formal [`.spectra/invariants.json`](file:///d:/Bhavik/Spectra/.spectra/invariants.json) visual invariant schemas. | [`packages/invariant-compiler/src/compile.ts`](file:///d:/Bhavik/Spectra/packages/invariant-compiler/src/compile.ts)                   |
-| **Muse Spark Open 1026** (`meta-models/muse-spark-open-1026`) | **Baseten Open-Weight Reasoner**: Powers high-volume VLM evaluations and synthesizes automated CSS layout patches from Spectra rejection telemetry.                                     | [`packages/invariant-compiler/src/baseten-provider.ts`](file:///d:/Bhavik/Spectra/packages/invariant-compiler/src/baseten-provider.ts) |
+| **Muse Spark Open 1026** (`meta-models/muse-spark-open-1026`) | **Baseten Open-Weight Reasoner**: Powers high-volume VLM evaluations and synthesizes automated CSS layout patches from Spectra rejection telemetry.                                     | [`packages/invariant-compiler/src/compile.ts`](file:///d:/Bhavik/Spectra/packages/invariant-compiler/src/compile.ts)                   |
 | **Muse Code MCP** (`spectra-mcp`)                             | **Agent Integration**: Standard Model Context Protocol stdio server allowing Muse Code or any MCP-compatible agent to invoke Spectra Referee natively.                                  | [`packages/mcp-server`](file:///d:/Bhavik/Spectra/packages/mcp-server)                                                                 |
 
 ---
@@ -177,7 +177,7 @@ Exposes 4 bounded tools:
 3. `spectra_compile_invariant` — Voice `.wav` (`muse-voice-transcribe-1.0`) or text compilation (`muse-spark-1.3` / `meta-models/muse-spark-open-1026`) into Zod-validated `.spectra/invariants.json`.
 4. `spectra_closed_loop` — Autonomous 4-phase Closed-Loop Referee & Repair execution across scenarios `s1`, `s2`, `s3`, or `all`.
 
-### 5. Run Monorepo Test Suites (130 Tests Passing)
+### 5. Run Monorepo Test Suites (133 Tests Passing)
 
 ```bash
 # Offline unit, integration, and contract tests (zero API spend)

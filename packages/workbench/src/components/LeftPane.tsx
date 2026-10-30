@@ -45,25 +45,25 @@ export const LeftPane: React.FC<LeftPaneProps> = ({
     {
       id: 's2',
       tag: 'S2 - Mobile MP4',
-      badge: '15.0% Overlap',
+      badge: '15% Clip (15.18% Loss)',
       title: 'Raw Mobile MP4 Recording',
-      subtitle: '15.0% bottom-sheet overlap on "Pay $149.00" with no DOM',
+      subtitle: '15.0% bottom-sheet overlap on "Pay $149.00" [475, 610, 330, 52]',
       icon: <Smartphone className="w-3.5 h-3.5 text-[#4A4843] shrink-0" />,
     },
     {
       id: 's3',
       tag: 'S3 - DOM Catch',
-      badge: '10.0% Edge',
+      badge: '10% Clip (9.60% Loss)',
       title: 'Sticky Cart Drawer ("The Catch")',
-      subtitle: '10.0% bottom-edge clip where DOM center hit-test passes',
+      subtitle: '10.0% clip on "Complete Checkout" (BBox [910, 600, 340, 50] / SAM [909, 600, 342, 51])',
       icon: <Layout className="w-3.5 h-3.5 text-[#4A4843] shrink-0" />,
     },
     {
       id: 's1',
       tag: 'S1 - Canvas',
-      badge: '15.0% Collision',
+      badge: '15% Clip (14.25% Loss)',
       title: 'HTML5 Canvas Collision',
-      subtitle: '15.0% tooltip collision inside a single <canvas> element',
+      subtitle: '15.0% tooltip collision on "Revenue Series Legend" [820, 240, 220, 48]',
       icon: <Monitor className="w-3.5 h-3.5 text-[#4A4843] shrink-0" />,
     },
   ];
@@ -166,8 +166,9 @@ export const LeftPane: React.FC<LeftPaneProps> = ({
       </div>
 
       {/* Bottom Footer */}
-      <footer className="h-9 px-3.5 border-t border-[#B8B4A9] flex items-center justify-between shrink-0 bg-[#EAE7DF]">
+      <footer className="h-9 px-3.5 border-t border-[#B8B4A9] flex items-center justify-between shrink-0 bg-[#EAE7DF] font-mono text-[10px] text-[#4A4843]">
         <span className="font-sans text-xs font-medium text-[#181816]">Spectra Referee</span>
+        <span className="px-1.5 py-0.5 bg-[#DFDCD3] border border-[#B8B4A9]">CACHED REPLAY ($0.00)</span>
       </footer>
     </aside>
   );

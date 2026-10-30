@@ -23,10 +23,11 @@ The canonical noise-floor calibration parameters locked in `@spectra/core` are:
 
 ### A. Temporal Mask Jitter ($\sigma_{\text{noise}} = 0.0045$)
 Computed from live `sam-3.1` response `resp_6ae03ef78bd3db0853c642af` (`benchmark/responses/phase2-smoke/canvas_000_v1_sam.json`), evaluating the target element ("Revenue Series Legend") across clean, unoccluded post-animation frames ($t_0 \dots t_5$):
-- Decoded raster mask pixel areas: `[10667, 10543, 10566, 10552, 10565, 10545]` px (settled window mean $\mu = 10{,}573.0$ px, sample standard deviation $s = 47.06$ px).
-- Post-settlement settled frames ($t_2 \dots t_7$): `[10412, 10412, 10319, 10319, 10319, 10319]` px (mean $\mu = 10{,}350$ px, sample standard deviation $s = 46.5$ px).
+- Decoded raster mask pixel areas: `[10667, 10543, 10566, 10552, 10565, 10545]` px
+- Sample mean: $\mu = 10{,}573.0$ px
+- Sample standard deviation (Bessel-corrected, $N=6$): $s = 47.06$ px
 - Relative standard deviation:
-  $$\sigma_{\text{noise}} = \frac{s}{\mu} = \frac{46.5}{10350} \approx 0.00449 \to \mathbf{0.0045}\quad (0.45\%)$$
+  $$\sigma_{\text{noise}} = \frac{s}{\mu} = \frac{47.06}{10573.0} \approx 0.00445 \to \mathbf{0.0045}\quad (0.45\%)$$
 - $3\sigma$ Rejection Threshold:
   $$3\sigma_{\text{noise}} = 3 \times 0.0045 = \mathbf{0.0135}\quad (1.35\%)$$
 
@@ -58,5 +59,6 @@ However, $\delta = 0.0410$ is intentionally wider than $2\sigma_{\text{noise}}$ 
 
 ## 4. Honest Scope & Production Roadmap
 
-- **Hackathon Budget Constraints:** To strictly respect Rule 6 ($0 live call exposure during development) and Meta API token budgets, this static calibration was locked from 1 canonical clean clip ($t_0 \dots t_7$) + 4 cross-instrument live smoke runs rather than an exhaustive 10-clip $\times$ 5-repetition multi-session live API sweep.
+- **Hackathon Budget Constraints:** To strictly respect Rule 6 ($0 live call exposure during development) and Meta API token budgets, this static calibration was locked from 1 canonical clean clip ($t_0 \dots t_5$, 6 frames) + 4 cross-instrument live smoke runs rather than an exhaustive 10-clip $\times$ 5-repetition multi-session live API sweep.
 - **Production Roadmap:** In a continuous CI environment, Spectra can run nightly scheduled calibration sweeps across diverse UI frameworks (Flutter, SwiftUI, WebGL, Android Jetpack Compose) to publish dynamic per-framework $\sigma_{\text{noise}}$ and $\delta$ profiles.
+

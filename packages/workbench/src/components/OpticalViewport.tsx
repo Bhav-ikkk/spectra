@@ -217,6 +217,10 @@ export const OpticalViewport: React.FC<OpticalViewportProps> = ({
 
         {/* Right: Reticle Controls & Loupe Trigger */}
         <div className="flex items-center gap-3">
+          <span className="font-mono text-[10px] px-2 py-0.5 bg-[#DFDCD3] border border-[#B8B4A9] text-[#4A4843] hidden md:inline">
+            CACHED REPLAY ($0.00)
+          </span>
+
           {/* Loupe Toggle Keycap */}
           <button
             type="button"

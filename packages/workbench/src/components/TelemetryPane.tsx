@@ -154,9 +154,14 @@ export const TelemetryPane: React.FC<TelemetryPaneProps> = ({
           <span className="font-mono text-xs font-semibold tracking-[0.06em] uppercase text-[#181816]">
             SPECTRA REFEREE
           </span>
-          <span className="font-mono text-[10px] text-[#1D4D35] bg-[#DCE8DF] border border-[#9BB8A5] px-1.5 py-0.5 rounded-[2px] font-semibold">
-            Rule 2 Verified
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span className="font-mono text-[9px] text-[#4A4843] bg-[#DFDCD3] border border-[#B8B4A9] px-1.5 py-0.5 rounded-[2px]">
+              CACHED REPLAY ($0.00)
+            </span>
+            <span className="font-mono text-[10px] text-[#1D4D35] bg-[#DCE8DF] border border-[#9BB8A5] px-1.5 py-0.5 rounded-[2px] font-semibold">
+              Rule 2 Verified
+            </span>
+          </div>
         </div>
 
         {/* Section 1 — Verdict & Coordinates */}

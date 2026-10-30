@@ -682,10 +682,23 @@ export async function handleCompileVoice(req: IncomingMessage, res: ServerRespon
 
 export interface SaveInvariantPayload {
   id?: string;
-  description: string;
-  target: string;
+  description?: string;
+  target?: string;
+  targetLabel?: string;
   bbox?: [number, number, number, number];
   minVisibility?: number;
+  threshold?: number;
+  sourceFile?: string;
+  invariant?: {
+    id?: string;
+    description?: string;
+    target?: string;
+    targetLabel?: string;
+    bbox?: [number, number, number, number];
+    minVisibility?: number;
+    threshold?: number;
+    sourceFile?: string;
+  };
 }
 
 export async function handleSaveInvariant(
@@ -693,11 +706,27 @@ export async function handleSaveInvariant(
   res: ServerResponse,
 ): Promise<void> {
   try {
-    const payload = await parseJsonBody<SaveInvariantPayload>(req);
-    if (!payload.description || !payload.target) {
+    const rawPayload = await parseJsonBody<SaveInvariantPayload>(req);
+    const inner = rawPayload.invariant || {};
+    const description =
+      rawPayload.description || inner.description || 'Visual Invariant';
+    const target =
+      rawPayload.target ||
+      rawPayload.targetLabel ||
+      inner.target ||
+      inner.targetLabel;
+
+    if (!description || !target) {
       sendJson(res, 400, { error: 'description and target are required' });
       return;
     }
+
+    const bbox = rawPayload.bbox || inner.bbox;
+    const minVisibility =
+      rawPayload.minVisibility ??
+      inner.minVisibility ??
+      (inner.threshold !== undefined ? 1 - inner.threshold : 0.9865);
+    const sourceFile = rawPayload.sourceFile || inner.sourceFile;
 
     let rootDir = process.cwd();
     while (
@@ -726,16 +755,18 @@ export async function handleSaveInvariant(
     }
 
     const id =
-      payload.id || `inv-${payload.target.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-visible`;
+      rawPayload.id ||
+      inner.id ||
+      `inv-${target.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-visible`;
 
     const newInv: Record<string, unknown> = {
       id,
-      description: payload.description,
+      description,
       type: 'visual',
       severity: 'error',
       matcher: {
         strategy: 'semantic',
-        target: payload.target,
+        target,
         expected: true,
       },
       source: {
@@ -745,10 +776,11 @@ export async function handleSaveInvariant(
       },
     };
 
-    if (payload.bbox) {
+    if (bbox) {
       newInv.metadata = {
-        targetBBox: payload.bbox,
-        minVisibility: payload.minVisibility ?? 0.9865,
+        targetBBox: bbox,
+        minVisibility,
+        ...(sourceFile ? { sourceFile } : {}),
       };
     }
 

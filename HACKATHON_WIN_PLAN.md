@@ -6,6 +6,62 @@
 > not from a fresh run. Where the repo contradicts itself, it is called out as a
 > must-fix before judging.
 
+## 0b. Post-P0 Re-review (2026-10-30) — what changed since v1 of this plan
+
+You fixed nearly everything. An 8-agent minute-level re-review (every cited
+body opened; falsification critic; one gap re-run that executed the full
+vitest suite: **16 files / 130 passed / 0 failed**) plus my own direct
+re-reads of the highest-stakes files produced these verdicts:
+
+**P0:** #1 FIXED (README L78 + design L52/L59 now 21-v1/18-occluded scope) ·
+#2 FIXED (real run `resp_6ae03ef…` cited) · #3 FIXED (4 MCP tools listed;
+test asserts are `mcp-server.test.ts` L134–137 `toContain` ×4 — no count
+assert, consider adding `toHaveLength(4)`) · #4 FIXED (130/130 observed
+2026-10-30; the old "115" static count had missed the `.tsx` suite) ·
+#5 FIXED (offline default + `--live` + Rule 6 warning) · #6 PARTIAL (60-sec
+docs exist in README + new `JUDGING.md`; still no fresh-clone execution record
+or backup video — these are actions, not files).
+
+**P1:** #7 FIXED with a new sub-issue (`packages/core/CALIBRATION_NOTE.md`
+exists, but §2 carries BOTH frame windows: header says t_0..t_5 with areas
+`[10667, …]` while the σ formula uses the t_2..t_7 set `s=46.5/μ=10350` —
+both round to 0.0045, which is why nobody noticed; settle by recomputing from
+`phase2-smoke/canvas_000_v1_sam.json` and deleting the losing window) ·
+**#8 DOWNGRADED to PARTIAL** (`docs/MODEL_VERIFICATION.md` exists but cites 4
+proof files absent from the repo: `phase3-voice/compile_spark_live.json`,
+`transcribe_live.json`, `compile_baseten_live.json`, and
+`closed-loop-s3/baseten_repair_patch.json` — I verified each absence by direct
+read; restore the fixtures or correct the doc, this is the same
+fabrication-adjacent class as the old bogus run ID) · #9 FIXED (runner asserts
+calibration, refusal test added) · #10 FIXED (loud refusal, no spike-1
+fallback).
+
+**P2:** #11 DONE (`parser-pin.test.ts`: exact areas 17299/15708, rSam, bbox,
+SVG path) · #13 DONE (`JUDGING.md` with corrected 21-clip Act 3).
+
+**NEW judge-visible defects found at minute level (all confirmed by direct
+read unless noted):** `BenchmarkView.tsx` L39/L51 labels the Muse rows
+"GPT-4o" and "Claude 3.5 Sonnet," and its `detectionRate` column mirrors the
+false-pass values (Spectra shows 0.9444, report says 1.0) · Lens
+`handleCachedReplay` returns hardcoded rSam/visRatio after a 120 ms timeout,
+Optical/Telemetry/CLI carry matching hardcoded per-scenario numbers — a judge
+who opens DevTools or the source sees theater, not measurement · Lens "Lock"
+POSTs `{invariant:{…}}` but `save-invariant` needs flat
+`{description,target}` → HTTP 400 dead end (workflow-observed, not
+independently re-read by me) · README L71 links to nonexistent
+`invariant-compiler/src/baseten-provider.ts` (provider logic is inline in
+`compile.ts`/`vlm-judge.ts`/`closed-loop.ts`) · contract drift: S3 bbox
+`910,600,340,50` (manifest/CLI) vs `909,600,342,51` (SAM/UI), S3 loss 9.6% vs
+"10.0% Edge" badge, S1/S2 label mismatches · code hazards (acknowledged, no
+fix requested yet): referee has zero range checks so NaN inputs yield VERIFIED
+pass; OOB/negative bboxes silently poison NCC; single-mask clips collapse to
+rSam=1.0; `sample_count` means frames in JSON but clips in code;
+`isCalibrated` permits Infinity/0.
+
+**New #1 priority (under 1 hour):** restore the 4 missing proof fixtures or
+fix `MODEL_VERIFICATION.md`, fix the two modelAlias labels, fix the README
+L71 link. Then record the backup video. Details in §13–§15.
+
 ## 0. Verdict up front
 
 - **What it is:** an open-source dual-instrument visual referee for AI coding
@@ -331,3 +387,110 @@ honestly, including the parts where it refuses to guess."
 stack end to end, and can catch a 10% occlusion live while competitors
 false-pass. Fix the P0s, rehearse the 3 acts, demo offline-first, and let the
 referee — including its refusals — be the star.*
+
+---
+
+## 13. Judge's-eye view (if I were judging Meta AI hackathon)
+
+**The 3 moments that would already amaze me (all real, in-repo):**
+
+1. **The S3 artifact chain.** `closed_loop_summary.json`: naive center-pixel
+   PASS → Spectra REJECTED at 9.6% vs the 1.35% threshold → a live Baseten
+   `muse-spark-open-1026` repair patch (`agent_repair_patch.json`) → pass-2
+   VERIFIED with `closedLoopSuccess: true`. Catch → fix → proof in one
+   replayable directory. This is your single strongest exhibit.
+2. **The 4-evaluator spread with honest scope.** 21 v1 clips, 0.0% false-pass
+   and 1.11% MAE at 480 ms vs DOM 94.4% / Spark 1.3 61.1% / Open 44.4% —
+   now correctly scoped after the P0#1 fix. A judge who distrusts VLM
+   self-grading will love that you benchmarked the flagship against yourself
+   and published its 61.1%.
+3. **The refusal contract.** `UncalibratedError` + the new runner refusal test:
+   a measurement tool that refuses to guess is rarer and more trustworthy than
+   one more decimal of accuracy. Demo the refusal once — it takes 10 seconds
+   and judges remember it.
+
+**The 3 missing things that would make it unforgettable (the wow gaps):**
+
+1. **A watchable 3-minute demo video.** There is no mp4/webm at root or docs.
+   Judges who can't run your stack (or judge async) currently get docs but no
+   film. Record Act 1–3 exactly as scripted in §6; it doubles as your venue
+   network-death backup. Highest wow-per-minute left on the table.
+2. **Visible live Meta calls.** The cited phase-3 voice proofs are absent and
+   the voice live path needs keys, so at the venue you're on replay fixtures.
+   Nothing wrong with replay — but label it on-screen ("cached replay · live
+   path: POST /asr/transcribe") and, if credits allow, do exactly ONE live
+   call on stage (voice compile is the most theatrical). One live call +
+   honest replay labels beats all-live fragility and all-replay suspicion.
+3. **A "show your work" moment.** Today BenchmarkView is filter/toggle over a
+   bundled report (no re-run) and the Lens verdict is a 120 ms canned replay.
+   The killer feature is an explain-verdict pane: per-instrument votes,
+   margin-to-threshold, bbox source, and the exact rule that fired (gross-δ /
+   split-vote / 3σ). A judge who sees the machine reason in front of them
+   stops fact-checking and starts championing. (~5h, see §14.)
+
+**What could still sink you:** the GPT-4o/Claude mislabels on Muse rows (a
+Meta judge WILL notice competitors' names on your slideware), the 4 absent
+proof files behind a "verification" doc, and any hardcoded number a judge
+catches while poking the UI. All are <1h fixes — do them before anything in
+§14.
+
+## 14. Next directions (grounded in the actual code, ordered by win-impact/hr)
+
+**WIN batch (before judging, solo-feasible):**
+
+1. `spectra_explain` MCP tool — per-instrument votes, margin-to-threshold,
+   bboxSource, reusing `resolveVerifyInputs` (~2h).
+2. Per-environment delta/threshold in `evaluateDualInstrument` (residuals span
+   0.0036–0.0205; one global δ undersells canvas) + return margin-to-threshold
+   (~3h).
+3. `calibrate` CLI subcommand wrapping `calculateCalibrationFromRepetitions`
+   over `benchmark/responses` (~3h) — makes Rule 3 compliance a command, not
+   a chore.
+4. Compiler emits `targetBBox` + `minVisibility` + behavioral matchers the
+   schema already accepts (~3h).
+5. `checkInvariants` dispatches per-invariant matcher strategy + severity
+   (today only visual+bbox runs; exact/regex/behavioral are ignored) + exit
+   codes (~4h).
+6. Instrument-B DeltaE/SSIM option beside RGB-Euclidean tolerance=5.0; fix the
+   flat-color rNcc fallback (~4h).
+7. Occlusion levels 0.02/0.08 near the 1.35% boundary + a text-contrast env in
+   `generate.py`, regen manifest (~5h) — probes your own threshold honestly.
+8. `/api/explain-verdict` + workbench explainer pane reusing pipelineStages
+   (~5h) — the §13 "show your work" moment.
+
+**BET batch (post-hackathon product bets):** 5th evaluator, two-frame VLM diff
+(~6h) · frame-trajectory dips instead of t0/tk endpoints in Instrument A —
+`frameAreas` is already collected but unused (~8h) · bbox-visibility/ocr-text
+matcher strategies with real executors (~8h) · replace synthetic pixel-repaint
+pass-2 with a real patch applier + ranked multi-attempt loop (~12h).
+
+**Fix alongside (tech debt with judge visibility):** NaN/OOB-bbox guards in
+referee + instrument-b · settle frame window + unify `sample_count` semantics
+· `toHaveLength(4)` MCP tool pin · de-hardcode Lens/Optical/Telemetry/CLI
+display values or label them "cached replay" · fix Lens Lock payload shape ·
+reconcile S3 bbox + label drift across manifest/CLI/UI.
+
+## 15. Minute-level truth ledger (the absolute truth, condensed)
+
+**Strongest mechanics (bet the demo on these):** assert-calibrated-first
+referee with strict-`>` boundary semantics; Bessel-corrected σ with median
+aggregation; cache-first everything with loud live-miss errors; parser pin
+tests on exact areas; 130/130 green suite with zero skips; the S3 closed-loop
+artifact chain; offline `$0` smoke.
+
+**Weakest holes (never let a judge find these first):** NaN → VERIFIED;
+`visRatio ?? rNcc` fallback means rNcc never enters verdict math; offline
+verify lets Instrument A mirror B (agreement δ ~0, masks lose independence);
+pass-2 verify runs without cached SAM so it inherits that mirror; clipped
+`visibilityPercentage` beside unclamped `visibilityLoss`; `clipId` dropped
+from verdict output; benchmark latency averages mix cached-ms with live-s;
+full base64 mp4 re-POST on every SAM cache miss; Baseten repair has a
+deterministic fallback but the Meta path throws; BenchmarkView lower half
+still uninspected (live re-run question open).
+
+**Unresolved / unverified at time of writing:** fresh-clone execution record +
+backup video (actions) · authoritative changed-file list (git blocked by
+dubious ownership; all verdicts rest on file-body reads) · frame-window truth
+· BenchmarkView lower-half behavior + detectionRate column verdict · live Meta
+call visibility at venue · Lens Lock 400 + CLI/MCP default divergences (fix
+verified by workflow only).

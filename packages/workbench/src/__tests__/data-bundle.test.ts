@@ -406,4 +406,101 @@ describe('@spectra/workbench - Local API Server Middleware Tests ($0.00 Spend)',
       }
     }
   });
+
+  it('MODEL_VERIFICATION.md Path Existence Test: every referenced benchmark and package file exists', () => {
+    const docPath = path.join(workspaceRoot, 'docs', 'MODEL_VERIFICATION.md');
+    expect(fs.existsSync(docPath)).toBe(true);
+    const content = fs.readFileSync(docPath, 'utf-8');
+
+    const pathRegex = /`((?:benchmark|packages)\/[^`]+)`/g;
+    const matches: string[] = [];
+    let match;
+    while ((match = pathRegex.exec(content)) !== null) {
+      matches.push(match[1]);
+    }
+
+    expect(matches.length).toBeGreaterThan(0);
+    for (const relPath of matches) {
+      const fullPath = path.resolve(workspaceRoot, relPath);
+      expect(
+        fs.existsSync(fullPath),
+        `Referenced file in MODEL_VERIFICATION.md does not exist: ${relPath}`,
+      ).toBe(true);
+    }
+  });
+
+  it('BenchmarkView.tsx No-Competitor-Mislabel Test: zero occurrences of GPT-4o or Claude', () => {
+    const benchmarkViewPath = path.join(
+      workspaceRoot,
+      'packages',
+      'workbench',
+      'src',
+      'components',
+      'BenchmarkView.tsx',
+    );
+    expect(fs.existsSync(benchmarkViewPath)).toBe(true);
+    const code = fs.readFileSync(benchmarkViewPath, 'utf-8');
+
+    expect(code).not.toContain('GPT-4o');
+    expect(code).not.toContain('gpt-4o');
+    expect(code).not.toContain('Claude');
+    expect(code).not.toContain('Anthropic');
+    expect(code).not.toContain('OpenAI');
+
+    expect(code).toContain('Muse Spark 1.3');
+    expect(code).toContain('Muse Spark Open 1026');
+    expect(code).toContain('Spectra Dual-Instrument Referee');
+    expect(code).toContain('DOM Center Hit-Test');
+  });
+
+  it('POST /api/save-invariant Payload Shapes Test: accepts both flat and nested invariant structures', async () => {
+    const invPath = path.join(workspaceRoot, '.spectra', 'invariants.json');
+    const originalContent = fs.existsSync(invPath) ? fs.readFileSync(invPath, 'utf-8') : null;
+
+    try {
+      // 1. Flat payload shape
+      const flatTest = createMockReqRes({
+        method: 'POST',
+        url: '/api/save-invariant',
+        body: {
+          target: 'Test Flat Target',
+          description: 'Flat invariant description',
+          bbox: [100, 200, 300, 40],
+          minVisibility: 0.9865,
+        },
+      });
+      await handleSaveInvariant(flatTest.req, flatTest.res);
+      const flatRes = await flatTest.getResult();
+      expect(flatRes.statusCode).toBe(200);
+      expect((flatRes.data as { success: boolean }).success).toBe(true);
+
+      // 2. Nested { invariant: { ... } } shape (from Spectra Lens)
+      const nestedTest = createMockReqRes({
+        method: 'POST',
+        url: '/api/save-invariant',
+        body: {
+          invariant: {
+            id: 'inv_nested_lens_test',
+            description: 'Nested lens invariant description',
+            targetLabel: 'Test Nested Target',
+            bbox: [909, 600, 342, 51],
+            minVisibility: 0.9865,
+          },
+        },
+      });
+      await handleSaveInvariant(nestedTest.req, nestedTest.res);
+      const nestedRes = await nestedTest.getResult();
+      expect(nestedRes.statusCode).toBe(200);
+      const nestedData = nestedRes.data as {
+        success: boolean;
+        invariant: { matcher: { target: string } };
+      };
+      expect(nestedData.success).toBe(true);
+      expect(nestedData.invariant.matcher.target).toBe('Test Nested Target');
+    } finally {
+      if (originalContent !== null) {
+        fs.writeFileSync(invPath, originalContent, 'utf-8');
+      }
+    }
+  });
 });
