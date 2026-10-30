@@ -36,7 +36,16 @@ export function getCalibration(): CalibrationData {
  * Checks whether current calibration has valid measured sigma_noise and delta values.
  */
 export function isCalibrated(cal: CalibrationData = getCalibration()): boolean {
-  return cal.sigma_noise !== null && cal.delta !== null && cal.sigma_noise >= 0 && cal.delta >= 0;
+  return (
+    typeof cal.sigma_noise === 'number' &&
+    Number.isFinite(cal.sigma_noise) &&
+    cal.sigma_noise > 0 &&
+    cal.sigma_noise < 1 &&
+    typeof cal.delta === 'number' &&
+    Number.isFinite(cal.delta) &&
+    cal.delta > 0 &&
+    cal.delta < 1
+  );
 }
 
 /**

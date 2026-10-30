@@ -257,6 +257,7 @@ export class SpectraMcpServer {
           instrumentA: measurement.instrumentA,
           instrumentB: measurement.instrumentB,
           notes: measurement.notes,
+          decisionExplanation: measurement.decisionExplanation,
           resolvedBBox: resolved.targetBBox,
           bboxSource: resolved.bboxSource,
           samFrame0DetectedBBox,
@@ -475,6 +476,17 @@ export class SpectraMcpServer {
       this.rl.close();
     }
   }
+}
+
+export async function spectra_explain(
+  args: RawVerifyToolArgs,
+): Promise<Record<string, unknown>> {
+  const server = new SpectraMcpServer();
+  const res = (await server.executeTool(
+    'spectra_verify',
+    args as unknown as Record<string, unknown>,
+  )) as Record<string, unknown>;
+  return res;
 }
 
 // Direct execution detection in Node ESM

@@ -30,12 +30,35 @@ export function computeTemplateMatchVisibility(
   const t0Buffer = typeof t0Input === 'string' ? fs.readFileSync(t0Input) : Buffer.from(t0Input);
   const tkBuffer = typeof tkInput === 'string' ? fs.readFileSync(tkInput) : Buffer.from(tkInput);
 
+  if (
+    !Number.isFinite(targetBBox.x) ||
+    !Number.isFinite(targetBBox.y) ||
+    !Number.isFinite(targetBBox.width) ||
+    !Number.isFinite(targetBBox.height) ||
+    targetBBox.width <= 0 ||
+    targetBBox.height <= 0
+  ) {
+    throw new Error(
+      `Invalid target bounding box: [x=${targetBBox.x}, y=${targetBBox.y}, width=${targetBBox.width}, height=${targetBBox.height}]. Coordinates must be finite numbers and dimensions positive.`,
+    );
+  }
+
   const png0 = PNG.sync.read(t0Buffer);
   const pngk = PNG.sync.read(tkBuffer);
 
-  const totalPixels = targetBBox.width * targetBBox.height;
+  const imgW = Math.min(png0.width, pngk.width);
+  const imgH = Math.min(png0.height, pngk.height);
+
+  const startX = Math.max(0, Math.min(imgW, Math.floor(targetBBox.x)));
+  const startY = Math.max(0, Math.min(imgH, Math.floor(targetBBox.y)));
+  const endX = Math.max(0, Math.min(imgW, Math.floor(targetBBox.x + targetBBox.width)));
+  const endY = Math.max(0, Math.min(imgH, Math.floor(targetBBox.y + targetBBox.height)));
+
+  const totalPixels = (endX - startX) * (endY - startY);
   if (totalPixels <= 0) {
-    throw new Error('Target bounding box area must be greater than zero');
+    throw new Error(
+      `Target bounding box [x=${targetBBox.x}, y=${targetBBox.y}, width=${targetBBox.width}, height=${targetBBox.height}] is outside image bounds [${imgW}x${imgH}].`,
+    );
   }
 
   let unchangedPixelCount = 0;
@@ -46,8 +69,8 @@ export function computeTemplateMatchVisibility(
   let sumB = 0;
   let idx = 0;
 
-  for (let y = targetBBox.y; y < targetBBox.y + targetBBox.height; y++) {
-    for (let x = targetBBox.x; x < targetBBox.x + targetBBox.width; x++) {
+  for (let y = startY; y < endY; y++) {
+    for (let x = startX; x < endX; x++) {
       const byteIdx = (y * png0.width + x) * 4;
 
       const r0 = png0.data[byteIdx];
@@ -102,8 +125,9 @@ export function computeTemplateMatchVisibility(
     const rawNcc = cov / denominator;
     rNcc = Math.max(0.0, Math.min(1.0, rawNcc));
   } else {
-    // Zero variance in one or both patches (flat color)
-    rNcc = unchangedPixelCount === totalPixels ? 1.0 : 0.0;
+    // Zero variance in one or both patches (flat color):
+    // Fall back to pixelVisibilityRatio instead of 0 or NaN
+    rNcc = pixelVisibilityRatio;
   }
 
   return {

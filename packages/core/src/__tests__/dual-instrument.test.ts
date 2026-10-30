@@ -210,5 +210,116 @@ describe('Dual-Instrument Measurement Engine (Offline $0.00 Spend)', () => {
       expect(verdict.reason).toContain('2574/17160 px loss');
       expect(verdict.visibilityLoss).toBeCloseTo(0.15, 4);
     });
+
+    it('rejects NaN, Infinity, and out-of-range scores in evaluateDualInstrument', () => {
+      const invalidPairs = [
+        { rSam: NaN, visRatio: 0.9 },
+        { rSam: 0.9, visRatio: NaN },
+        { rSam: Infinity, visRatio: 0.9 },
+        { rSam: 0.9, visRatio: -Infinity },
+        { rSam: -0.1, visRatio: 0.9 },
+        { rSam: 1.5, visRatio: 0.9 },
+        { rSam: 0.9, visRatio: -0.5 },
+        { rSam: 0.9, visRatio: 1.2 },
+      ];
+
+      for (const pair of invalidPairs) {
+        expect(
+          () =>
+            evaluateDualInstrument({
+              rSam: pair.rSam,
+              visRatio: pair.visRatio,
+              rNcc: 0.9,
+              calibration: cal,
+            }),
+          `Expected pair (${pair.rSam}, ${pair.visRatio}) to throw`,
+        ).toThrowError(/Invalid instrument measurement/);
+      }
+    });
+
+    it('populates structured decisionExplanation with exact rule, votes, and margins', () => {
+      // Clean pass
+      const passVerdict = evaluateDualInstrument({
+        rSam: 1.0,
+        rNcc: 1.0,
+        calibration: cal,
+      });
+      expect(passVerdict.decisionExplanation).toBeDefined();
+      expect(passVerdict.decisionExplanation?.ruleFired).toBe('RULE_4_THREE_SIGMA_CLEAN_PASS');
+      expect(passVerdict.decisionExplanation?.instrumentAVote).toBe('pass');
+      expect(passVerdict.decisionExplanation?.instrumentBVote).toBe('pass');
+      expect(passVerdict.decisionExplanation?.marginToThreshold).toBeLessThanOrEqual(0);
+      expect(passVerdict.decisionExplanation?.formulaSummary).toContain('within 3σ noise floor');
+
+      // Occlusion reject
+      const failVerdict = evaluateDualInstrument({
+        rSam: 0.85,
+        rNcc: 0.85,
+        calibration: cal,
+      });
+      expect(failVerdict.decisionExplanation).toBeDefined();
+      expect(failVerdict.decisionExplanation?.ruleFired).toBe('RULE_3_THREE_SIGMA_OCCLUSION_REJECT');
+      expect(failVerdict.decisionExplanation?.instrumentAVote).toBe('fail');
+      expect(failVerdict.decisionExplanation?.instrumentBVote).toBe('fail');
+      expect(failVerdict.decisionExplanation?.marginToThreshold).toBeGreaterThan(0);
+      expect(failVerdict.decisionExplanation?.formulaSummary).toContain('exceeds 3σ noise floor');
+
+      // Gross delta inconclusive
+      const deltaVerdict = evaluateDualInstrument({
+        rSam: 0.95,
+        rNcc: 0.7,
+        calibration: cal,
+      });
+      expect(deltaVerdict.decisionExplanation).toBeDefined();
+      expect(deltaVerdict.decisionExplanation?.ruleFired).toBe('RULE_1_GROSS_DELTA_INCONCLUSIVE');
+      expect(deltaVerdict.decisionExplanation?.deltaMargin).toBeLessThan(0);
+
+      // Boundary split inconclusive
+      const splitVerdict = evaluateDualInstrument({
+        rSam: 0.995,
+        visRatio: 0.975,
+        rNcc: 0.975,
+        calibration: cal,
+      });
+      expect(splitVerdict.decisionExplanation).toBeDefined();
+      expect(splitVerdict.decisionExplanation?.ruleFired).toBe('RULE_2_BOUNDARY_SPLIT_INCONCLUSIVE');
+    });
+
+    it('validates bounding box and clamps out-of-bounds coordinates safely in computeTemplateMatchVisibility', () => {
+      const clip = manifest.clips[0];
+      const t0Path = path.join(root, clip.t0FramePath!);
+      const tkPath = path.join(root, clip.tkFramePath!);
+
+      // Invalid dimensions or NaN
+      expect(() =>
+        computeTemplateMatchVisibility(t0Path, tkPath, {
+          x: 0,
+          y: 0,
+          width: 0,
+          height: 50,
+        }),
+      ).toThrowError(/Invalid target bounding box/);
+
+      expect(() =>
+        computeTemplateMatchVisibility(t0Path, tkPath, {
+          x: NaN,
+          y: 0,
+          width: 100,
+          height: 50,
+        }),
+      ).toThrowError(/Invalid target bounding box/);
+
+      // Clamped coordinates extending beyond 1280x720 edge
+      const clampedResult = computeTemplateMatchVisibility(t0Path, tkPath, {
+        x: 1200,
+        y: 680,
+        width: 150, // extends past 1280
+        height: 80,  // extends past 720
+      });
+      expect(clampedResult.totalPixels).toBeGreaterThan(0);
+      expect(Number.isFinite(clampedResult.rNcc)).toBe(true);
+      expect(clampedResult.rNcc).toBeGreaterThanOrEqual(0);
+      expect(clampedResult.rNcc).toBeLessThanOrEqual(1);
+    });
   });
 });

@@ -238,6 +238,7 @@ export interface LiveVideoVerifyApiResponse {
   }>;
   cliCommandEquivalent: string;
   mcpPayloadEquivalent: Record<string, unknown>;
+  decisionExplanation?: unknown;
 }
 
 export async function handleVerifyLive(req: IncomingMessage, res: ServerResponse): Promise<void> {
@@ -532,6 +533,7 @@ export async function handleVerifyLive(req: IncomingMessage, res: ServerResponse
       pipelineStages,
       cliCommandEquivalent,
       mcpPayloadEquivalent,
+      decisionExplanation: result.decisionExplanation,
     };
 
     sendJson(res, 200, response);
@@ -806,6 +808,59 @@ export async function handleSaveInvariant(
   }
 }
 
+export interface ExplainVerdictPayload {
+  clipId?: string;
+  videoPath?: string;
+  targetLabel?: string;
+  targetBBox?: [number, number, number, number] | { x: number; y: number; width: number; height: number };
+}
+
+export async function handleExplainVerdict(
+  req: IncomingMessage,
+  res: ServerResponse,
+): Promise<void> {
+  try {
+    const payload = await parseJsonBody<ExplainVerdictPayload>(req);
+    const repoRoot = findRepoRoot();
+    const clipId = payload.clipId || 'dom_catch_010_v1';
+    const targetLabel = payload.targetLabel || 'Complete Checkout';
+
+    const t0Path = path.join(repoRoot, 'benchmark', 'clips', `${clipId}_t0.png`);
+    const tkPath = path.join(repoRoot, 'benchmark', 'clips', `${clipId}_tk.png`);
+    const videoPath = payload.videoPath || path.join(repoRoot, 'benchmark', 'clips', `${clipId}.mp4`);
+    const cachedSam = path.join(repoRoot, 'benchmark', 'responses', 'phase2-smoke', `${clipId}_sam.json`);
+
+    const callerBBox = payload.targetBBox ? normalizeBBox(payload.targetBBox) : undefined;
+    const client = new SpectraClient();
+    const result = await client.verifyClip({
+      clipId,
+      t0FramePath: fs.existsSync(t0Path) ? t0Path : undefined,
+      tkFramePath: fs.existsSync(tkPath) ? tkPath : undefined,
+      videoPath: fs.existsSync(videoPath) ? videoPath : undefined,
+      targetLabel,
+      targetBBox: callerBBox,
+      cachedSamResponsePath: fs.existsSync(cachedSam) ? cachedSam : undefined,
+    });
+
+    const bboxSource = payload.targetBBox ? 'caller' : 'sam-frame-0';
+
+    sendJson(res, 200, {
+      ...result,
+      verdict: result.combinedVerdict,
+      decisionExplanation: result.decisionExplanation,
+      bboxSource,
+      formulaSummary: result.decisionExplanation?.formulaSummary,
+      ruleFired: result.decisionExplanation?.ruleFired,
+      instrumentAVote: result.decisionExplanation?.instrumentAVote,
+      instrumentBVote: result.decisionExplanation?.instrumentBVote,
+      marginToThreshold: result.decisionExplanation?.marginToThreshold,
+      deltaMargin: result.decisionExplanation?.deltaMargin,
+    });
+  } catch (err) {
+    sendJson(res, 400, { error: (err as Error).message });
+  }
+}
+
 export function spectraApiMiddleware(): Connect.NextHandleFunction {
   return async (req, res, next) => {
     const url = req.url?.split('?')[0];
@@ -827,6 +882,10 @@ export function spectraApiMiddleware(): Connect.NextHandleFunction {
     }
     if (url === '/api/save-invariant' && req.method === 'POST') {
       await handleSaveInvariant(req, res);
+      return;
+    }
+    if (url === '/api/explain-verdict' && req.method === 'POST') {
+      await handleExplainVerdict(req, res);
       return;
     }
     next();

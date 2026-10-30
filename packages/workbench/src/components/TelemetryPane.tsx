@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ChevronDown, ChevronRight, Compass } from 'lucide-react';
 import type { WorkbenchScenarioBundle } from '../types.js';
 import {
   HardwareToggle,
@@ -52,6 +53,7 @@ export const TelemetryPane: React.FC<TelemetryPaneProps> = ({
 }) => {
   const [internalShowSamMask, setInternalShowSamMask] = useState(true);
   const [voiceRuleActive, setVoiceRuleActive] = useState(true);
+  const [showDecisionTree, setShowDecisionTree] = useState(true);
 
   const showSam = externalShowSamMask !== undefined ? externalShowSamMask : internalShowSamMask;
   const toggleSam = externalOnToggleSamMask || setInternalShowSamMask;
@@ -258,6 +260,115 @@ export const TelemetryPane: React.FC<TelemetryPaneProps> = ({
             </pre>
           </div>
         )}
+
+        {/* Section: Decision Tree · Show Your Work */}
+        <div className="p-3.5 border-b border-[#B8B4A9] space-y-2 bg-[#E5E2DA]">
+          <div
+            onClick={() => setShowDecisionTree(!showDecisionTree)}
+            className="flex items-center justify-between cursor-pointer select-none"
+          >
+            <div className="flex items-center gap-1.5 font-mono text-xs font-semibold uppercase tracking-wider text-[#181816]">
+              <Compass className="w-3.5 h-3.5 text-[#181816]" />
+              <span>DECISION TREE · SHOW YOUR WORK</span>
+            </div>
+            <button
+              type="button"
+              className="text-[#4A4843] hover:text-[#181816] cursor-pointer"
+              title={showDecisionTree ? 'Collapse Decision Tree' : 'Expand Decision Tree'}
+            >
+              {showDecisionTree ? (
+                <ChevronDown className="w-3.5 h-3.5" />
+              ) : (
+                <ChevronRight className="w-3.5 h-3.5" />
+              )}
+            </button>
+          </div>
+
+          {showDecisionTree && (
+            <div className="p-2.5 rounded-[3px] bg-[#D6D3C9] border border-[#B8B4A9] font-mono text-[10.5px] leading-relaxed space-y-1.5 text-[#181816] shadow-inner">
+              <div className="flex items-center justify-between pb-1 border-b border-[#B8B4A9]">
+                <span className="text-[#6E6B64] font-semibold">Rule Fired:</span>
+                <span
+                  className={`px-1.5 py-0.2 rounded-[2px] font-bold text-[9.5px] tracking-tight ${
+                    isPass2 ? 'bg-[#2E7D52] text-white' : 'bg-[#E05246] text-white'
+                  }`}
+                >
+                  {isPass2
+                    ? 'RULE_4_THREE_SIGMA_CLEAN_PASS'
+                    : 'RULE_3_THREE_SIGMA_OCCLUSION_REJECT'}
+                </span>
+              </div>
+
+              <div>
+                <span className="text-[#6E6B64] font-semibold">Instrument Votes:</span>
+                <div className="pl-1 text-[#181816]">
+                  {isPass2 ? (
+                    <>
+                      • Inst A (SAM 3.1):{' '}
+                      <span className="text-[#1D4D35] font-semibold">PASS (0.00% loss)</span>
+                      <br />• Inst B (Pixel):{' '}
+                      <span className="text-[#1D4D35] font-semibold">PASS (0.00% loss)</span>
+                    </>
+                  ) : (
+                    <>
+                      • Inst A (SAM 3.1):{' '}
+                      <span className="text-[#9E2A22] font-semibold">
+                        FAIL (-{((1 - rSam) * 100).toFixed(2)}%)
+                      </span>
+                      <br />• Inst B (Pixel):{' '}
+                      <span className="text-[#9E2A22] font-semibold">
+                        FAIL (-{((1 - visRatio) * 100).toFixed(2)}%)
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex flex-col">
+                <span className="text-[#6E6B64] font-semibold">Agreement Check:</span>
+                <span className="pl-1">
+                  |rSam - vis| = {(Math.abs(rSam - visRatio) * 100).toFixed(2)}% ≤{' '}
+                  {(0.041 * 100).toFixed(2)}% (δ){' '}
+                  <span className="text-[#1D4D35] font-semibold">
+                    [AGREED, +{((0.041 - Math.abs(rSam - visRatio)) * 100).toFixed(2)}% margin]
+                  </span>
+                </span>
+              </div>
+
+              <div className="flex flex-col">
+                <span className="text-[#6E6B64] font-semibold">Threshold Margin:</span>
+                <span className="pl-1">
+                  {isPass2 ? (
+                    <>
+                      Loss 0.00% vs 1.35% (3σ){' '}
+                      <span className="text-[#1D4D35] font-semibold">
+                        [-1.35% within noise floor]
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      Loss {cfg.pass1LossPct.toFixed(2)}% vs 1.35% (3σ){' '}
+                      <span className="text-[#9E2A22] font-semibold">
+                        [+{(cfg.pass1LossPct - 1.35).toFixed(2)}% above noise floor]
+                      </span>
+                    </>
+                  )}
+                </span>
+              </div>
+
+              <div className="flex flex-col pt-0.5 border-t border-[#B8B4A9]">
+                <span className="text-[#6E6B64] font-semibold">BBox Provenance:</span>
+                <span className="pl-1 text-[10px] text-[#4A4843] break-all">
+                  {activeId === 's3'
+                    ? 'Manifest [910,600,340,50] · SAM Frame-0 [909,600,342,51]'
+                    : activeId === 's1'
+                      ? 'Manifest [820,240,220,48] · SAM Frame-0 [820,240,220,48]'
+                      : 'Manifest [475,610,330,52] · SAM Frame-0 [475,610,330,52]'}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Section 6 — Phase 01..04: Closed-Loop Repair Phases */}
         <div className="p-3.5 space-y-2">

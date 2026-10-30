@@ -14,7 +14,7 @@
 2. **Category / Bonus Tracks:**
    - **Best Use of Meta AI:** End-to-end integration of 4 Meta AI models/developer surfaces: `sam-3.1` (video segmentation via `@meta-sam/parser@0.1.0`), `muse-spark-1.3` (multimodal VLM judge), `muse-voice-transcribe-1.0` (spoken invariant ingestion), and `meta-models/muse-spark-open-1026` (open-weight patch generation on Baseten).
    - **Best Dev Tool / Agent Infrastructure:** Model Context Protocol (MCP) stdio server exposing 4 bounded tools (`spectra_verify`, `spectra_check`, `spectra_compile_invariant`, `spectra_closed_loop`) to Muse Code, Claude Code, and Cursor.
-   - **Open Source / Technical Achievement:** Dual-instrument optical consensus engine with calibrated noise floor ($3\sigma = 1.35\%$, $\delta = 4.10\%$, MAE $1.11\%$), 133 passing offline tests, zero live API spend ($0.00), and Rule 1 non-fabrication guarantee.
+   - **Open Source / Technical Achievement:** Dual-instrument optical consensus engine with calibrated noise floor ($3\sigma = 1.35\%$, $\delta = 4.10\%$, MAE $1.11\%$), 138 passing offline tests, zero live API spend ($0.00), and Rule 1 non-fabrication guarantee.
 
 ---
 
@@ -27,7 +27,7 @@ Spectra is built **offline-first**. All benchmark clips, live response JSONs, an
 pnpm install
 pnpm -r build
 
-# 2. Verify all 133 Unit & Contract Tests Pass Offline ($0.00 Spend)
+# 2. Verify all 138 Unit & Contract Tests Pass Offline ($0.00 Spend)
 pnpm -r test
 
 # 3. Run Zero-BBox Auto-Resolution Optical Verification via Production CLI

@@ -72,4 +72,20 @@ describe('Calibration & Noise-Floor (Rule 2 enforcement)', () => {
     expect(isCalibrated(calibrated)).toBe(true);
     expect(() => assertCalibrated(calibrated)).not.toThrow();
   });
+
+  it('rejects NaN, Infinity, negative, zero, and out-of-range values as uncalibrated', () => {
+    const invalidValues = [NaN, Infinity, -Infinity, 0, -0.01, 1.5];
+    for (const val of invalidValues) {
+      const badCal = {
+        sigma_noise: val,
+        delta: 0.041,
+        measured_at: null,
+        run_id: null,
+        sample_count: 1,
+        citation: 'Invalid',
+      };
+      expect(isCalibrated(badCal)).toBe(false);
+      expect(() => assertCalibrated(badCal)).toThrowError(UncalibratedError);
+    }
+  });
 });

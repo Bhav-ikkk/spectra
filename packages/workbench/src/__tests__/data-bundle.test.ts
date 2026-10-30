@@ -10,6 +10,7 @@ import {
   handleClosedLoopLive,
   handleCompileVoice,
   handleSaveInvariant,
+  handleExplainVerdict,
   spectraApiMiddleware,
   type WorkbenchDataBundle,
   type LiveVideoVerifyApiResponse,
@@ -502,5 +503,44 @@ describe('@spectra/workbench - Local API Server Middleware Tests ($0.00 Spend)',
         fs.writeFileSync(invPath, originalContent, 'utf-8');
       }
     }
+  });
+
+  it('POST /api/explain-verdict returns structured decisionExplanation with mathematical proof', async () => {
+    const { req, res, getResult } = createMockReqRes({
+      method: 'POST',
+      url: '/api/explain-verdict',
+      body: {
+        clipId: 'dom_catch_010_v1',
+        targetLabel: 'Complete Checkout',
+        targetBBox: [910, 600, 340, 50],
+      },
+    });
+
+    await handleExplainVerdict(req, res);
+    const result = await getResult();
+
+    expect(result.statusCode).toBe(200);
+    const data = result.data as {
+      verdict: string;
+      decisionExplanation: {
+        ruleFired: string;
+        instrumentAVote: string;
+        instrumentBVote: string;
+        marginToThreshold: number;
+        observedDelta: number;
+        deltaLimit: number;
+        deltaMargin: number;
+        formulaSummary: string;
+      };
+      bboxSource: string;
+    };
+    expect(data.verdict).toBe('fail');
+    expect(data.decisionExplanation).toBeDefined();
+    expect(data.decisionExplanation.ruleFired).toBe('RULE_3_THREE_SIGMA_OCCLUSION_REJECT');
+    expect(data.decisionExplanation.instrumentAVote).toBe('fail');
+    expect(data.decisionExplanation.instrumentBVote).toBe('fail');
+    expect(data.decisionExplanation.marginToThreshold).toBeGreaterThan(0);
+    expect(data.decisionExplanation.deltaMargin).toBeGreaterThan(0);
+    expect(data.bboxSource).toBe('caller');
   });
 });

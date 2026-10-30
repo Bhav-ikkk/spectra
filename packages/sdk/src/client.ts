@@ -365,6 +365,7 @@ export class SpectraClient {
       noiseDelta: verdict.instrumentAgreementDelta,
       calibrated: true,
       notes: verdict.reason,
+      decisionExplanation: verdict.decisionExplanation,
     };
 
     return MeasurementResultSchema.parse(measurement);

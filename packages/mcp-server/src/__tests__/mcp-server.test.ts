@@ -129,6 +129,7 @@ describe('@spectra/mcp-server - End-to-End Stdio Protocol Integration Tests ($0.
 
       expect(res.error).toBeUndefined();
       expect(res.result?.tools).toBeDefined();
+      expect(res.result?.tools).toHaveLength(4);
       const toolNames = res.result?.tools.map((t) => t.name);
 
       expect(toolNames).toContain('spectra_verify');
@@ -180,6 +181,9 @@ describe('@spectra/mcp-server - End-to-End Stdio Protocol Integration Tests ($0.
       expect(data.calibrated).toBe(true);
       expect(data.reason).toContain('VERIFIED:');
       expect(data.resolvedBBox).toBeDefined();
+      expect(data.decisionExplanation).toBeDefined();
+      expect(data.decisionExplanation.ruleFired).toBe('RULE_4_THREE_SIGMA_CLEAN_PASS');
+      expect(data.decisionExplanation.marginToThreshold).toBeLessThanOrEqual(0);
     });
 
     it('catches dom_catch_010_v1 (10% occlusion) returning verdict === "fail" and pixelLossCount > 0', async () => {
@@ -213,6 +217,9 @@ describe('@spectra/mcp-server - End-to-End Stdio Protocol Integration Tests ($0.
       expect(data.rSam).toBeCloseTo(0.908, 2);
       expect(data.reason).toContain('REJECTED: Visibility loss 9.60% exceeds threshold');
       expect(data.repairActionRequired).toBe(true);
+      expect(data.decisionExplanation).toBeDefined();
+      expect(data.decisionExplanation.ruleFired).toBe('RULE_3_THREE_SIGMA_OCCLUSION_REJECT');
+      expect(data.decisionExplanation.marginToThreshold).toBeGreaterThan(0);
     });
 
     // Test 1: Zero-BBox and Zero-PNG resolution with videoPath only (canvas_000_v1)

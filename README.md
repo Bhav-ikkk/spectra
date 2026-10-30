@@ -2,7 +2,7 @@
 
 > _"Don't trust 'done.' Measure it."_
 
-[![Build & Test](<https://img.shields.io/badge/CI%20Status-Passing%20(133%20tests)-emerald?style=for-the-badge&logo=githubactions>)](https://github.com/Bhav-ikkk/spectra/actions)
+[![Build & Test](<https://img.shields.io/badge/CI%20Status-Passing%20(138%20tests)-emerald?style=for-the-badge&logo=githubactions>)](https://github.com/Bhav-ikkk/spectra/actions)
 [![Rule 1 Verified](https://img.shields.io/badge/Rule%201-100%25%20Non--Fabricated%20Data-blue?style=for-the-badge)](file:///d:/Bhavik/Spectra/AGENTS.md)
 [![Rule 2 Calibrated](https://img.shields.io/badge/Rule%202%20Calibrated-σ_noise%200.45%25%20%7C%203σ%201.35%25-purple?style=for-the-badge)](file:///d:/Bhavik/Spectra/packages/core/src/calibration.json)
 [![Meta AI Models](https://img.shields.io/badge/Meta%20AI-SAM%203.1%20%7C%20Muse%20Spark%20%7C%20Muse%20Voice-indigo?style=for-the-badge)](https://dev.meta.ai)
@@ -177,7 +177,7 @@ Exposes 4 bounded tools:
 3. `spectra_compile_invariant` — Voice `.wav` (`muse-voice-transcribe-1.0`) or text compilation (`muse-spark-1.3` / `meta-models/muse-spark-open-1026`) into Zod-validated `.spectra/invariants.json`.
 4. `spectra_closed_loop` — Autonomous 4-phase Closed-Loop Referee & Repair execution across scenarios `s1`, `s2`, `s3`, or `all`.
 
-### 5. Run Monorepo Test Suites (133 Tests Passing)
+### 5. Run Monorepo Test Suites (138 Tests Passing)
 
 ```bash
 # Offline unit, integration, and contract tests (zero API spend)
