@@ -1,12 +1,29 @@
-# SPECTRA V3.0 — The Visual Referee for AI Agents
+<div align="center">
+  <img src="./assets/spectra-banner.svg" alt="Spectra V3.0 — Visual Referee for AI Coding Agents" width="100%" />
 
-> _"Don't trust 'done.' Measure it."_
+  <br />
 
-[![Build & Test](<https://img.shields.io/badge/CI%20Status-Passing%20(138%20tests)-emerald?style=for-the-badge&logo=githubactions>)](https://github.com/Bhav-ikkk/spectra/actions)
-[![Rule 1 Verified](https://img.shields.io/badge/Rule%201-100%25%20Non--Fabricated%20Data-blue?style=for-the-badge)](file:///d:/Bhavik/Spectra/AGENTS.md)
-[![Rule 2 Calibrated](https://img.shields.io/badge/Rule%202%20Calibrated-σ_noise%200.45%25%20%7C%203σ%201.35%25-purple?style=for-the-badge)](file:///d:/Bhavik/Spectra/packages/core/src/calibration.json)
-[![Meta AI Models](https://img.shields.io/badge/Meta%20AI-SAM%203.1%20%7C%20Muse%20Spark%20%7C%20Muse%20Voice-indigo?style=for-the-badge)](https://dev.meta.ai)
-[![Baseten Open Weight](https://img.shields.io/badge/Baseten-muse--spark--open--1026-teal?style=for-the-badge)](https://baseten.co)
+  <!-- Custom Field-Monitor Color-Matched Badges -->
+  <p>
+    <a href="#60-second-judge-quickstart"><img src="https://img.shields.io/badge/TESTS-138%20PASSING%20(100%25%20OFFLINE)-2E7D52?style=flat-square&labelColor=181816" alt="138 Tests Passing" /></a>
+    <a href="./packages/core/CALIBRATION_NOTE.md"><img src="https://img.shields.io/badge/RULE%202%203%CF%83%20FLOOR-1.35%25%20(%CF%83%3D0.45%25)-2E7D52?style=flat-square&labelColor=181816" alt="Calibrated 3-Sigma 1.35%" /></a>
+    <a href="./benchmark/results/referee_benchmark_report.json"><img src="https://img.shields.io/badge/FALSE--PASS%20RATE-0.0%25%20(18%2F18%20CAUGHT)-181816?style=flat-square&labelColor=EAE7DF" alt="0.0% False Pass Rate" /></a>
+    <a href="./docs/MODEL_VERIFICATION.md"><img src="https://img.shields.io/badge/META%20STACK-SAM%203.1%20%C2%B7%20SPARK%201.3%20%C2%B7%20VOICE%201.0-E05246?style=flat-square&labelColor=181816" alt="Meta Stack" /></a>
+    <a href="./packages/mcp-server"><img src="https://img.shields.io/badge/MCP%20SERVER-4%20TOOLS%20(STDIO)-181816?style=flat-square&labelColor=DFDCD3" alt="4 MCP Tools" /></a>
+    <a href="./LICENSE"><img src="https://img.shields.io/badge/LICENSE-MIT-4A4843?style=flat-square&labelColor=181816" alt="MIT License" /></a>
+  </p>
+
+  <p>
+    <strong><a href="#60-second-judge-quickstart">60-Second Quickstart</a></strong> ·
+    <strong><a href="./JUDGING.md">3-Minute Judging Guide</a></strong> ·
+    <strong><a href="#empirical-4-evaluator-referee-benchmark-results">Benchmark Report</a></strong> ·
+    <strong><a href="./packages/core/CALIBRATION_NOTE.md">Calibration Proof</a></strong> ·
+    <strong><a href="./docs/MODEL_VERIFICATION.md">Model Verification</a></strong> ·
+    <strong><a href="#4-connect-to-muse-code-via-mcp-spectramcp-server">CLI & MCP Docs</a></strong>
+  </p>
+</div>
+
+> _"Don’t trust ‘done.’ Measure it."_
 
 **Spectra** is the open-source, dual-instrument visual referee engine for AI coding agents. When agents like Muse Code, Devin, or SWE-bench claim a UI feature is "done", Spectra verifies visual invariants using sub-pixel optical measurement—catching subtle regressions that DOM checks, screenshot-diffing, and raw LLM vision models completely miss.
 

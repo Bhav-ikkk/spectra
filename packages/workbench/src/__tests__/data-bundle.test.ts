@@ -544,3 +544,29 @@ describe('@spectra/workbench - Local API Server Middleware Tests ($0.00 Spend)',
     expect(data.bboxSource).toBe('caller');
   });
 });
+
+
+describe('@spectra/workbench - Brand Asset Integrity Tests', () => {
+  const workspaceRoot = path.resolve(__dirname, '../../../../');
+
+  const brandAssets = [
+    path.join(workspaceRoot, 'assets', 'spectra-logo.svg'),
+    path.join(workspaceRoot, 'assets', 'spectra-banner.svg'),
+    path.join(workspaceRoot, 'packages', 'workbench', 'public', 'favicon.svg'),
+  ];
+
+  it('all brand SVG assets exist on disk and contain valid <svg root elements', () => {
+    for (const assetPath of brandAssets) {
+      expect(
+        fs.existsSync(assetPath),
+        `Brand asset missing: ${path.relative(workspaceRoot, assetPath)}`,
+      ).toBe(true);
+
+      const content = fs.readFileSync(assetPath, 'utf-8');
+      expect(
+        content.includes('<svg'),
+        `${path.relative(workspaceRoot, assetPath)} is not a valid SVG file`,
+      ).toBe(true);
+    }
+  });
+});

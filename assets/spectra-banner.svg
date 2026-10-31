@@ -1,0 +1,194 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" width="1200" height="360" fill="none">
+  <defs>
+    <pattern id="dot-grid" x="0" y="0" width="12" height="12" patternUnits="userSpaceOnUse">
+      <circle cx="6" cy="6" r="0.6" fill="#B8B4A9"/>
+    </pattern>
+    <pattern id="hatch-45" x="0" y="0" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="6" stroke="#E05246" stroke-width="1.5" stroke-opacity="0.55"/>
+    </pattern>
+    <clipPath id="right-panel-clip">
+      <rect x="640" y="0" width="560" height="360" rx="0"/>
+    </clipPath>
+  </defs>
+
+  <!-- === BACKGROUND === -->
+  <rect width="1200" height="360" fill="#EAE7DF"/>
+  <rect width="1200" height="360" fill="url(#dot-grid)"/>
+
+  <!-- 1px Structural Grid Lines -->
+  <line x1="640" y1="0" x2="640" y2="360" stroke="#B8B4A9" stroke-width="1"/>
+
+  <!-- Top Millimeter Ruler Ticks -->
+  <g stroke="#181816" stroke-width="1">
+    <line x1="100" y1="0" x2="100" y2="6"/>
+    <line x1="200" y1="0" x2="200" y2="8"/>
+    <line x1="300" y1="0" x2="300" y2="6"/>
+    <line x1="400" y1="0" x2="400" y2="8"/>
+    <line x1="500" y1="0" x2="500" y2="6"/>
+    <line x1="600" y1="0" x2="600" y2="8"/>
+    <line x1="700" y1="0" x2="700" y2="6"/>
+    <line x1="800" y1="0" x2="800" y2="8"/>
+    <line x1="900" y1="0" x2="900" y2="6"/>
+    <line x1="1000" y1="0" x2="1000" y2="8"/>
+    <line x1="1100" y1="0" x2="1100" y2="6"/>
+  </g>
+
+  <!-- Bottom Millimeter Ruler Ticks -->
+  <g stroke="#181816" stroke-width="1">
+    <line x1="100" y1="360" x2="100" y2="354"/>
+    <line x1="200" y1="360" x2="200" y2="352"/>
+    <line x1="300" y1="360" x2="300" y2="354"/>
+    <line x1="400" y1="360" x2="400" y2="352"/>
+    <line x1="500" y1="360" x2="500" y2="354"/>
+    <line x1="600" y1="360" x2="600" y2="352"/>
+    <line x1="700" y1="360" x2="700" y2="354"/>
+    <line x1="800" y1="360" x2="800" y2="352"/>
+    <line x1="900" y1="360" x2="900" y2="354"/>
+    <line x1="1000" y1="360" x2="1000" y2="352"/>
+    <line x1="1100" y1="360" x2="1100" y2="354"/>
+  </g>
+
+  <!-- 4-Corner Rangefinder Brackets -->
+  <path d="M16 36 V16 H36" stroke="#181816" stroke-width="2.5" stroke-linecap="square"/>
+  <path d="M1164 16 H1184 V36" stroke="#181816" stroke-width="2.5" stroke-linecap="square"/>
+  <path d="M16 324 V344 H36" stroke="#181816" stroke-width="2.5" stroke-linecap="square"/>
+  <path d="M1164 344 H1184 V324" stroke="#181816" stroke-width="2.5" stroke-linecap="square"/>
+
+  <!-- ============================================================ -->
+  <!-- LEFT PANEL (x=0..640) — Branding & Typography                -->
+  <!-- ============================================================ -->
+
+  <!-- Top Technical Header Strip -->
+  <rect x="32" y="28" width="580" height="22" rx="3" fill="#181816"/>
+  <text x="42" y="43" font-family="ui-monospace, SFMono-Regular, 'JetBrains Mono', monospace" font-size="10" font-weight="500" fill="#EAE7DF" letter-spacing="0.06em">SPECTRA OPTICAL INSTRUMENTATION // META AI HACKATHON 2026</text>
+  <!-- Calibrated Pill -->
+  <rect x="420" y="30" width="184" height="18" rx="9" fill="#2E7D52"/>
+  <text x="432" y="43" font-family="ui-monospace, SFMono-Regular, 'JetBrains Mono', monospace" font-size="9" font-weight="600" fill="#FFFFFF" letter-spacing="0.04em">RULE 2 CALIBRATED · 3σ=1.35%</text>
+
+  <!-- Embedded Optical Aperture Emblem (inline mini-logo) -->
+  <g transform="translate(40, 68)">
+    <rect x="0" y="0" width="72" height="72" rx="12" fill="#EAE7DF" stroke="#181816" stroke-width="2"/>
+    <circle cx="36" cy="36" r="24" fill="#DFDCD3" stroke="#181816" stroke-width="1.5"/>
+    <circle cx="36" cy="36" r="18" fill="#181816"/>
+    <path d="M36 21 A15 15 0 0 0 36 51 Z" fill="#2E7D52" fill-opacity="0.85"/>
+    <path d="M36 21 A15 15 0 0 1 36 51 Z" fill="#E05246" fill-opacity="0.90"/>
+    <circle cx="36" cy="36" r="8" fill="#181816" stroke="#EAE7DF" stroke-width="1"/>
+    <circle cx="36" cy="36" r="2.5" fill="#EAE7DF"/>
+    <line x1="8" y1="36" x2="28" y2="36" stroke="#181816" stroke-width="1"/>
+    <line x1="44" y1="36" x2="64" y2="36" stroke="#181816" stroke-width="1"/>
+    <line x1="36" y1="8" x2="36" y2="28" stroke="#181816" stroke-width="1"/>
+    <line x1="36" y1="44" x2="36" y2="64" stroke="#181816" stroke-width="1"/>
+    <!-- Corner brackets -->
+    <path d="M6 16 V6 H16" stroke="#181816" stroke-width="1.5" stroke-linecap="square"/>
+    <path d="M56 6 H66 V16" stroke="#181816" stroke-width="1.5" stroke-linecap="square"/>
+    <path d="M6 56 V66 H16" stroke="#181816" stroke-width="1.5" stroke-linecap="square"/>
+    <path d="M56 66 H66 V56" stroke="#181816" stroke-width="1.5" stroke-linecap="square"/>
+    <!-- Status LED -->
+    <circle cx="60" cy="12" r="3" fill="#2E7D52" stroke="#181816" stroke-width="0.8"/>
+  </g>
+
+  <!-- SPECTRA Wordmark -->
+  <text x="128" y="100" font-family="ui-monospace, SFMono-Regular, 'JetBrains Mono', monospace" font-size="54" font-weight="800" fill="#181816" letter-spacing="0.04em">SPECTRA</text>
+  <!-- V3.0 Badge -->
+  <rect x="470" y="78" width="52" height="24" rx="4" fill="#181816"/>
+  <text x="480" y="95" font-family="ui-monospace, SFMono-Regular, 'JetBrains Mono', monospace" font-size="13" font-weight="700" fill="#EAE7DF">V3.0</text>
+
+  <!-- Tagline -->
+  <text x="128" y="126" font-family="'Host Grotesk', 'Inter', system-ui, sans-serif" font-size="22" font-weight="600" fill="#181816">"Don't trust 'done.' Measure it."</text>
+
+  <!-- Subtitle -->
+  <text x="40" y="168" font-family="'Host Grotesk', 'Inter', system-ui, sans-serif" font-size="14" fill="#4A4843">Dual-Instrument Visual Referee for AI Coding Agents</text>
+  <text x="40" y="186" font-family="'Host Grotesk', 'Inter', system-ui, sans-serif" font-size="13" fill="#4A4843">SAM 3.1 Segmentation + Pixel Template Matching + Closed-Loop Repair</text>
+
+  <!-- Thin Separator -->
+  <line x1="40" y1="204" x2="610" y2="204" stroke="#B8B4A9" stroke-width="1"/>
+
+  <!-- Bottom 4 Hardware Spec Pills -->
+  <g font-family="ui-monospace, SFMono-Regular, 'JetBrains Mono', monospace" font-size="10" font-weight="500">
+    <!-- Pill 1 -->
+    <rect x="40" y="218" width="178" height="26" rx="5" fill="#181816"/>
+    <text x="52" y="235" fill="#EAE7DF">SAM 3.1 + @meta-sam/parser</text>
+    <!-- Pill 2 -->
+    <rect x="226" y="218" width="210" height="26" rx="5" fill="#181816"/>
+    <text x="238" y="235" fill="#EAE7DF">Muse Voice 1.0 + Muse Spark 1.3</text>
+    <!-- Pill 3 -->
+    <rect x="40" y="252" width="214" height="26" rx="5" fill="#181816"/>
+    <text x="52" y="269" fill="#EAE7DF">Muse Spark Open 1026 (Baseten)</text>
+    <!-- Pill 4 -->
+    <rect x="262" y="252" width="222" height="26" rx="5" fill="#181816"/>
+    <text x="274" y="269" fill="#EAE7DF">CLI + 4-Tool MCP + Workbench</text>
+  </g>
+
+  <!-- Bottom-left: Benchmark Summary Line -->
+  <text x="40" y="310" font-family="ui-monospace, SFMono-Regular, 'JetBrains Mono', monospace" font-size="11" fill="#4A4843">138 tests · 21 clips · 0.0% false-pass · 1.11% MAE · 480ms</text>
+  <text x="40" y="328" font-family="ui-monospace, SFMono-Regular, 'JetBrains Mono', monospace" font-size="10" fill="#B8B4A9">σ_noise = 0.45% · 3σ = 1.35% · δ = 4.10% · 8-frame 4FPS cap</text>
+
+  <!-- ============================================================ -->
+  <!-- RIGHT PANEL (x=640..1200) — "The Catch" Technical Diagram    -->
+  <!-- ============================================================ -->
+  <g clip-path="url(#right-panel-clip)">
+
+    <!-- Section Title -->
+    <rect x="660" y="28" width="184" height="22" rx="3" fill="#E05246"/>
+    <text x="670" y="43" font-family="ui-monospace, SFMono-Regular, 'JetBrains Mono', monospace" font-size="10" font-weight="600" fill="#FFFFFF" letter-spacing="0.06em">THE CATCH — WHY SPECTRA</text>
+
+    <!-- === BOX 1: TRADITIONAL QA (Coral Border) === -->
+    <rect x="660" y="60" width="260" height="82" rx="6" fill="#FFFFFF" stroke="#E05246" stroke-width="1.5"/>
+    <rect x="660" y="60" width="260" height="20" rx="6" fill="#E05246"/>
+    <rect x="660" y="73" width="260" height="7" fill="#E05246"/>
+    <text x="672" y="75" font-family="ui-monospace, SFMono-Regular, 'JetBrains Mono', monospace" font-size="9" font-weight="700" fill="#FFFFFF" letter-spacing="0.08em">TRADITIONAL QA</text>
+
+    <text x="672" y="98" font-family="ui-monospace, SFMono-Regular, 'JetBrains Mono', monospace" font-size="9.5" fill="#181816">DOM Hit-Test (1080, 625):</text>
+    <rect x="846" y="88" width="62" height="16" rx="3" fill="#E05246"/>
+    <text x="854" y="100" font-family="ui-monospace, SFMono-Regular, 'JetBrains Mono', monospace" font-size="8.5" font-weight="700" fill="#FFFFFF">PASS ✗</text>
+
+    <text x="672" y="116" font-family="ui-monospace, SFMono-Regular, 'JetBrains Mono', monospace" font-size="9.5" fill="#181816">Flagship VLM Judge:</text>
+    <rect x="812" y="106" width="62" height="16" rx="3" fill="#E05246"/>
+    <text x="820" y="118" font-family="ui-monospace, SFMono-Regular, 'JetBrains Mono', monospace" font-size="8.5" font-weight="700" fill="#FFFFFF">PASS ✗</text>
+
+    <text x="672" y="134" font-family="ui-monospace, SFMono-Regular, 'JetBrains Mono', monospace" font-size="8" fill="#4A4843">94.4% + 61.1% False-Pass Rate</text>
+
+    <!-- === BOX 2: SPECTRA DUAL-INSTRUMENT CATCH (Green Border) === -->
+    <rect x="660" y="152" width="520" height="104" rx="6" fill="#FFFFFF" stroke="#2E7D52" stroke-width="1.5"/>
+    <rect x="660" y="152" width="520" height="20" rx="6" fill="#2E7D52"/>
+    <rect x="660" y="165" width="520" height="7" fill="#2E7D52"/>
+    <text x="672" y="167" font-family="ui-monospace, SFMono-Regular, 'JetBrains Mono', monospace" font-size="9" font-weight="700" fill="#FFFFFF" letter-spacing="0.08em">SPECTRA DUAL-INSTRUMENT CATCH</text>
+
+    <!-- Visual button representation -->
+    <rect x="676" y="184" width="200" height="30" rx="4" fill="#2E7D52"/>
+    <text x="710" y="204" font-family="'Host Grotesk', 'Inter', system-ui, sans-serif" font-size="12" font-weight="700" fill="#FFFFFF">Complete Checkout</text>
+    <!-- 10% occluded area with hatch -->
+    <rect x="676" y="211" width="200" height="3" rx="0" fill="url(#hatch-45)"/>
+    <rect x="676" y="211" width="200" height="3" fill="#E05246" fill-opacity="0.3"/>
+
+    <!-- Measurement callouts -->
+    <text x="892" y="196" font-family="ui-monospace, SFMono-Regular, 'JetBrains Mono', monospace" font-size="9" fill="#181816">bbox [910, 600, 340x50]</text>
+    <text x="892" y="212" font-family="ui-monospace, SFMono-Regular, 'JetBrains Mono', monospace" font-size="9" fill="#E05246" font-weight="600">9.60% LOSS > 1.35% 3σ</text>
+    <text x="892" y="228" font-family="ui-monospace, SFMono-Regular, 'JetBrains Mono', monospace" font-size="9" fill="#181816">REJECTED · 1,700 px occluded</text>
+
+    <!-- Arrow pointing down to occlusion -->
+    <line x1="776" y1="220" x2="776" y2="246" stroke="#E05246" stroke-width="1.5" stroke-dasharray="3,2"/>
+    <text x="680" y="248" font-family="ui-monospace, SFMono-Regular, 'JetBrains Mono', monospace" font-size="8.5" fill="#4A4843">rSam=0.9080 · visRatio=0.9000 · Δ=0.80% &lt; 4.10%</text>
+
+    <!-- === BOX 3: CLOSED-LOOP VERIFIED (Emerald) === -->
+    <rect x="660" y="268" width="520" height="66" rx="6" fill="#FFFFFF" stroke="#2E7D52" stroke-width="1.5"/>
+    <rect x="660" y="268" width="520" height="20" rx="6" fill="#181816"/>
+    <rect x="660" y="281" width="520" height="7" fill="#181816"/>
+    <text x="672" y="283" font-family="ui-monospace, SFMono-Regular, 'JetBrains Mono', monospace" font-size="9" font-weight="700" fill="#EAE7DF" letter-spacing="0.08em">CLOSED-LOOP VERIFIED — PASS #2</text>
+
+    <!-- Repair arrow -->
+    <text x="672" y="306" font-family="ui-monospace, SFMono-Regular, 'JetBrains Mono', monospace" font-size="10" fill="#2E7D52" font-weight="700">→ muse-spark-open-1026 CSS patch</text>
+    <text x="672" y="322" font-family="ui-monospace, SFMono-Regular, 'JetBrains Mono', monospace" font-size="10" fill="#181816" font-weight="600">0.0% False-Pass · 1.11% MAE · 480ms · 100.0% Restored</text>
+
+    <!-- Green checkmark -->
+    <circle cx="1150" y="300" r="14" fill="#2E7D52"/>
+    <text x="1142" y="305" font-family="system-ui, sans-serif" font-size="16" fill="#FFFFFF" font-weight="700">✓</text>
+
+    <!-- Right side connector arrows between boxes -->
+    <line x1="930" y1="142" x2="930" y2="152" stroke="#2E7D52" stroke-width="1.5"/>
+    <polygon points="926,150 930,156 934,150" fill="#2E7D52"/>
+    <line x1="930" y1="256" x2="930" y2="268" stroke="#181816" stroke-width="1.5"/>
+    <polygon points="926,266 930,272 934,266" fill="#181816"/>
+  </g>
+</svg>
+

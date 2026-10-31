@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" fill="none">
+  <!-- Anodized Putty Hardware Chassis -->
+  <rect x="4" y="4" width="120" height="120" rx="18" fill="#EAE7DF" stroke="#181816" stroke-width="3"/>
+  <rect x="10" y="10" width="108" height="108" rx="12" stroke="#B8B4A9" stroke-width="1"/>
+
+  <!-- 4-Corner Rangefinder Brackets -->
+  <path d="M18 34 V18 H34" stroke="#181816" stroke-width="2.5" stroke-linecap="square"/>
+  <path d="M94 18 H110 V34" stroke="#181816" stroke-width="2.5" stroke-linecap="square"/>
+  <path d="M18 94 V110 H34" stroke="#181816" stroke-width="2.5" stroke-linecap="square"/>
+  <path d="M94 110 H110 V94" stroke="#181816" stroke-width="2.5" stroke-linecap="square"/>
+
+  <!-- Top & Bottom Millimeter Ruler Ticks -->
+  <path d="M46 14 V19 M55 14 V17 M64 14 V20 M73 14 V17 M82 14 V19" stroke="#181816" stroke-width="1.5"/>
+  <path d="M46 114 V109 M55 114 V111 M64 114 V108 M73 114 V111 M82 114 V109" stroke="#181816" stroke-width="1.5"/>
+
+  <!-- Outer Optical Barrel -->
+  <circle cx="64" cy="64" r="36" fill="#DFDCD3" stroke="#181816" stroke-width="2.5"/>
+  <circle cx="64" cy="64" r="28" fill="#181816"/>
+
+  <!-- Dual-Instrument Split Aperture (Left: SAM 3.1 Emerald, Right: Occlusion Coral Catch) -->
+  <path d="M64 42 A22 22 0 0 0 64 86 Z" fill="#2E7D52" fill-opacity="0.85"/>
+  <path d="M64 42 A22 22 0 0 1 64 86 Z" fill="#E05246" fill-opacity="0.90"/>
+
+  <!-- Inner Precision Crosshair & Calibration Ring -->
+  <circle cx="64" cy="64" r="14" fill="#181816" stroke="#EAE7DF" stroke-width="1.75"/>
+  <line x1="22" y1="64" x2="54" y2="64" stroke="#181816" stroke-width="1.75"/>
+  <line x1="74" y1="64" x2="106" y2="64" stroke="#181816" stroke-width="1.75"/>
+  <line x1="64" y1="22" x2="64" y2="54" stroke="#181816" stroke-width="1.75"/>
+  <line x1="64" y1="74" x2="64" y2="106" stroke="#181816" stroke-width="1.75"/>
+  <circle cx="64" cy="64" r="3.5" fill="#EAE7DF"/>
+
+  <!-- Top-Right Rule 2 Verified Status LED -->
+  <circle cx="101" cy="27" r="4" fill="#2E7D52" stroke="#181816" stroke-width="1.2"/>
+</svg>
+
