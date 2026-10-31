@@ -32,4 +32,7 @@ temp/
 tmp/
 *.tmp
 
+# Private reports (for us only - never commit)
+report/
+
 
