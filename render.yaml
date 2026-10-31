@@ -19,3 +19,6 @@ services:
         sync: false
       - key: BASETEN_API_KEY
         sync: false
+      # Bearer [REDACTED] required on all /api/* routes when set (empty = local/dev mode)
+      - key: SPECTRA_API_TOKEN
+        sync: false

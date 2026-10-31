@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import {
   computeTemplateMatchVisibility,
   computeSamVisibilityRatio,
@@ -161,18 +161,30 @@ export class SpectraClient {
         try {
           if (!t0FramePath) {
             const tmpT0 = path.join(os.tmpdir(), `spectra_${stem}_t0_${Date.now()}.png`);
-            execSync(`ffmpeg -y -ss 0 -i "${resolvedVideoPath}" -vframes 1 "${tmpT0}"`, {
-              stdio: 'ignore',
-            });
+            execFileSync(
+              'ffmpeg',
+              ['-y', '-ss', '0', '-i', resolvedVideoPath, '-vframes', '1', tmpT0],
+              { stdio: 'ignore' },
+            );
             if (fs.existsSync(tmpT0)) t0FramePath = tmpT0;
           }
           if (!tkFramePath) {
             const tmpTk = path.join(os.tmpdir(), `spectra_${stem}_tk_${Date.now()}.png`);
-            execSync(
-              `ffmpeg -y -sseof -0.1 -i "${resolvedVideoPath}" -update 1 -frames:v 1 "${tmpTk}"`,
-              {
-                stdio: 'ignore',
-              },
+            execFileSync(
+              'ffmpeg',
+              [
+                '-y',
+                '-sseof',
+                '-0.1',
+                '-i',
+                resolvedVideoPath,
+                '-update',
+                '1',
+                '-frames:v',
+                '1',
+                tmpTk,
+              ],
+              { stdio: 'ignore' },
             );
             if (fs.existsSync(tmpTk)) tkFramePath = tmpTk;
           }

@@ -350,6 +350,19 @@ Respond ONLY with valid JSON conforming to this schema:
   };
 }
 
+function matchEnvValue(envText: string, key: string): string | undefined {
+  const match = envText.match(new RegExp(`^${key}=([^\r\n]+)`, 'm'));
+  const raw = match?.[1]?.trim();
+  if (!raw) return undefined;
+  if (
+    raw.length >= 2 &&
+    ((raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'")))
+  ) {
+    return raw.slice(1, -1);
+  }
+  return raw;
+}
+
 async function requestAgentRepairPatch(
   scenarioDef: ScenarioDefinition,
   options: RunClosedLoopOptions,
@@ -362,18 +375,17 @@ async function requestAgentRepairPatch(
   if (!apiKey && fs.existsSync(path.join(root, '.env'))) {
     const envText = fs.readFileSync(path.join(root, '.env'), 'utf-8');
     if (provider === 'baseten') {
-      apiKey =
-        envText.match(/BASETEN_API_KEY=([^\r\n]+)/)?.[1]?.trim() || process.env.BASETEN_API_KEY;
+      apiKey = matchEnvValue(envText, 'BASETEN_API_KEY') || process.env.BASETEN_API_KEY;
       baseUrl =
         baseUrl ||
-        envText.match(/BASETEN_BASE_URL=([^\r\n]+)/)?.[1]?.trim() ||
+        matchEnvValue(envText, 'BASETEN_BASE_URL') ||
         process.env.BASETEN_BASE_URL ||
         'https://inference.baseten.co/v1';
     } else {
-      apiKey = envText.match(/META_API_KEY=([^\r\n]+)/)?.[1]?.trim() || process.env.META_API_KEY;
+      apiKey = matchEnvValue(envText, 'META_API_KEY') || process.env.META_API_KEY;
       baseUrl =
         baseUrl ||
-        envText.match(/META_API_BASE_URL=([^\r\n]+)/)?.[1]?.trim() ||
+        matchEnvValue(envText, 'META_API_BASE_URL') ||
         process.env.META_API_BASE_URL ||
         'https://api.meta.ai/v1';
     }

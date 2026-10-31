@@ -12,12 +12,25 @@ function findProjectRoot(): string {
   return dir;
 }
 
+function matchEnvValue(envContent: string, key: string): string | undefined {
+  const match = envContent.match(new RegExp(`^${key}=([^\r\n]+)`, 'm'));
+  const raw = match?.[1]?.trim();
+  if (!raw) return undefined;
+  if (
+    raw.length >= 2 &&
+    ((raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'")))
+  ) {
+    return raw.slice(1, -1);
+  }
+  return raw;
+}
+
 export async function runVoiceSmoke() {
   console.log('=== Step 2: Live Invariant Compilation (muse-spark-1.3) ===\n');
 
   const root = findProjectRoot();
   const envContent = fs.readFileSync(path.join(root, '.env'), 'utf-8');
-  const apiKey = envContent.match(/META_API_KEY=(.+)/)?.[1]?.trim() || process.env.META_API_KEY;
+  const apiKey = matchEnvValue(envContent, 'META_API_KEY') || process.env.META_API_KEY;
 
   if (!apiKey) {
     throw new Error('META_API_KEY is not defined.');

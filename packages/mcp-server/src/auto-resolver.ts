@@ -43,23 +43,24 @@ export function findRepoRoot(startDir: string = process.cwd()): string {
   return process.cwd();
 }
 
-export function normalizeBBox(
-  input: BoundingBox | [number, number, number, number],
-): BoundingBox {
-  if (Array.isArray(input)) {
-    const [x, y, width, height] = input;
-    return {
-      x: Math.round(x),
-      y: Math.round(y),
-      width: Math.round(width),
-      height: Math.round(height),
-    };
+export function normalizeBBox(input: BoundingBox | [number, number, number, number]): BoundingBox {
+  const values: unknown[] = Array.isArray(input)
+    ? [...input]
+    : [input.x, input.y, input.width, input.height];
+  if (
+    values.length !== 4 ||
+    values.some((v) => typeof v !== 'number' || !Number.isFinite(v) || v < 0)
+  ) {
+    throw new Error(
+      'Invalid targetBBox: expected [x, y, width, height] with finite non-negative numbers.',
+    );
   }
+  const [x, y, width, height] = values as [number, number, number, number];
   return {
-    x: Math.round(input.x),
-    y: Math.round(input.y),
-    width: Math.round(input.width),
-    height: Math.round(input.height),
+    x: Math.round(x),
+    y: Math.round(y),
+    width: Math.round(width),
+    height: Math.round(height),
   };
 }
 
@@ -314,6 +315,13 @@ export function resolveVerifyInputs(args: RawVerifyToolArgs): ResolvedVerifyInpu
     throw new Error(
       'Unable to auto-detect targetBBox: no cached SAM Frame 0 mask or manifest entry found, and no targetBBox was provided.',
     );
+  }
+
+  if (
+    args.tolerance !== undefined &&
+    (typeof args.tolerance !== 'number' || !Number.isFinite(args.tolerance) || args.tolerance < 0)
+  ) {
+    throw new Error('Invalid tolerance: must be a finite number >= 0.');
   }
 
   return {

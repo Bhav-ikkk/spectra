@@ -2,7 +2,8 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
+import crypto from 'node:crypto';
 import type { Plugin, Connect } from 'vite';
 import {
   SpectraClient,
@@ -17,6 +18,79 @@ import {
 } from '@spectra/sdk';
 
 const MAX_JSON_BODY_SIZE = 50 * 1024 * 1024; // 50 MB
+const MAX_DECODED_UPLOAD_BYTES = 40 * 1024 * 1024; // 40 MB cap on base64-decoded uploads
+
+/** Errors caused by caller input: safe to report the message back to the caller. */
+export class ClientError extends Error {
+  statusCode: number;
+  constructor(message: string, statusCode = 400) {
+    super(message);
+    this.name = 'ClientError';
+    this.statusCode = statusCode;
+  }
+}
+
+/** Reports errors without leaking server internals: ClientError messages pass through, everything else is generic. */
+function sendError(
+  res: ServerResponse,
+  err: unknown,
+  scope: string,
+  fallbackMessage: string,
+  fallbackStatus = 500,
+): void {
+  if (err instanceof ClientError) {
+    sendJson(res, err.statusCode, { error: err.message });
+    return;
+  }
+  console.error(`[${scope}]`, err);
+  sendJson(res, fallbackStatus, { error: fallbackMessage });
+}
+
+/** True when `candidate` resolves inside `dir`. */
+export function isPathWithin(candidate: string, dir: string): boolean {
+  const relative = path.relative(path.resolve(dir), path.resolve(candidate));
+  return (
+    relative !== '' &&
+    relative !== '..' &&
+    !relative.startsWith(`..${path.sep}`) &&
+    !path.isAbsolute(relative)
+  );
+}
+
+/**
+ * Resolves a caller-supplied path and confines it to `allowedRoots`.
+ * Repo-relative inputs resolve against `repoRoot`; absolute inputs must already
+ * sit inside an allowed root. Throws ClientError otherwise.
+ */
+function resolveConfinedClientPath(
+  input: string | undefined,
+  repoRoot: string,
+  allowedRoots: string[],
+): string | undefined {
+  if (!input) return undefined;
+  const resolved = path.isAbsolute(input) ? path.normalize(input) : path.resolve(repoRoot, input);
+  if (!allowedRoots.some((root) => isPathWithin(resolved, root))) {
+    throw new ClientError('Path is outside the allowed directories.', 400);
+  }
+  return resolved;
+}
+
+/** Quotes a value for safe copy-paste into POSIX shells. */
+function shellQuote(value: string): string {
+  if (/^[A-Za-z0-9_@%+=:,./-]+$/.test(value)) return value;
+  return `'${value.replace(/'/g, `'\\''`)}'`;
+}
+
+/** Decodes a base64 upload with a hard cap on the decoded byte size. */
+function decodeBase64Upload(cleanB64: string, what: string): Buffer {
+  if (Math.floor((cleanB64.length * 3) / 4) > MAX_DECODED_UPLOAD_BYTES) {
+    throw new ClientError(
+      `${what} exceeds the ${MAX_DECODED_UPLOAD_BYTES}-byte upload limit.`,
+      413,
+    );
+  }
+  return Buffer.from(cleanB64, 'base64');
+}
 
 export async function parseJsonBody<T = unknown>(
   req: IncomingMessage,
@@ -25,15 +99,20 @@ export async function parseJsonBody<T = unknown>(
   return new Promise((resolve, reject) => {
     let body = '';
     let size = 0;
+    let rejected = false;
     req.on('data', (chunk: Buffer | string) => {
+      if (rejected) return;
       size += typeof chunk === 'string' ? Buffer.byteLength(chunk) : chunk.length;
       if (size > maxSizeBytes) {
+        rejected = true;
         reject(new Error(`Payload too large: exceeds ${maxSizeBytes} bytes limit`));
+        req.destroy();
         return;
       }
       body += chunk.toString();
     });
     req.on('end', () => {
+      if (rejected) return;
       if (!body.trim()) {
         resolve({} as T);
         return;
@@ -71,14 +150,18 @@ function findRepoRoot(startDir: string = process.cwd()): string {
 }
 
 function normalizeBBox(
-  bbox:
-    | [number, number, number, number]
-    | { x: number; y: number; width: number; height: number },
+  bbox: [number, number, number, number] | { x: number; y: number; width: number; height: number },
 ): { x: number; y: number; width: number; height: number } {
-  if (Array.isArray(bbox)) {
-    return { x: bbox[0], y: bbox[1], width: bbox[2], height: bbox[3] };
+  const box = Array.isArray(bbox)
+    ? { x: bbox[0], y: bbox[1], width: bbox[2], height: bbox[3] }
+    : bbox;
+  const values = [box.x, box.y, box.width, box.height];
+  if (values.some((n) => typeof n !== 'number' || !Number.isFinite(n) || n < 0)) {
+    throw new ClientError(
+      'Invalid targetBBox: x, y, width, height must be finite non-negative numbers.',
+    );
   }
-  return bbox;
+  return { x: box.x, y: box.y, width: box.width, height: box.height };
 }
 
 function extractVideoFrames(
@@ -93,10 +176,14 @@ function extractVideoFrames(
 
   let ffmpegSuccess = false;
   try {
-    execSync(`ffmpeg -y -ss 0 -i "${videoPath}" -vframes 1 "${outT0}"`, { stdio: 'ignore' });
-    execSync(`ffmpeg -y -sseof -0.1 -i "${videoPath}" -update 1 -frames:v 1 "${outTk}"`, {
+    execFileSync('ffmpeg', ['-y', '-ss', '0', '-i', videoPath, '-vframes', '1', outT0], {
       stdio: 'ignore',
     });
+    execFileSync(
+      'ffmpeg',
+      ['-y', '-sseof', '-0.1', '-i', videoPath, '-update', '1', '-frames:v', '1', outTk],
+      { stdio: 'ignore' },
+    );
     if (fs.existsSync(outT0) && fs.existsSync(outTk)) {
       ffmpegSuccess = true;
     }
@@ -142,10 +229,7 @@ cap.release()
 `.trim();
 
   try {
-    execSync(
-      `"${pyExe}" -c "${script.replace(/\r?\n/g, ';')}" "${videoPath}" "${outT0}" "${outTk}"`,
-      { stdio: 'ignore' },
-    );
+    execFileSync(pyExe, ['-c', script, videoPath, outT0, outTk], { stdio: 'ignore' });
   } catch {
     // continue
   }
@@ -242,8 +326,9 @@ export interface LiveVideoVerifyApiResponse {
 }
 
 export async function handleVerifyLive(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  const tempFiles: string[] = [];
   try {
-    const payload = await parseJsonBody<VerifyLivePayload>(req);
+    const payload = await parseJsonBody<VerifyLivePayload>(req, MAX_JSON_BODY_SIZE);
 
     if (!payload.targetLabel) {
       sendJson(res, 400, { error: 'targetLabel is required for verification' });
@@ -264,15 +349,12 @@ export async function handleVerifyLive(req: IncomingMessage, res: ServerResponse
       const rawFileName = payload.videoFileName?.trim() || `verify_${Date.now()}.mp4`;
       const fileName = path.basename(rawFileName);
       videoPath = path.join(tmpDir, fileName);
-      fs.writeFileSync(videoPath, Buffer.from(cleanB64, 'base64'));
+      fs.writeFileSync(videoPath, decodeBase64Upload(cleanB64, 'videoBase64'));
+      tempFiles.push(videoPath);
     }
 
-    if (videoPath && !path.isAbsolute(videoPath)) {
-      const cand = path.resolve(repoRoot, videoPath);
-      if (fs.existsSync(cand)) {
-        videoPath = cand;
-      }
-    }
+    const framesAllowedRoots = [tmpDir, path.join(repoRoot, 'benchmark')];
+    videoPath = resolveConfinedClientPath(videoPath, repoRoot, framesAllowedRoots);
 
     const stem = payload.videoFileName
       ? path.basename(payload.videoFileName, path.extname(payload.videoFileName))
@@ -283,23 +365,19 @@ export async function handleVerifyLive(req: IncomingMessage, res: ServerResponse
     if (payload.t0Base64) {
       const cleanB64 = stripBase64Prefix(payload.t0Base64);
       t0Path = path.join(tmpDir, `verify_${Date.now()}_t0.png`);
-      fs.writeFileSync(t0Path, Buffer.from(cleanB64, 'base64'));
+      fs.writeFileSync(t0Path, decodeBase64Upload(cleanB64, 't0Base64'));
+      tempFiles.push(t0Path);
     }
 
     if (payload.tkBase64) {
       const cleanB64 = stripBase64Prefix(payload.tkBase64);
       tkPath = path.join(tmpDir, `verify_${Date.now()}_tk.png`);
-      fs.writeFileSync(tkPath, Buffer.from(cleanB64, 'base64'));
+      fs.writeFileSync(tkPath, decodeBase64Upload(cleanB64, 'tkBase64'));
+      tempFiles.push(tkPath);
     }
 
-    if (t0Path && !path.isAbsolute(t0Path)) {
-      const cand = path.resolve(repoRoot, t0Path);
-      if (fs.existsSync(cand)) t0Path = cand;
-    }
-    if (tkPath && !path.isAbsolute(tkPath)) {
-      const cand = path.resolve(repoRoot, tkPath);
-      if (fs.existsSync(cand)) tkPath = cand;
-    }
+    t0Path = resolveConfinedClientPath(t0Path, repoRoot, framesAllowedRoots);
+    tkPath = resolveConfinedClientPath(tkPath, repoRoot, framesAllowedRoots);
 
     if ((!t0Path || !tkPath) && videoPath && stem) {
       const videoDir = path.dirname(videoPath);
@@ -315,6 +393,7 @@ export async function handleVerifyLive(req: IncomingMessage, res: ServerResponse
 
       if ((!t0Path || !tkPath) && fs.existsSync(videoPath)) {
         const extracted = extractVideoFrames(videoPath, stem, repoRoot);
+        tempFiles.push(extracted.t0Path, extracted.tkPath);
         if (!t0Path && fs.existsSync(extracted.t0Path)) t0Path = extracted.t0Path;
         if (!tkPath && fs.existsSync(extracted.tkPath)) tkPath = extracted.tkPath;
       }
@@ -329,11 +408,10 @@ export async function handleVerifyLive(req: IncomingMessage, res: ServerResponse
 
     const frameExtractMs = Math.max(1, Date.now() - tStage1Start);
 
-    let cachedSamPath = payload.cachedSamResponsePath;
-    if (cachedSamPath && !path.isAbsolute(cachedSamPath)) {
-      const cand = path.resolve(repoRoot, cachedSamPath);
-      if (fs.existsSync(cand)) cachedSamPath = cand;
-    }
+    let cachedSamPath = resolveConfinedClientPath(payload.cachedSamResponsePath, repoRoot, [
+      tmpDir,
+      path.join(repoRoot, 'benchmark'),
+    ]);
     if (!cachedSamPath && stem) {
       const candidates = [
         path.join(repoRoot, 'benchmark', 'responses', 'phase2-smoke', `${stem}_sam.json`),
@@ -485,7 +563,7 @@ export async function handleVerifyLive(req: IncomingMessage, res: ServerResponse
         ? `benchmark/clips/${payload.videoFileName}`
         : videoPath || 'video.mp4');
 
-    const cliCommandEquivalent = `spectra verify --video ${displayVideoPath} --target "${payload.targetLabel}"${
+    const cliCommandEquivalent = `spectra verify --video ${shellQuote(displayVideoPath)} --target ${shellQuote(payload.targetLabel)}${
       callerBBox
         ? ` --bbox ${callerBBox.x},${callerBBox.y},${callerBBox.width},${callerBBox.height}`
         : ''
@@ -538,7 +616,15 @@ export async function handleVerifyLive(req: IncomingMessage, res: ServerResponse
 
     sendJson(res, 200, response);
   } catch (err) {
-    sendJson(res, 400, { error: (err as Error).message });
+    sendError(res, err, 'handleVerifyLive', 'Verification failed due to an internal error.');
+  } finally {
+    for (const f of tempFiles) {
+      try {
+        fs.unlinkSync(f);
+      } catch {
+        // already removed
+      }
+    }
   }
 }
 
@@ -551,7 +637,7 @@ export async function handleClosedLoopLive(
   res: ServerResponse,
 ): Promise<void> {
   try {
-    const payload = await parseJsonBody<ClosedLoopLivePayload>(req);
+    const payload = await parseJsonBody<ClosedLoopLivePayload>(req, 64 * 1024);
     const scenario = payload.scenario || 's3';
 
     const result = await runClosedLoopReferee({
@@ -573,7 +659,7 @@ export async function handleClosedLoopLive(
       renderedFrameDataUrl: pass2DataUrl,
     });
   } catch (err) {
-    sendJson(res, 500, { error: (err as Error).message });
+    sendError(res, err, 'handleClosedLoopLive', 'Closed-loop run failed due to an internal error.');
   }
 }
 
@@ -585,8 +671,9 @@ export interface CompileVoicePayload {
 }
 
 export async function handleCompileVoice(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  const tempFiles: string[] = [];
   try {
-    const payload = await parseJsonBody<CompileVoicePayload>(req);
+    const payload = await parseJsonBody<CompileVoicePayload>(req, 12 * 1024 * 1024);
 
     let transcriptText = payload.transcript;
     let sessionId = 'voyager/transcribe/6D0FEAC1E93944EB9F057C5DBE136055';
@@ -596,7 +683,8 @@ export async function handleCompileVoice(req: IncomingMessage, res: ServerRespon
       fs.mkdirSync(tmpDir, { recursive: true });
       const cleanB64 = stripBase64Prefix(payload.audioBase64);
       const tmpWav = path.join(tmpDir, `voice_${Date.now()}.wav`);
-      fs.writeFileSync(tmpWav, Buffer.from(cleanB64, 'base64'));
+      fs.writeFileSync(tmpWav, decodeBase64Upload(cleanB64, 'audioBase64'));
+      tempFiles.push(tmpWav);
 
       // If live META_API_KEY is available, transcribe via muse-voice-transcribe-1.0
       if (process.env.META_API_KEY) {
@@ -658,10 +746,16 @@ export async function handleCompileVoice(req: IncomingMessage, res: ServerRespon
       }
 
       if (payload.outPath) {
-        const targetPath = path.isAbsolute(payload.outPath)
-          ? payload.outPath
-          : path.resolve(repoRoot, payload.outPath);
-        fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+        const fileName = path.basename(payload.outPath);
+        if (!/^[A-Za-z0-9_.-]+\.json$/i.test(fileName)) {
+          throw new ClientError('outPath must be a .json file name inside .spectra/.', 400);
+        }
+        const spectraDir = path.join(repoRoot, '.spectra');
+        const targetPath = path.join(spectraDir, fileName);
+        if (!isPathWithin(targetPath, spectraDir)) {
+          throw new ClientError('outPath resolves outside .spectra/.', 400);
+        }
+        fs.mkdirSync(spectraDir, { recursive: true });
         fs.writeFileSync(targetPath, JSON.stringify(compiled, null, 2), 'utf-8');
       }
 
@@ -678,7 +772,15 @@ export async function handleCompileVoice(req: IncomingMessage, res: ServerRespon
       error: 'Either transcript or audioBase64 must be provided to compile invariants.',
     });
   } catch (err) {
-    sendJson(res, 400, { error: (err as Error).message });
+    sendError(res, err, 'handleCompileVoice', 'Voice compile failed due to an internal error.');
+  } finally {
+    for (const f of tempFiles) {
+      try {
+        fs.unlinkSync(f);
+      } catch {
+        // already removed
+      }
+    }
   }
 }
 
@@ -708,7 +810,7 @@ export async function handleSaveInvariant(
   res: ServerResponse,
 ): Promise<void> {
   try {
-    const rawPayload = await parseJsonBody<SaveInvariantPayload>(req);
+    const rawPayload = await parseJsonBody<SaveInvariantPayload>(req, 256 * 1024);
     const inner = rawPayload.invariant || {};
     const description =
       rawPayload.description || inner.description || 'Visual Invariant';
@@ -804,7 +906,12 @@ export async function handleSaveInvariant(
       totalInvariants: doc.invariants.length,
     });
   } catch (err) {
-    sendJson(res, 500, { error: (err as Error).message });
+    sendError(
+      res,
+      err,
+      'handleSaveInvariant',
+      'Saving the invariant failed due to an internal error.',
+    );
   }
 }
 
@@ -820,7 +927,7 @@ export async function handleExplainVerdict(
   res: ServerResponse,
 ): Promise<void> {
   try {
-    const payload = await parseJsonBody<ExplainVerdictPayload>(req);
+    const payload = await parseJsonBody<ExplainVerdictPayload>(req, 256 * 1024);
     const repoRoot = findRepoRoot();
     const clipId = payload.clipId || 'dom_catch_010_v1';
     const targetLabel = payload.targetLabel || 'Complete Checkout';
@@ -857,13 +964,61 @@ export async function handleExplainVerdict(
       deltaMargin: result.decisionExplanation?.deltaMargin,
     });
   } catch (err) {
-    sendJson(res, 400, { error: (err as Error).message });
+    sendError(
+      res,
+      err,
+      'handleExplainVerdict',
+      'Verdict explanation failed due to an internal error.',
+    );
   }
+}
+
+const API_TOKEN = (process.env.SPECTRA_API_TOKEN || '').trim();
+const RATE_LIMIT_MAX_REQUESTS = 60;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const rateLimitBuckets = new Map<string, { count: number; resetAt: number }>();
+
+function isApiAuthorized(req: IncomingMessage): boolean {
+  if (!API_TOKEN) return true; // no token configured: local/dev mode
+  const header = req.headers.authorization || '';
+  const presented = header.startsWith('Bearer ') ? header.slice('Bearer '.length).trim() : '';
+  if (!presented) return false;
+  const a = Buffer.from(presented);
+  const b = Buffer.from(API_TOKEN);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  for (const [key, bucket] of rateLimitBuckets) {
+    if (bucket.resetAt <= now) rateLimitBuckets.delete(key);
+  }
+  const bucket = rateLimitBuckets.get(ip);
+  if (!bucket) {
+    rateLimitBuckets.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return false;
+  }
+  bucket.count += 1;
+  return bucket.count > RATE_LIMIT_MAX_REQUESTS;
 }
 
 export function spectraApiMiddleware(): Connect.NextHandleFunction {
   return async (req, res, next) => {
     const url = req.url?.split('?')[0];
+    if (!url || !url.startsWith('/api/')) {
+      next();
+      return;
+    }
+    if (!isApiAuthorized(req)) {
+      sendJson(res, 401, { error: 'Unauthorized: valid bearer token required.' });
+      return;
+    }
+    const clientIp = (req.socket?.remoteAddress || 'unknown').toString();
+    if (isRateLimited(clientIp)) {
+      res.setHeader('Retry-After', '60');
+      sendJson(res, 429, { error: 'Too many requests. Retry shortly.' });
+      return;
+    }
     if (url === '/api/status' && req.method === 'GET') {
       await handleApiStatus(req, res);
       return;

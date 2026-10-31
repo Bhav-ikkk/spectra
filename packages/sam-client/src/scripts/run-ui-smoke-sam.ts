@@ -32,13 +32,26 @@ function findProjectRoot(): string {
   return dir;
 }
 
+function matchEnvValue(envContent: string, key: string): string | undefined {
+  const match = envContent.match(new RegExp(`^${key}=([^\r\n]+)`, 'm'));
+  const raw = match?.[1]?.trim();
+  if (!raw) return undefined;
+  if (
+    raw.length >= 2 &&
+    ((raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'")))
+  ) {
+    return raw.slice(1, -1);
+  }
+  return raw;
+}
+
 function getApiKey(root: string): string {
   const envPath = path.join(root, '.env');
   if (fs.existsSync(envPath)) {
     const envContent = fs.readFileSync(envPath, 'utf-8');
-    const match = envContent.match(/META_API_KEY=(.+)/);
-    if (match?.[1]?.trim()) {
-      return match[1].trim();
+    const value = matchEnvValue(envContent, 'META_API_KEY');
+    if (value) {
+      return value;
     }
   }
   if (process.env.META_API_KEY) {

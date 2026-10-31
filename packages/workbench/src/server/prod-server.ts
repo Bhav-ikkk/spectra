@@ -2,7 +2,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { spectraApiMiddleware } from './api-middleware.js';
+import { spectraApiMiddleware, isPathWithin } from './api-middleware.js';
 import { getCalibration } from '@spectra/sdk';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -60,8 +60,15 @@ function serveFile(res: http.ServerResponse, filePath: string): boolean {
 const apiMiddleware = spectraApiMiddleware();
 
 const server = http.createServer((req, res) => {
-  const parsedUrl = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
-  const pathname = decodeURIComponent(parsedUrl.pathname);
+  let pathname: string;
+  try {
+    const parsedUrl = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
+    pathname = decodeURIComponent(parsedUrl.pathname);
+  } catch {
+    res.writeHead(400, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Bad request.' }));
+    return;
+  }
 
   // 1. API Routes
   if (pathname.startsWith('/api/')) {
@@ -90,12 +97,16 @@ const server = http.createServer((req, res) => {
   // 3. Static Assets from dist/ or public/
   const safeRelativePath = pathname.replace(/^\/+/, '');
   const distCandidate = path.join(distDir, safeRelativePath);
-  if (pathname !== '/' && serveFile(res, distCandidate)) {
+  if (pathname !== '/' && isPathWithin(distCandidate, distDir) && serveFile(res, distCandidate)) {
     return;
   }
 
   const publicCandidate = path.join(publicDir, safeRelativePath);
-  if (pathname !== '/' && serveFile(res, publicCandidate)) {
+  if (
+    pathname !== '/' &&
+    isPathWithin(publicCandidate, publicDir) &&
+    serveFile(res, publicCandidate)
+  ) {
     return;
   }
 

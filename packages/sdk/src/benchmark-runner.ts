@@ -31,6 +31,20 @@ function findProjectRoot(): string {
   return dir;
 }
 
+function parseEnvValue(content: string, key: string): string | undefined {
+  const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const match = content.match(new RegExp(`^${escapedKey}=([^\\r\\n]+)`, 'm'));
+  const raw = match?.[1]?.trim();
+  if (!raw) return undefined;
+  if (
+    raw.length >= 2 &&
+    ((raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'")))
+  ) {
+    return raw.slice(1, -1);
+  }
+  return raw;
+}
+
 function getEnvVar(key: string): string | undefined {
   if (typeof process !== 'undefined' && process.env?.[key]) {
     return process.env[key];
@@ -39,10 +53,7 @@ function getEnvVar(key: string): string | undefined {
   const envPath = path.join(root, '.env');
   if (fs.existsSync(envPath)) {
     const content = fs.readFileSync(envPath, 'utf-8');
-    const match = content.match(new RegExp(`${key}=([^\\r\\n]+)`));
-    if (match?.[1]?.trim()) {
-      return match[1].trim();
-    }
+    return parseEnvValue(content, key);
   }
   return undefined;
 }

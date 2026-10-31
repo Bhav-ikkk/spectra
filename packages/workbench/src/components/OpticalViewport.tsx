@@ -130,6 +130,8 @@ export const OpticalViewport: React.FC<OpticalViewportProps> = ({
     masks?.find((m) => m.frameIndex === activeFrameIndex) ||
     masks?.[activeFrameIndex] ||
     masks?.[masks.length - 1];
+  const sanitizeSvgPath = (d: string): string => (d && /^[MLHVZmlhvz0-9 .,+-]+$/.test(d) ? d : '');
+  const safeMaskPath = activeMask?.svgPath ? sanitizeSvgPath(activeMask.svgPath) : '';
 
   const isMobile = scenarioId === 's2' || environment === 'mobile_mp4' || targetLabel.toLowerCase().includes('pay');
 
@@ -301,14 +303,14 @@ export const OpticalViewport: React.FC<OpticalViewportProps> = ({
           )}
 
           {/* SAM Mask Vector Overlay */}
-          {showMask && activeMask?.svgPath && (
+          {showMask && safeMaskPath && (
             <svg
               viewBox="0 0 1280 720"
               className="absolute inset-0 w-full h-full pointer-events-none z-10"
               style={{ imageRendering: 'pixelated' }}
             >
               <path
-                d={activeMask.svgPath}
+                d={safeMaskPath}
                 fill={isVerifiedPass ? 'rgba(46, 125, 82, 0.22)' : 'rgba(224, 82, 70, 0.24)'}
                 stroke={isVerifiedPass ? '#2E7D52' : '#E05246'}
                 strokeWidth="2.5"

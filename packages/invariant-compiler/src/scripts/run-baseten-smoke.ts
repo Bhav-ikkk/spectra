@@ -14,6 +14,19 @@ function findProjectRoot(): string {
   return dir;
 }
 
+function matchEnvValue(envContent: string, key: string): string | undefined {
+  const match = envContent.match(new RegExp(`^${key}=([^\r\n]+)`, 'm'));
+  const raw = match?.[1]?.trim();
+  if (!raw) return undefined;
+  if (
+    raw.length >= 2 &&
+    ((raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'")))
+  ) {
+    return raw.slice(1, -1);
+  }
+  return raw;
+}
+
 export async function runBasetenSmoke() {
   console.log('=== Baseten Open-Weight (meta-models/muse-spark-open-1026) Smoke Test ===\n');
 
@@ -24,8 +37,8 @@ export async function runBasetenSmoke() {
 
   if (!apiKey && fs.existsSync(envPath)) {
     const envContent = fs.readFileSync(envPath, 'utf-8');
-    apiKey = envContent.match(/BASETEN_API_KEY=([^\r\n]+)/)?.[1]?.trim();
-    const envBaseUrl = envContent.match(/BASETEN_BASE_URL=([^\r\n]+)/)?.[1]?.trim();
+    apiKey = matchEnvValue(envContent, 'BASETEN_API_KEY');
+    const envBaseUrl = matchEnvValue(envContent, 'BASETEN_BASE_URL');
     if (envBaseUrl) baseUrl = envBaseUrl;
   }
 

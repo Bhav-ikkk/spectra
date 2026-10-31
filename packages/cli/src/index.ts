@@ -26,9 +26,11 @@ export interface CliResult {
   data?: unknown;
 }
 
+const MAX_BBOX_COORD = 100000;
+
 function parseBoundingBox(bboxStr: string): BoundingBox {
   const parts = bboxStr.split(',').map((p) => Number(p.trim()));
-  if (parts.length !== 4 || parts.some((n) => Number.isNaN(n) || n < 0)) {
+  if (parts.length !== 4 || parts.some((n) => !Number.isFinite(n) || n < 0 || n > MAX_BBOX_COORD)) {
     throw new Error(
       `Invalid bbox format "${bboxStr}". Expected "x,y,width,height" with non-negative numbers.`,
     );

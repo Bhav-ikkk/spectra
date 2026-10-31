@@ -179,6 +179,18 @@ describe('@spectra/cli - Production CLI Offline Tests ($0.00 Spend)', () => {
       expect(getStderr2()).toContain('Invalid bbox format');
     });
 
+    it('rejects non-finite and out-of-range bbox coordinates', async () => {
+      for (const bad of ['Infinity,0,10,10', '0,NaN,10,10', '0,0,100001,10']) {
+        const { io, getStderr } = createTestIo();
+        const res = await runCli(
+          ['verify', '--t0', 'a.png', '--tk', 'b.png', '--target', 'btn', '--bbox', bad],
+          io,
+        );
+        expect(res.exitCode).toBe(1);
+        expect(getStderr()).toContain('Invalid bbox format');
+      }
+    });
+
     it('verifies canvas_000_v1 with ONLY --video and --target (zero-bbox, table output, exit 0)', async () => {
       const { io, getStdout } = createTestIo();
       const res = await runCli(

@@ -136,7 +136,8 @@ export const LiveDropzoneView: React.FC = () => {
     result?.tkDataUrl ||
     result?.tkBase64 ||
     `/benchmark-assets/${selectedSample.replace('.mp4', '_tk.png')}`;
-  const tkMaskSvg = result?.tkSvgMaskPath || result?.tkSvgPath || '';
+  const sanitizeSvgPath = (d: string): string => (d && /^[MLHVZmlhvz0-9 .,+-]+$/.test(d) ? d : '');
+  const tkMaskSvg = sanitizeSvgPath(result?.tkSvgMaskPath || result?.tkSvgPath || '');
   const isRejected = result?.verdict === 'fail' || result?.combinedVerdict === 'fail';
 
   const stages: PipelineStage[] = [
