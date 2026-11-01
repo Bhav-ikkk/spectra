@@ -2,6 +2,10 @@
 
 > _"Don't trust 'done.' Measure it."_
 
+> **Instant Zero-Install Judge Link (Vercel CDN, $0 Cached Mode + Client BYOK):**
+> 🔗 **[https://spectra-lyart.vercel.app](https://spectra-lyart.vercel.app)**
+> Full Field Monitor UI with zero setup: 45-clip visual explorer, 1-click closed-loop repair arena (S1–S3), voice studio replay, and optical reticle HUD.
+
 ---
 
 ## 1. 30-Second Pitch & Track Routing

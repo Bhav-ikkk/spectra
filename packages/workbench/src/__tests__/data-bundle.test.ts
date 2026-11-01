@@ -581,7 +581,32 @@ describe('@spectra/workbench - Deployment Manifest & Architecture Tests', () => 
     expect(vercelConfig.framework).toBe('vite');
     expect(vercelConfig.outputDirectory).toBe('packages/workbench/dist');
     expect(vercelConfig.buildCommand).toContain('@spectra/workbench build');
+    const samIdx = vercelConfig.buildCommand.indexOf('@spectra/sam-client build');
+    const coreIdx = vercelConfig.buildCommand.indexOf('@spectra/core build');
+    expect(samIdx).toBeGreaterThan(-1);
+    expect(coreIdx).toBeGreaterThan(-1);
+    expect(samIdx).toBeLessThan(coreIdx);
     expect(Array.isArray(vercelConfig.rewrites)).toBe(true);
+  });
+
+  it('.github/workflows/ci.yml uses pnpm/action-setup without conflicting version key', () => {
+    const ciPath = path.join(workspaceRoot, '.github', 'workflows', 'ci.yml');
+    expect(fs.existsSync(ciPath)).toBe(true);
+    const content = fs.readFileSync(ciPath, 'utf-8');
+    expect(content).toContain('pnpm/action-setup');
+    const actionSetupSection = content.slice(content.indexOf('pnpm/action-setup'));
+    const nextStepIndex = actionSetupSection.indexOf('- uses: actions/setup-node');
+    const stepText = nextStepIndex !== -1 ? actionSetupSection.slice(0, nextStepIndex) : actionSetupSection;
+    expect(stepText).not.toContain('version:');
+  });
+
+  it('README.md and JUDGING.md contain live Vercel deployment URL', () => {
+    const readmePath = path.join(workspaceRoot, 'README.md');
+    const judgingPath = path.join(workspaceRoot, 'JUDGING.md');
+    expect(fs.existsSync(readmePath)).toBe(true);
+    expect(fs.existsSync(judgingPath)).toBe(true);
+    expect(fs.readFileSync(readmePath, 'utf-8')).toContain('https://spectra-lyart.vercel.app');
+    expect(fs.readFileSync(judgingPath, 'utf-8')).toContain('https://spectra-lyart.vercel.app');
   });
 
   it('render.yaml exists and defines docker runtime with /api/health check', () => {

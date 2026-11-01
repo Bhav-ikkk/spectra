@@ -5,6 +5,7 @@
 
   <!-- Custom Field-Monitor Color-Matched Badges -->
   <p>
+    <a href="https://spectra-lyart.vercel.app"><img src="https://img.shields.io/badge/LIVE%20WORKBENCH-spectra--lyart.vercel.app-2E7D52?style=flat-square&labelColor=181816" alt="Live Workbench" /></a>
     <a href="#60-second-judge-quickstart"><img src="https://img.shields.io/badge/TESTS-138%20PASSING%20(100%25%20OFFLINE)-2E7D52?style=flat-square&labelColor=181816" alt="138 Tests Passing" /></a>
     <a href="./packages/core/CALIBRATION_NOTE.md"><img src="https://img.shields.io/badge/RULE%202%203%CF%83%20FLOOR-1.35%25%20(%CF%83%3D0.45%25)-2E7D52?style=flat-square&labelColor=181816" alt="Calibrated 3-Sigma 1.35%" /></a>
     <a href="./benchmark/results/referee_benchmark_report.json"><img src="https://img.shields.io/badge/FALSE--PASS%20RATE-0.0%25%20(18%2F18%20CAUGHT)-181816?style=flat-square&labelColor=EAE7DF" alt="0.0% False Pass Rate" /></a>
@@ -122,6 +123,8 @@ _Key finding: At 10% edge occlusion ("The Catch"), naive DOM hit-testing and fla
 ---
 
 ## 60-Second Judge Quickstart
+
+> **Live Deployed Workbench:** [https://spectra-lyart.vercel.app](https://spectra-lyart.vercel.app) *(Instant 0-install interactive Field Monitor on Vercel Edge CDN)*
 
 ### Prerequisites
 
