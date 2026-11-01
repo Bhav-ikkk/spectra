@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { startAudioRecording, type AudioRecordingSession } from '../utils/audio-recorder.js';
 import { VerticalLedMeter } from './FieldMonitorPrimitives.js';
+import { callCompileInvariant } from '../utils/api-client.js';
 
 export interface VoiceStudioViewProps {
   invariants: Record<string, unknown>;
@@ -81,22 +82,15 @@ export const VoiceStudioView: React.FC<VoiceStudioViewProps> = ({
       const { base64Wav } = await recordingSessionRef.current.stop();
       recordingSessionRef.current = null;
 
-      const res = await fetch('/api/compile-voice', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          audioBase64: `data:audio/wav;base64,${base64Wav}`,
-          provider: modelProvider,
-        }),
-      });
+      const data = await callCompileInvariant({
+        audioBase64: `data:audio/wav;base64,${base64Wav}`,
+        provider: modelProvider,
+      }, { invariants } as any);
 
-      if (res.ok) {
-        const data = await res.json();
-        if (data.transcript) setPromptText(data.transcript);
-        if (data.sessionId) setActiveSessionId(data.sessionId);
-        if (data.document || data.invariants) {
-          setCompiledResult(data.document || { invariants: data.invariants });
-        }
+      if (data.transcript) setPromptText(data.transcript);
+      if (data.sessionId) setActiveSessionId(data.sessionId);
+      if (data.document) {
+        setCompiledResult(data.document);
       }
     } catch (err) {
       setMicError((err as Error).message || 'Failed to compile audio recording.');
@@ -122,21 +116,14 @@ export const VoiceStudioView: React.FC<VoiceStudioViewProps> = ({
     setIsCompiling(true);
     setMicError(null);
     try {
-      const res = await fetch('/api/compile-voice', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          transcript: promptText,
-          provider: modelProvider,
-          outPath: '.spectra/invariants.json',
-        }),
-      });
+      const data = await callCompileInvariant({
+        transcript: promptText,
+        provider: modelProvider,
+        outPath: '.spectra/invariants.json',
+      }, { invariants } as any);
 
-      if (res.ok) {
-        const data = await res.json();
-        if (data.document || data.invariants) {
-          setCompiledResult(data.document || { invariants: data.invariants });
-        }
+      if (data.document) {
+        setCompiledResult(data.document);
       }
     } catch (err) {
       setMicError((err as Error).message || 'Failed to compile transcript.');

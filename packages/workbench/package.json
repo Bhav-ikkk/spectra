@@ -9,7 +9,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "test": "vitest run --passWithNoTests",
-    "build": "tsc && vite build",
+    "build": "tsx src/scripts/bundle-workbench-data.ts && tsc && vite build",
     "dev": "vite",
     "start": "tsx src/server/prod-server.ts",
     "bundle-data": "tsx src/scripts/bundle-workbench-data.ts"

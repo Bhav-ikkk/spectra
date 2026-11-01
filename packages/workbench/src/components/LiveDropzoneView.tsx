@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { UploadCloud, Copy, Check, Target, Sparkles, Terminal, Layers } from 'lucide-react';
 import { RangefinderReticleOverlay } from './FieldMonitorPrimitives.js';
+import { callVerifyLive } from '../utils/api-client.js';
+import type { VerifyLivePayload } from '../server/api-middleware.js';
 
 interface PipelineStage {
   id: string;
@@ -75,7 +77,7 @@ export const LiveDropzoneView: React.FC = () => {
     const activeLabel = overrideLabel || targetLabel;
 
     try {
-      const payload: Record<string, unknown> = {
+      const payload: VerifyLivePayload = {
         targetLabel: activeLabel,
       };
 
@@ -87,28 +89,7 @@ export const LiveDropzoneView: React.FC = () => {
         payload.videoPath = `benchmark/clips/${activeFileName}`;
       }
 
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      try {
-        const metaKey = localStorage.getItem('SPECTRA_META_API_KEY');
-        const basetenKey = localStorage.getItem('SPECTRA_BASETEN_API_KEY');
-        if (metaKey) headers['x-meta-api-key'] = metaKey;
-        if (basetenKey) headers['x-baseten-api-key'] = basetenKey;
-      } catch {
-        // ignore in SSR/test
-      }
-
-      const res = await fetch('/api/verify-live', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: 'Verification failed' }));
-        throw new Error(err.error || `HTTP ${res.status}`);
-      }
-
-      const data = await res.json();
+      const data = await callVerifyLive(payload);
       setResult(data);
     } catch (err: any) {
       setErrorMsg(err.message || 'Verification request failed');

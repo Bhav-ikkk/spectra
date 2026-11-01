@@ -11,6 +11,11 @@ import {
 import { startAudioRecording, type AudioRecordingSession } from '../utils/audio-recorder.js';
 import type { WorkbenchScenarioBundle, WorkbenchClipAsset } from '../types.js';
 import { RangefinderReticleOverlay } from './FieldMonitorPrimitives.js';
+import {
+  callVerifyLive,
+  callCompileInvariant,
+  callSaveInvariant,
+} from '../utils/api-client.js';
 
 export interface SpectraLensOverlayProps {
   isOpen: boolean;
@@ -174,26 +179,21 @@ export const SpectraLensOverlay: React.FC<SpectraLensOverlayProps> = ({
           : 'dom_catch_010_v1');
 
     try {
-      const res = await fetch('/api/verify-live', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          videoFileName: `${clipId}.mp4`,
-          videoPath: `benchmark/clips/${clipId}.mp4`,
-          t0FramePath: `benchmark/clips/${clipId}_t0.png`,
-          tkFramePath: `benchmark/clips/${clipId}_tk.png`,
-          targetLabel,
-          targetBBox: [
-            selectedRegion.x,
-            selectedRegion.y,
-            selectedRegion.width,
-            selectedRegion.height,
-          ],
-        }),
+      const data = await callVerifyLive({
+        videoFileName: `${clipId}.mp4`,
+        videoPath: `benchmark/clips/${clipId}.mp4`,
+        t0FramePath: `benchmark/clips/${clipId}_t0.png`,
+        tkFramePath: `benchmark/clips/${clipId}_tk.png`,
+        targetLabel,
+        targetBBox: [
+          selectedRegion.x,
+          selectedRegion.y,
+          selectedRegion.width,
+          selectedRegion.height,
+        ],
       });
 
-      if (res.ok) {
-        const data = await res.json();
+      if (data) {
         const rSam =
           typeof data.rSam === 'number'
             ? data.rSam
@@ -211,10 +211,10 @@ export const SpectraLensOverlay: React.FC<SpectraLensOverlayProps> = ({
                 ? 0.85
                 : 0.9;
         const rNcc =
-          typeof data.rNcc === 'number'
-            ? data.rNcc
-            : typeof data.instrumentB?.nccScore === 'number'
-              ? data.instrumentB.nccScore
+          typeof (data as any).rNcc === 'number'
+            ? (data as any).rNcc
+            : typeof (data.instrumentB as any)?.nccScore === 'number'
+              ? (data.instrumentB as any).nccScore
               : 0.5241;
         const lossPct = Math.round((1 - rSam) * 10000) / 100;
         const pixelLossCount =
@@ -226,8 +226,8 @@ export const SpectraLensOverlay: React.FC<SpectraLensOverlayProps> = ({
                 ? 2574
                 : 1700;
         const totalPixels =
-          typeof data.totalPixels === 'number'
-            ? data.totalPixels
+          typeof (data as any).totalPixels === 'number'
+            ? (data as any).totalPixels
             : scenarioId === 's1'
               ? 10560
               : scenarioId === 's2'
@@ -250,7 +250,7 @@ export const SpectraLensOverlay: React.FC<SpectraLensOverlayProps> = ({
         return;
       }
     } catch (err) {
-      console.warn('[SpectraLens] /api/verify-live call, falling back to cached bundle:', err);
+      console.warn('[SpectraLens] callVerifyLive fallback:', err);
     }
 
     // Offline / test fallback
@@ -307,19 +307,12 @@ export const SpectraLensOverlay: React.FC<SpectraLensOverlayProps> = ({
           const { base64Wav } = await recordingSessionRef.current.stop();
           recordingSessionRef.current = null;
 
-          const res = await fetch('/api/compile-voice', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              audioBase64: `data:audio/wav;base64,${base64Wav}`,
-              provider: 'baseten',
-            }),
+          const voiceData = await callCompileInvariant({
+            audioBase64: `data:audio/wav;base64,${base64Wav}`,
+            provider: 'baseten',
           });
-          if (res.ok) {
-            const voiceData = await res.json();
-            if (voiceData.transcript) {
-              setExpectationText(voiceData.transcript);
-            }
+          if (voiceData.transcript) {
+            setExpectationText(voiceData.transcript);
           }
         }
       } catch (err) {
@@ -355,43 +348,35 @@ export const SpectraLensOverlay: React.FC<SpectraLensOverlayProps> = ({
     const description = expectationText || `Keep ${targetLabel} fully visible`;
 
     try {
-      const res = await fetch('/api/save-invariant', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: newId,
-          description,
-          target: targetLabel,
-          targetLabel,
-          bbox,
-          minVisibility: 0.9865,
-          threshold: calibration.threshold,
-          sourceFile: verdictData?.sourceFile,
-          invariant: {
-            id: newId,
-            description,
-            target: targetLabel,
-            targetLabel,
-            bbox,
-            type: 'visibility_unobstructed',
-            sourceFile: verdictData?.sourceFile,
-            threshold: calibration.threshold,
-            minVisibility: 0.9865,
-          },
-        }),
+      const invPayload = {
+        id: newId,
+        description,
+        target: targetLabel,
+        targetLabel,
+        bbox,
+        type: 'visibility_unobstructed',
+        sourceFile: verdictData?.sourceFile,
+        threshold: calibration.threshold,
+        minVisibility: 0.9865,
+      };
+
+      const data = await callSaveInvariant({
+        id: newId,
+        description,
+        target: targetLabel,
+        targetLabel,
+        bbox,
+        minVisibility: 0.9865,
+        threshold: calibration.threshold,
+        sourceFile: verdictData?.sourceFile,
+        invariant: invPayload,
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        setLockStatus('✓ LOCKED TO .spectra/invariants.json');
-        if (onInvariantSaved) {
-          onInvariantSaved(data.invariant);
-        }
-        setTimeout(() => setLockStatus(null), 3000);
-      } else {
-        setLockStatus('Failed to save invariant');
-        setTimeout(() => setLockStatus(null), 3000);
+      setLockStatus('✓ LOCKED TO .spectra/invariants.json');
+      if (onInvariantSaved) {
+        onInvariantSaved(data.invariant);
       }
+      setTimeout(() => setLockStatus(null), 3000);
     } catch {
       setLockStatus('Saved to session state');
       setTimeout(() => setLockStatus(null), 3000);

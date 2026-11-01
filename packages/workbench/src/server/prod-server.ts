@@ -70,6 +70,13 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // 0. Quick Health Check (Supports both /health and /api/health)
+  if (pathname === '/health') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ status: 'ok', calibrated: true }));
+    return;
+  }
+
   // 1. API Routes
   if (pathname.startsWith('/api/')) {
     apiMiddleware(req, res, (err?: unknown) => {

@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "generatedAt": "2026-10-27T16:37:55.951Z",
+  "generatedAt": "2026-11-01T07:43:57.307Z",
   "calibration": {
     "sigma_noise": 0.0045,
     "delta": 0.041,
@@ -72,7 +72,23 @@
               "rSam": 0.8650042186181682,
               "estimatedOcclusion": 0.13499578138183177,
               "baselineArea": 10667,
-              "evalArea": 9227
+              "evalArea": 9227,
+              "detectedBBox": {
+                "x": 817,
+                "y": 240,
+                "width": 224,
+                "height": 49
+              },
+              "frameAreas": [
+                10667,
+                10541,
+                10571,
+                10185,
+                9547,
+                9225,
+                9238,
+                9227
+              ]
             }
           },
           "instrumentB": {
@@ -288,17 +304,17 @@
         "t0AssetUrl": "/benchmark-assets/canvas_000_v1_t0.png",
         "tkAssetUrl": "/benchmark-assets/canvas_000_v1_tk.png",
         "verdict": {
-          "clipId": "canvas_000_v1",
+          "clipId": "canvas_015_v1_pass2_attempt1",
           "instrumentA": {
             "instrument": "sam_decode",
-            "score": 0.9911877753820193,
+            "score": 1,
             "passed": true,
-            "details": "t0Area=10667px, tkArea=10573px, rSam=0.9912",
+            "details": "t0Area=10560px, tkArea=10560px, rSam=1.0000",
             "raw": {
-              "rSam": 0.9911877753820193,
-              "estimatedOcclusion": 0.008812224617980702,
-              "baselineArea": 10667,
-              "evalArea": 10573
+              "rSam": 1,
+              "estimatedOcclusion": 0,
+              "baselineArea": 10560,
+              "evalArea": 10560
             }
           },
           "instrumentB": {
@@ -322,10 +338,10 @@
             }
           },
           "combinedVerdict": "pass",
-          "confidence": 0.9911877753820193,
-          "noiseDelta": 0.008812224617980702,
+          "confidence": 1,
+          "noiseDelta": 0,
           "calibrated": true,
-          "notes": "VERIFIED: Visibility 99.56% within noise tolerance (1.35%)"
+          "notes": "VERIFIED: Visibility 100.00% within noise tolerance (1.35%)"
         },
         "masks": [
           {
@@ -490,7 +506,9 @@
         "pass2Verdict": "pass",
         "pass2LossPct": 0,
         "closedLoopSuccess": true,
-        "timestamp": "2026-10-27T13:46:45.273Z"
+        "timestamp": "2026-10-28T09:11:09.267Z",
+        "attemptsCount": 1,
+        "renderedFramePath": "D:\\Bhavik\\Spectra\\benchmark\\responses\\closed-loop-s1\\pass2_rendered_tk.png"
       }
     },
     "s2": {
@@ -513,7 +531,23 @@
               "rSam": 0.846350759428864,
               "estimatedOcclusion": 0.15364924057113605,
               "baselineArea": 17579,
-              "evalArea": 14878
+              "evalArea": 14878,
+              "detectedBBox": {
+                "x": 473,
+                "y": 610,
+                "width": 334,
+                "height": 53
+              },
+              "frameAreas": [
+                17579,
+                17358,
+                17390,
+                16542,
+                15386,
+                14916,
+                14909,
+                14878
+              ]
             }
           },
           "instrumentB": {
@@ -729,17 +763,17 @@
         "t0AssetUrl": "/benchmark-assets/mobile_mp4_000_v1_t0.png",
         "tkAssetUrl": "/benchmark-assets/mobile_mp4_000_v1_tk.png",
         "verdict": {
-          "clipId": "mobile_mp4_000_v1",
+          "clipId": "mobile_mp4_015_v1_pass2_attempt1",
           "instrumentA": {
             "instrument": "sam_decode",
-            "score": 0.9887365606689801,
+            "score": 1,
             "passed": true,
-            "details": "t0Area=17579px, tkArea=17381px, rSam=0.9887",
+            "details": "t0Area=17160px, tkArea=17160px, rSam=1.0000",
             "raw": {
-              "rSam": 0.9887365606689801,
-              "estimatedOcclusion": 0.01126343933101992,
-              "baselineArea": 17579,
-              "evalArea": 17381
+              "rSam": 1,
+              "estimatedOcclusion": 0,
+              "baselineArea": 17160,
+              "evalArea": 17160
             }
           },
           "instrumentB": {
@@ -763,10 +797,10 @@
             }
           },
           "combinedVerdict": "pass",
-          "confidence": 0.9887365606689801,
-          "noiseDelta": 0.01126343933101992,
+          "confidence": 1,
+          "noiseDelta": 0,
           "calibrated": true,
-          "notes": "VERIFIED: Visibility 99.44% within noise tolerance (1.35%)"
+          "notes": "VERIFIED: Visibility 100.00% within noise tolerance (1.35%)"
         },
         "masks": [
           {
@@ -931,7 +965,9 @@
         "pass2Verdict": "pass",
         "pass2LossPct": 0,
         "closedLoopSuccess": true,
-        "timestamp": "2026-10-27T13:46:45.549Z"
+        "timestamp": "2026-10-28T09:11:10.049Z",
+        "attemptsCount": 1,
+        "renderedFramePath": "D:\\Bhavik\\Spectra\\benchmark\\responses\\closed-loop-s2\\pass2_rendered_tk.png"
       }
     },
     "s3": {
@@ -954,7 +990,23 @@
               "rSam": 0.9080293658592983,
               "estimatedOcclusion": 0.09197063414070172,
               "baselineArea": 17299,
-              "evalArea": 15708
+              "evalArea": 15708,
+              "detectedBBox": {
+                "x": 909,
+                "y": 600,
+                "width": 342,
+                "height": 51
+              },
+              "frameAreas": [
+                17299,
+                17258,
+                17273,
+                16665,
+                16130,
+                15756,
+                15759,
+                15708
+              ]
             }
           },
           "instrumentB": {
@@ -1167,17 +1219,17 @@
         "t0AssetUrl": "/benchmark-assets/dom_catch_000_v1_t0.png",
         "tkAssetUrl": "/benchmark-assets/dom_catch_000_v1_tk.png",
         "verdict": {
-          "clipId": "dom_catch_000_v1",
+          "clipId": "dom_catch_010_v1_pass2_attempt1",
           "instrumentA": {
             "instrument": "sam_decode",
             "score": 1,
             "passed": true,
-            "details": "t0Area=17299px, tkArea=17299px, rSam=1.0000",
+            "details": "t0Area=17000px, tkArea=17000px, rSam=1.0000",
             "raw": {
               "rSam": 1,
               "estimatedOcclusion": 0,
-              "baselineArea": 17299,
-              "evalArea": 17299
+              "baselineArea": 17000,
+              "evalArea": 17000
             }
           },
           "instrumentB": {
@@ -1369,7 +1421,9 @@
         "pass2Verdict": "pass",
         "pass2LossPct": 0,
         "closedLoopSuccess": true,
-        "timestamp": "2026-10-27T13:46:45.811Z"
+        "timestamp": "2026-10-28T09:11:10.934Z",
+        "attemptsCount": 1,
+        "renderedFramePath": "D:\\Bhavik\\Spectra\\benchmark\\responses\\closed-loop-s3\\pass2_rendered_tk.png"
       }
     }
   },
@@ -6418,7 +6472,12 @@
       "groundTruthOcclusion": 0,
       "variant": "clean",
       "targetLabel": "Revenue Series Legend",
-      "targetBBox": [820, 240, 220, 48],
+      "targetBBox": [
+        820,
+        240,
+        220,
+        48
+      ],
       "t0AssetUrl": "/benchmark-assets/canvas_000_v1_t0.png",
       "tkAssetUrl": "/benchmark-assets/canvas_000_v1_tk.png",
       "videoAssetUrl": "/benchmark-assets/canvas_000_v1.mp4",
@@ -6602,7 +6661,12 @@
       "groundTruthOcclusion": 0,
       "variant": "clean",
       "targetLabel": "Revenue Series Legend",
-      "targetBBox": [820, 240, 220, 48],
+      "targetBBox": [
+        820,
+        240,
+        220,
+        48
+      ],
       "t0AssetUrl": "/benchmark-assets/canvas_000_v2_t0.png",
       "tkAssetUrl": "/benchmark-assets/canvas_000_v2_tk.png",
       "videoAssetUrl": "/benchmark-assets/canvas_000_v2.mp4",
@@ -6616,7 +6680,12 @@
       "groundTruthOcclusion": 0.05,
       "variant": "edge-case",
       "targetLabel": "Revenue Series Legend",
-      "targetBBox": [820, 240, 220, 48],
+      "targetBBox": [
+        820,
+        240,
+        220,
+        48
+      ],
       "t0AssetUrl": "/benchmark-assets/canvas_005_v1_t0.png",
       "tkAssetUrl": "/benchmark-assets/canvas_005_v1_tk.png",
       "videoAssetUrl": "/benchmark-assets/canvas_005_v1.mp4",
@@ -6800,7 +6869,12 @@
       "groundTruthOcclusion": 0.05,
       "variant": "edge-case",
       "targetLabel": "Revenue Series Legend",
-      "targetBBox": [820, 240, 220, 48],
+      "targetBBox": [
+        820,
+        240,
+        220,
+        48
+      ],
       "t0AssetUrl": "/benchmark-assets/canvas_005_v2_t0.png",
       "tkAssetUrl": "/benchmark-assets/canvas_005_v2_tk.png",
       "videoAssetUrl": "/benchmark-assets/canvas_005_v2.mp4",
@@ -6814,7 +6888,12 @@
       "groundTruthOcclusion": 0.1,
       "variant": "edge-case",
       "targetLabel": "Revenue Series Legend",
-      "targetBBox": [820, 240, 220, 48],
+      "targetBBox": [
+        820,
+        240,
+        220,
+        48
+      ],
       "t0AssetUrl": "/benchmark-assets/canvas_010_v1_t0.png",
       "tkAssetUrl": "/benchmark-assets/canvas_010_v1_tk.png",
       "videoAssetUrl": "/benchmark-assets/canvas_010_v1.mp4",
@@ -6998,7 +7077,12 @@
       "groundTruthOcclusion": 0.1,
       "variant": "edge-case",
       "targetLabel": "Revenue Series Legend",
-      "targetBBox": [820, 240, 220, 48],
+      "targetBBox": [
+        820,
+        240,
+        220,
+        48
+      ],
       "t0AssetUrl": "/benchmark-assets/canvas_010_v2_t0.png",
       "tkAssetUrl": "/benchmark-assets/canvas_010_v2_tk.png",
       "videoAssetUrl": "/benchmark-assets/canvas_010_v2.mp4",
@@ -7012,7 +7096,12 @@
       "groundTruthOcclusion": 0.15,
       "variant": "edge-case",
       "targetLabel": "Revenue Series Legend",
-      "targetBBox": [820, 240, 220, 48],
+      "targetBBox": [
+        820,
+        240,
+        220,
+        48
+      ],
       "t0AssetUrl": "/benchmark-assets/canvas_015_v1_t0.png",
       "tkAssetUrl": "/benchmark-assets/canvas_015_v1_tk.png",
       "videoAssetUrl": "/benchmark-assets/canvas_015_v1.mp4",
@@ -7196,7 +7285,12 @@
       "groundTruthOcclusion": 0.15,
       "variant": "edge-case",
       "targetLabel": "Revenue Series Legend",
-      "targetBBox": [820, 240, 220, 48],
+      "targetBBox": [
+        820,
+        240,
+        220,
+        48
+      ],
       "t0AssetUrl": "/benchmark-assets/canvas_015_v2_t0.png",
       "tkAssetUrl": "/benchmark-assets/canvas_015_v2_tk.png",
       "videoAssetUrl": "/benchmark-assets/canvas_015_v2.mp4",
@@ -7210,7 +7304,12 @@
       "groundTruthOcclusion": 0.25,
       "variant": "adversarial",
       "targetLabel": "Revenue Series Legend",
-      "targetBBox": [820, 240, 220, 48],
+      "targetBBox": [
+        820,
+        240,
+        220,
+        48
+      ],
       "t0AssetUrl": "/benchmark-assets/canvas_025_v1_t0.png",
       "tkAssetUrl": "/benchmark-assets/canvas_025_v1_tk.png",
       "videoAssetUrl": "/benchmark-assets/canvas_025_v1.mp4",
@@ -7394,7 +7493,12 @@
       "groundTruthOcclusion": 0.25,
       "variant": "adversarial",
       "targetLabel": "Revenue Series Legend",
-      "targetBBox": [820, 240, 220, 48],
+      "targetBBox": [
+        820,
+        240,
+        220,
+        48
+      ],
       "t0AssetUrl": "/benchmark-assets/canvas_025_v2_t0.png",
       "tkAssetUrl": "/benchmark-assets/canvas_025_v2_tk.png",
       "videoAssetUrl": "/benchmark-assets/canvas_025_v2.mp4",
@@ -7408,7 +7512,12 @@
       "groundTruthOcclusion": 0.4,
       "variant": "adversarial",
       "targetLabel": "Revenue Series Legend",
-      "targetBBox": [820, 240, 220, 48],
+      "targetBBox": [
+        820,
+        240,
+        220,
+        48
+      ],
       "t0AssetUrl": "/benchmark-assets/canvas_040_v1_t0.png",
       "tkAssetUrl": "/benchmark-assets/canvas_040_v1_tk.png",
       "videoAssetUrl": "/benchmark-assets/canvas_040_v1.mp4",
@@ -7592,7 +7701,12 @@
       "groundTruthOcclusion": 0.4,
       "variant": "adversarial",
       "targetLabel": "Revenue Series Legend",
-      "targetBBox": [820, 240, 220, 48],
+      "targetBBox": [
+        820,
+        240,
+        220,
+        48
+      ],
       "t0AssetUrl": "/benchmark-assets/canvas_040_v2_t0.png",
       "tkAssetUrl": "/benchmark-assets/canvas_040_v2_tk.png",
       "videoAssetUrl": "/benchmark-assets/canvas_040_v2.mp4",
@@ -7606,7 +7720,12 @@
       "groundTruthOcclusion": 0.6,
       "variant": "adversarial",
       "targetLabel": "Revenue Series Legend",
-      "targetBBox": [820, 240, 220, 48],
+      "targetBBox": [
+        820,
+        240,
+        220,
+        48
+      ],
       "t0AssetUrl": "/benchmark-assets/canvas_060_v1_t0.png",
       "tkAssetUrl": "/benchmark-assets/canvas_060_v1_tk.png",
       "videoAssetUrl": "/benchmark-assets/canvas_060_v1.mp4",
@@ -7790,7 +7909,12 @@
       "groundTruthOcclusion": 0.6,
       "variant": "adversarial",
       "targetLabel": "Revenue Series Legend",
-      "targetBBox": [820, 240, 220, 48],
+      "targetBBox": [
+        820,
+        240,
+        220,
+        48
+      ],
       "t0AssetUrl": "/benchmark-assets/canvas_060_v2_t0.png",
       "tkAssetUrl": "/benchmark-assets/canvas_060_v2_tk.png",
       "videoAssetUrl": "/benchmark-assets/canvas_060_v2.mp4",
@@ -7804,7 +7928,12 @@
       "groundTruthOcclusion": 0,
       "variant": "clean",
       "targetLabel": "Revenue Series Legend",
-      "targetBBox": [820, 240, 220, 48],
+      "targetBBox": [
+        820,
+        240,
+        220,
+        48
+      ],
       "t0AssetUrl": "/benchmark-assets/canvas_clean_ctrl_t0.png",
       "tkAssetUrl": "/benchmark-assets/canvas_clean_ctrl_tk.png",
       "videoAssetUrl": "/benchmark-assets/canvas_clean_ctrl.mp4",
@@ -7818,7 +7947,12 @@
       "groundTruthOcclusion": 0,
       "variant": "clean",
       "targetLabel": "Pay $149.00",
-      "targetBBox": [475, 610, 330, 52],
+      "targetBBox": [
+        475,
+        610,
+        330,
+        52
+      ],
       "t0AssetUrl": "/benchmark-assets/mobile_mp4_000_v1_t0.png",
       "tkAssetUrl": "/benchmark-assets/mobile_mp4_000_v1_tk.png",
       "videoAssetUrl": "/benchmark-assets/mobile_mp4_000_v1.mp4",
@@ -8002,7 +8136,12 @@
       "groundTruthOcclusion": 0,
       "variant": "clean",
       "targetLabel": "Pay $149.00",
-      "targetBBox": [475, 610, 330, 52],
+      "targetBBox": [
+        475,
+        610,
+        330,
+        52
+      ],
       "t0AssetUrl": "/benchmark-assets/mobile_mp4_000_v2_t0.png",
       "tkAssetUrl": "/benchmark-assets/mobile_mp4_000_v2_tk.png",
       "videoAssetUrl": "/benchmark-assets/mobile_mp4_000_v2.mp4",
@@ -8016,7 +8155,12 @@
       "groundTruthOcclusion": 0.05,
       "variant": "edge-case",
       "targetLabel": "Pay $149.00",
-      "targetBBox": [475, 610, 330, 52],
+      "targetBBox": [
+        475,
+        610,
+        330,
+        52
+      ],
       "t0AssetUrl": "/benchmark-assets/mobile_mp4_005_v1_t0.png",
       "tkAssetUrl": "/benchmark-assets/mobile_mp4_005_v1_tk.png",
       "videoAssetUrl": "/benchmark-assets/mobile_mp4_005_v1.mp4",
@@ -8200,7 +8344,12 @@
       "groundTruthOcclusion": 0.05,
       "variant": "edge-case",
       "targetLabel": "Pay $149.00",
-      "targetBBox": [475, 610, 330, 52],
+      "targetBBox": [
+        475,
+        610,
+        330,
+        52
+      ],
       "t0AssetUrl": "/benchmark-assets/mobile_mp4_005_v2_t0.png",
       "tkAssetUrl": "/benchmark-assets/mobile_mp4_005_v2_tk.png",
       "videoAssetUrl": "/benchmark-assets/mobile_mp4_005_v2.mp4",
@@ -8214,7 +8363,12 @@
       "groundTruthOcclusion": 0.1,
       "variant": "edge-case",
       "targetLabel": "Pay $149.00",
-      "targetBBox": [475, 610, 330, 52],
+      "targetBBox": [
+        475,
+        610,
+        330,
+        52
+      ],
       "t0AssetUrl": "/benchmark-assets/mobile_mp4_010_v1_t0.png",
       "tkAssetUrl": "/benchmark-assets/mobile_mp4_010_v1_tk.png",
       "videoAssetUrl": "/benchmark-assets/mobile_mp4_010_v1.mp4",
@@ -8398,7 +8552,12 @@
       "groundTruthOcclusion": 0.1,
       "variant": "edge-case",
       "targetLabel": "Pay $149.00",
-      "targetBBox": [475, 610, 330, 52],
+      "targetBBox": [
+        475,
+        610,
+        330,
+        52
+      ],
       "t0AssetUrl": "/benchmark-assets/mobile_mp4_010_v2_t0.png",
       "tkAssetUrl": "/benchmark-assets/mobile_mp4_010_v2_tk.png",
       "videoAssetUrl": "/benchmark-assets/mobile_mp4_010_v2.mp4",
@@ -8412,7 +8571,12 @@
       "groundTruthOcclusion": 0.15,
       "variant": "edge-case",
       "targetLabel": "Pay $149.00",
-      "targetBBox": [475, 610, 330, 52],
+      "targetBBox": [
+        475,
+        610,
+        330,
+        52
+      ],
       "t0AssetUrl": "/benchmark-assets/mobile_mp4_015_v1_t0.png",
       "tkAssetUrl": "/benchmark-assets/mobile_mp4_015_v1_tk.png",
       "videoAssetUrl": "/benchmark-assets/mobile_mp4_015_v1.mp4",
@@ -8596,7 +8760,12 @@
       "groundTruthOcclusion": 0.15,
       "variant": "edge-case",
       "targetLabel": "Pay $149.00",
-      "targetBBox": [475, 610, 330, 52],
+      "targetBBox": [
+        475,
+        610,
+        330,
+        52
+      ],
       "t0AssetUrl": "/benchmark-assets/mobile_mp4_015_v2_t0.png",
       "tkAssetUrl": "/benchmark-assets/mobile_mp4_015_v2_tk.png",
       "videoAssetUrl": "/benchmark-assets/mobile_mp4_015_v2.mp4",
@@ -8610,7 +8779,12 @@
       "groundTruthOcclusion": 0.25,
       "variant": "adversarial",
       "targetLabel": "Pay $149.00",
-      "targetBBox": [475, 610, 330, 52],
+      "targetBBox": [
+        475,
+        610,
+        330,
+        52
+      ],
       "t0AssetUrl": "/benchmark-assets/mobile_mp4_025_v1_t0.png",
       "tkAssetUrl": "/benchmark-assets/mobile_mp4_025_v1_tk.png",
       "videoAssetUrl": "/benchmark-assets/mobile_mp4_025_v1.mp4",
@@ -8794,7 +8968,12 @@
       "groundTruthOcclusion": 0.25,
       "variant": "adversarial",
       "targetLabel": "Pay $149.00",
-      "targetBBox": [475, 610, 330, 52],
+      "targetBBox": [
+        475,
+        610,
+        330,
+        52
+      ],
       "t0AssetUrl": "/benchmark-assets/mobile_mp4_025_v2_t0.png",
       "tkAssetUrl": "/benchmark-assets/mobile_mp4_025_v2_tk.png",
       "videoAssetUrl": "/benchmark-assets/mobile_mp4_025_v2.mp4",
@@ -8808,7 +8987,12 @@
       "groundTruthOcclusion": 0.4,
       "variant": "adversarial",
       "targetLabel": "Pay $149.00",
-      "targetBBox": [475, 610, 330, 52],
+      "targetBBox": [
+        475,
+        610,
+        330,
+        52
+      ],
       "t0AssetUrl": "/benchmark-assets/mobile_mp4_040_v1_t0.png",
       "tkAssetUrl": "/benchmark-assets/mobile_mp4_040_v1_tk.png",
       "videoAssetUrl": "/benchmark-assets/mobile_mp4_040_v1.mp4",
@@ -8992,7 +9176,12 @@
       "groundTruthOcclusion": 0.4,
       "variant": "adversarial",
       "targetLabel": "Pay $149.00",
-      "targetBBox": [475, 610, 330, 52],
+      "targetBBox": [
+        475,
+        610,
+        330,
+        52
+      ],
       "t0AssetUrl": "/benchmark-assets/mobile_mp4_040_v2_t0.png",
       "tkAssetUrl": "/benchmark-assets/mobile_mp4_040_v2_tk.png",
       "videoAssetUrl": "/benchmark-assets/mobile_mp4_040_v2.mp4",
@@ -9006,7 +9195,12 @@
       "groundTruthOcclusion": 0.6,
       "variant": "adversarial",
       "targetLabel": "Pay $149.00",
-      "targetBBox": [475, 610, 330, 52],
+      "targetBBox": [
+        475,
+        610,
+        330,
+        52
+      ],
       "t0AssetUrl": "/benchmark-assets/mobile_mp4_060_v1_t0.png",
       "tkAssetUrl": "/benchmark-assets/mobile_mp4_060_v1_tk.png",
       "videoAssetUrl": "/benchmark-assets/mobile_mp4_060_v1.mp4",
@@ -9190,7 +9384,12 @@
       "groundTruthOcclusion": 0.6,
       "variant": "adversarial",
       "targetLabel": "Pay $149.00",
-      "targetBBox": [475, 610, 330, 52],
+      "targetBBox": [
+        475,
+        610,
+        330,
+        52
+      ],
       "t0AssetUrl": "/benchmark-assets/mobile_mp4_060_v2_t0.png",
       "tkAssetUrl": "/benchmark-assets/mobile_mp4_060_v2_tk.png",
       "videoAssetUrl": "/benchmark-assets/mobile_mp4_060_v2.mp4",
@@ -9204,7 +9403,12 @@
       "groundTruthOcclusion": 0,
       "variant": "clean",
       "targetLabel": "Pay $149.00",
-      "targetBBox": [475, 610, 330, 52],
+      "targetBBox": [
+        475,
+        610,
+        330,
+        52
+      ],
       "t0AssetUrl": "/benchmark-assets/mobile_mp4_clean_ctrl_t0.png",
       "tkAssetUrl": "/benchmark-assets/mobile_mp4_clean_ctrl_tk.png",
       "videoAssetUrl": "/benchmark-assets/mobile_mp4_clean_ctrl.mp4",
@@ -9218,7 +9422,12 @@
       "groundTruthOcclusion": 0,
       "variant": "clean",
       "targetLabel": "Complete Checkout",
-      "targetBBox": [910, 600, 340, 50],
+      "targetBBox": [
+        910,
+        600,
+        340,
+        50
+      ],
       "t0AssetUrl": "/benchmark-assets/dom_catch_000_v1_t0.png",
       "tkAssetUrl": "/benchmark-assets/dom_catch_000_v1_tk.png",
       "videoAssetUrl": "/benchmark-assets/dom_catch_000_v1.mp4",
@@ -9402,7 +9611,12 @@
       "groundTruthOcclusion": 0,
       "variant": "clean",
       "targetLabel": "Complete Checkout",
-      "targetBBox": [910, 600, 340, 50],
+      "targetBBox": [
+        910,
+        600,
+        340,
+        50
+      ],
       "t0AssetUrl": "/benchmark-assets/dom_catch_000_v2_t0.png",
       "tkAssetUrl": "/benchmark-assets/dom_catch_000_v2_tk.png",
       "videoAssetUrl": "/benchmark-assets/dom_catch_000_v2.mp4",
@@ -9416,7 +9630,12 @@
       "groundTruthOcclusion": 0.05,
       "variant": "edge-case",
       "targetLabel": "Complete Checkout",
-      "targetBBox": [910, 600, 340, 50],
+      "targetBBox": [
+        910,
+        600,
+        340,
+        50
+      ],
       "t0AssetUrl": "/benchmark-assets/dom_catch_005_v1_t0.png",
       "tkAssetUrl": "/benchmark-assets/dom_catch_005_v1_tk.png",
       "videoAssetUrl": "/benchmark-assets/dom_catch_005_v1.mp4",
@@ -9600,7 +9819,12 @@
       "groundTruthOcclusion": 0.05,
       "variant": "edge-case",
       "targetLabel": "Complete Checkout",
-      "targetBBox": [910, 600, 340, 50],
+      "targetBBox": [
+        910,
+        600,
+        340,
+        50
+      ],
       "t0AssetUrl": "/benchmark-assets/dom_catch_005_v2_t0.png",
       "tkAssetUrl": "/benchmark-assets/dom_catch_005_v2_tk.png",
       "videoAssetUrl": "/benchmark-assets/dom_catch_005_v2.mp4",
@@ -9614,7 +9838,12 @@
       "groundTruthOcclusion": 0.1,
       "variant": "edge-case",
       "targetLabel": "Complete Checkout",
-      "targetBBox": [910, 600, 340, 50],
+      "targetBBox": [
+        910,
+        600,
+        340,
+        50
+      ],
       "t0AssetUrl": "/benchmark-assets/dom_catch_010_v1_t0.png",
       "tkAssetUrl": "/benchmark-assets/dom_catch_010_v1_tk.png",
       "videoAssetUrl": "/benchmark-assets/dom_catch_010_v1.mp4",
@@ -9798,7 +10027,12 @@
       "groundTruthOcclusion": 0.1,
       "variant": "edge-case",
       "targetLabel": "Complete Checkout",
-      "targetBBox": [910, 600, 340, 50],
+      "targetBBox": [
+        910,
+        600,
+        340,
+        50
+      ],
       "t0AssetUrl": "/benchmark-assets/dom_catch_010_v2_t0.png",
       "tkAssetUrl": "/benchmark-assets/dom_catch_010_v2_tk.png",
       "videoAssetUrl": "/benchmark-assets/dom_catch_010_v2.mp4",
@@ -9812,7 +10046,12 @@
       "groundTruthOcclusion": 0.15,
       "variant": "edge-case",
       "targetLabel": "Complete Checkout",
-      "targetBBox": [910, 600, 340, 50],
+      "targetBBox": [
+        910,
+        600,
+        340,
+        50
+      ],
       "t0AssetUrl": "/benchmark-assets/dom_catch_015_v1_t0.png",
       "tkAssetUrl": "/benchmark-assets/dom_catch_015_v1_tk.png",
       "videoAssetUrl": "/benchmark-assets/dom_catch_015_v1.mp4",
@@ -9996,7 +10235,12 @@
       "groundTruthOcclusion": 0.15,
       "variant": "edge-case",
       "targetLabel": "Complete Checkout",
-      "targetBBox": [910, 600, 340, 50],
+      "targetBBox": [
+        910,
+        600,
+        340,
+        50
+      ],
       "t0AssetUrl": "/benchmark-assets/dom_catch_015_v2_t0.png",
       "tkAssetUrl": "/benchmark-assets/dom_catch_015_v2_tk.png",
       "videoAssetUrl": "/benchmark-assets/dom_catch_015_v2.mp4",
@@ -10010,7 +10254,12 @@
       "groundTruthOcclusion": 0.25,
       "variant": "adversarial",
       "targetLabel": "Complete Checkout",
-      "targetBBox": [910, 600, 340, 50],
+      "targetBBox": [
+        910,
+        600,
+        340,
+        50
+      ],
       "t0AssetUrl": "/benchmark-assets/dom_catch_025_v1_t0.png",
       "tkAssetUrl": "/benchmark-assets/dom_catch_025_v1_tk.png",
       "videoAssetUrl": "/benchmark-assets/dom_catch_025_v1.mp4",
@@ -10194,7 +10443,12 @@
       "groundTruthOcclusion": 0.25,
       "variant": "adversarial",
       "targetLabel": "Complete Checkout",
-      "targetBBox": [910, 600, 340, 50],
+      "targetBBox": [
+        910,
+        600,
+        340,
+        50
+      ],
       "t0AssetUrl": "/benchmark-assets/dom_catch_025_v2_t0.png",
       "tkAssetUrl": "/benchmark-assets/dom_catch_025_v2_tk.png",
       "videoAssetUrl": "/benchmark-assets/dom_catch_025_v2.mp4",
@@ -10208,7 +10462,12 @@
       "groundTruthOcclusion": 0.4,
       "variant": "adversarial",
       "targetLabel": "Complete Checkout",
-      "targetBBox": [910, 600, 340, 50],
+      "targetBBox": [
+        910,
+        600,
+        340,
+        50
+      ],
       "t0AssetUrl": "/benchmark-assets/dom_catch_040_v1_t0.png",
       "tkAssetUrl": "/benchmark-assets/dom_catch_040_v1_tk.png",
       "videoAssetUrl": "/benchmark-assets/dom_catch_040_v1.mp4",
@@ -10392,7 +10651,12 @@
       "groundTruthOcclusion": 0.4,
       "variant": "adversarial",
       "targetLabel": "Complete Checkout",
-      "targetBBox": [910, 600, 340, 50],
+      "targetBBox": [
+        910,
+        600,
+        340,
+        50
+      ],
       "t0AssetUrl": "/benchmark-assets/dom_catch_040_v2_t0.png",
       "tkAssetUrl": "/benchmark-assets/dom_catch_040_v2_tk.png",
       "videoAssetUrl": "/benchmark-assets/dom_catch_040_v2.mp4",
@@ -10406,7 +10670,12 @@
       "groundTruthOcclusion": 0.6,
       "variant": "adversarial",
       "targetLabel": "Complete Checkout",
-      "targetBBox": [910, 600, 340, 50],
+      "targetBBox": [
+        910,
+        600,
+        340,
+        50
+      ],
       "t0AssetUrl": "/benchmark-assets/dom_catch_060_v1_t0.png",
       "tkAssetUrl": "/benchmark-assets/dom_catch_060_v1_tk.png",
       "videoAssetUrl": "/benchmark-assets/dom_catch_060_v1.mp4",
@@ -10590,7 +10859,12 @@
       "groundTruthOcclusion": 0.6,
       "variant": "adversarial",
       "targetLabel": "Complete Checkout",
-      "targetBBox": [910, 600, 340, 50],
+      "targetBBox": [
+        910,
+        600,
+        340,
+        50
+      ],
       "t0AssetUrl": "/benchmark-assets/dom_catch_060_v2_t0.png",
       "tkAssetUrl": "/benchmark-assets/dom_catch_060_v2_tk.png",
       "videoAssetUrl": "/benchmark-assets/dom_catch_060_v2.mp4",
@@ -10604,7 +10878,12 @@
       "groundTruthOcclusion": 0,
       "variant": "clean",
       "targetLabel": "Complete Checkout",
-      "targetBBox": [910, 600, 340, 50],
+      "targetBBox": [
+        910,
+        600,
+        340,
+        50
+      ],
       "t0AssetUrl": "/benchmark-assets/dom_catch_clean_ctrl_t0.png",
       "tkAssetUrl": "/benchmark-assets/dom_catch_clean_ctrl_tk.png",
       "videoAssetUrl": "/benchmark-assets/dom_catch_clean_ctrl.mp4",

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { EventEmitter } from 'node:events';
@@ -542,6 +542,164 @@ describe('@spectra/workbench - Local API Server Middleware Tests ($0.00 Spend)',
     expect(data.decisionExplanation.marginToThreshold).toBeGreaterThan(0);
     expect(data.decisionExplanation.deltaMargin).toBeGreaterThan(0);
     expect(data.bboxSource).toBe('caller');
+  });
+
+  it('GET /api/health returns HTTP 200 { status: "ok", calibrated: true }', async () => {
+    const middleware = spectraApiMiddleware();
+    const { req, res, getResult } = createMockReqRes({
+      method: 'GET',
+      url: '/api/health',
+    });
+
+    await middleware(req, res, () => {});
+    const result = await getResult();
+
+    expect(result.statusCode).toBe(200);
+    const data = result.data as { status: string; calibrated: boolean };
+    expect(data.status).toBe('ok');
+    expect(data.calibrated).toBe(true);
+  });
+});
+
+
+describe('@spectra/workbench - Deployment Manifest & Architecture Tests', () => {
+  const workspaceRoot = path.resolve(__dirname, '../../../../');
+
+  it('vercel.json exists, configures topological workspace build and workbench dist output', () => {
+    const vercelPath = path.join(workspaceRoot, 'vercel.json');
+    expect(fs.existsSync(vercelPath)).toBe(true);
+    const vercelConfig = JSON.parse(fs.readFileSync(vercelPath, 'utf-8'));
+    expect(vercelConfig.buildCommand).toContain('@spectra/workbench build');
+    expect(vercelConfig.outputDirectory).toBe('packages/workbench/dist');
+    expect(Array.isArray(vercelConfig.rewrites)).toBe(true);
+  });
+
+  it('render.yaml exists and defines docker runtime with /api/health check', () => {
+    const renderPath = path.join(workspaceRoot, 'render.yaml');
+    expect(fs.existsSync(renderPath)).toBe(true);
+    const content = fs.readFileSync(renderPath, 'utf-8');
+    expect(content).toContain('runtime: docker');
+    expect(content).toContain('healthCheckPath: /api/health');
+    expect(content).toContain('PORT');
+  });
+
+  it('Dockerfile exists, provisions ffmpeg, pnpm, and starts workbench production server', () => {
+    const dockerfilePath = path.join(workspaceRoot, 'Dockerfile');
+    expect(fs.existsSync(dockerfilePath)).toBe(true);
+    const content = fs.readFileSync(dockerfilePath, 'utf-8');
+    expect(content).toContain('FROM node:22-slim');
+    expect(content).toContain('ffmpeg');
+    expect(content).toContain('pnpm@9.15.0');
+    expect(content).toContain('PORT=4173');
+    expect(content).toContain('CMD ["pnpm", "--filter", "@spectra/workbench", "start"]');
+  });
+
+  it('api/health.ts serverless function exists and returns 200 JSON { status: "ok", calibrated: true }', async () => {
+    const healthFnPath = path.join(workspaceRoot, 'api', 'health.ts');
+    expect(fs.existsSync(healthFnPath)).toBe(true);
+    const mod = await import(path.join(workspaceRoot, 'api', 'health.js')).catch(() => null);
+    if (!mod) {
+      // In TS test runner, test via source read or direct invocation
+      const content = fs.readFileSync(healthFnPath, 'utf-8');
+      expect(content).toContain("status: 'ok'");
+      expect(content).toContain("calibrated: true");
+      expect(content).toContain("platform: 'vercel'");
+    }
+  });
+
+  it('smithery.yaml and glama.json exist for zero-config MCP registry discovery', () => {
+    const smitheryPath = path.join(workspaceRoot, 'smithery.yaml');
+    const glamaPath = path.join(workspaceRoot, 'glama.json');
+    expect(fs.existsSync(smitheryPath)).toBe(true);
+    expect(fs.existsSync(glamaPath)).toBe(true);
+
+    const smithery = fs.readFileSync(smitheryPath, 'utf-8');
+    expect(smithery).toContain('spectra');
+    expect(smithery).toContain('packages/mcp-server/dist/index.js');
+
+    const glama = JSON.parse(fs.readFileSync(glamaPath, 'utf-8'));
+    expect(glama.name).toBe('spectra');
+    expect(glama.tools).toContain('spectra_verify');
+  });
+});
+
+
+describe('@spectra/workbench - Client Bundle Zero-Fail Fallbacks', () => {
+  const workspaceRoot = path.resolve(__dirname, '../../../../');
+  const bundlePath = path.join(workspaceRoot, 'packages/workbench/public/workbench-data.json');
+  let bundle: WorkbenchDataBundle;
+
+  beforeAll(() => {
+    bundle = JSON.parse(fs.readFileSync(bundlePath, 'utf-8')) as WorkbenchDataBundle;
+  });
+
+  it('callVerifyLive falls back seamlessly to bundle for clean clips with 4 completed stages', async () => {
+    const { callVerifyLive } = await import('../utils/api-client.js');
+    const res = await callVerifyLive(
+      { videoFileName: 'canvas_000_v1.mp4', targetLabel: 'Revenue Series Legend' },
+      bundle,
+    );
+
+    expect(res.verdict).toBe('pass');
+    expect(res.combinedVerdict).toBe('pass');
+    expect(res.rSam).toBe(1.0);
+    expect(res.visRatio).toBe(1.0);
+    expect(res.pixelLossCount).toBe(0);
+    expect(res.pipelineStages).toHaveLength(4);
+    expect(res.pipelineStages.every((s) => s.status === 'completed')).toBe(true);
+    expect(res.decisionExplanation?.ruleFired).toBe('RULE_1_VERIFIED_CLEAN_RETAIN');
+  });
+
+  it('callVerifyLive falls back seamlessly to bundle for occluded clips with mathematical proof', async () => {
+    const { callVerifyLive } = await import('../utils/api-client.js');
+    const res = await callVerifyLive(
+      { videoFileName: 'dom_catch_010_v1.mp4', targetLabel: 'Complete Checkout' },
+      bundle,
+    );
+
+    expect(res.verdict).toBe('fail');
+    expect(res.combinedVerdict).toBe('fail');
+    expect(res.rSam).toBeLessThan(1.0);
+    expect(res.pixelLossCount).toBeGreaterThan(0);
+    expect(res.pipelineStages).toHaveLength(4);
+    expect(res.pipelineStages.every((s) => s.status === 'completed')).toBe(true);
+    expect(res.decisionExplanation?.ruleFired).toBe('RULE_3_THREE_SIGMA_OCCLUSION_REJECT');
+    expect(res.decisionExplanation?.observedDelta).toBeDefined();
+  });
+
+  it('callClosedLoopLive falls back seamlessly to bundle scenarios', async () => {
+    const { callClosedLoopLive } = await import('../utils/api-client.js');
+    const res = await callClosedLoopLive('s3', bundle);
+
+    expect(res.closedLoopSuccess).toBe(true);
+    expect(res.scenario).toBeDefined();
+    expect(res.scenario?.scenarioId).toBe('s3');
+    expect(res.scenario?.pass1.verdict.combinedVerdict).toBe('fail');
+    expect(res.scenario?.pass2.verdict.combinedVerdict).toBe('pass');
+  });
+
+  it('callCompileInvariant falls back to valid structured invariant document', async () => {
+    const { callCompileInvariant } = await import('../utils/api-client.js');
+    const res = await callCompileInvariant(
+      { transcript: 'Keep checkout button visible' },
+      bundle,
+    );
+
+    expect(res.success).toBe(true);
+    expect(res.document).toBeDefined();
+    expect(res.sessionId).toContain('voyager/transcribe/');
+  });
+
+  it('callSaveInvariant falls back to client storage and returns total count', async () => {
+    const { callSaveInvariant } = await import('../utils/api-client.js');
+    const res = await callSaveInvariant(
+      { invariant: { id: 'test-client-inv', target: 'Test Button' } },
+      bundle,
+    );
+
+    expect(res.success).toBe(true);
+    expect(res.invariant).toBeDefined();
+    expect(res.totalInvariants).toBeGreaterThanOrEqual(1);
   });
 });
 

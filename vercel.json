@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "pnpm --filter @spectra/core build && pnpm --filter @spectra/sam-client build && pnpm --filter @spectra/invariant-compiler build && pnpm --filter @spectra/sdk build && pnpm --filter @spectra/workbench build",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "outputDirectory": "packages/workbench/dist",
+  "framework": null,
+  "rewrites": [
+    {
+      "source": "/((?!assets/|clips/|frames/|favicon\\.svg|.*\\..*).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
+

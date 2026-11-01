@@ -9,6 +9,7 @@ import { BenchmarkView } from './components/BenchmarkView.js';
 import { VoiceStudioView } from './components/VoiceStudioView.js';
 import { LiveDropzoneView } from './components/LiveDropzoneView.js';
 import { SpectraLensOverlay } from './components/SpectraLensOverlay.js';
+import { callClosedLoopLive } from './utils/api-client.js';
 
 export const App: React.FC = () => {
   const [data, setData] = useState<WorkbenchDataBundle>(
@@ -65,16 +66,8 @@ export const App: React.FC = () => {
     setIsPatching(true);
     setScenarioPhase(3); // 03. Patch Synthesis
     try {
-      const res = await fetch('/api/closed-loop-live', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scenario: activeScenarioId }),
-      });
-      if (res.ok) {
-        setScenarioPhase(4); // 04. Pass #2 Re-Verify
-      } else {
-        setScenarioPhase(4);
-      }
+      await callClosedLoopLive(activeScenarioId, data);
+      setScenarioPhase(4); // 04. Pass #2 Re-Verify
     } catch {
       setScenarioPhase(4);
     } finally {

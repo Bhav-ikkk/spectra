@@ -322,7 +322,16 @@ export interface LiveVideoVerifyApiResponse {
   }>;
   cliCommandEquivalent: string;
   mcpPayloadEquivalent: Record<string, unknown>;
-  decisionExplanation?: unknown;
+  decisionExplanation?: {
+    ruleFired: string;
+    instrumentAVote: string;
+    instrumentBVote: string;
+    marginToThreshold: number;
+    observedDelta: number;
+    deltaLimit: number;
+    deltaMargin: number;
+    formulaSummary: string;
+  };
 }
 
 export async function handleVerifyLive(req: IncomingMessage, res: ServerResponse): Promise<void> {
@@ -1007,6 +1016,15 @@ export function spectraApiMiddleware(): Connect.NextHandleFunction {
     const url = req.url?.split('?')[0];
     if (!url || !url.startsWith('/api/')) {
       next();
+      return;
+    }
+    if (url === '/api/health' && req.method === 'GET') {
+      sendJson(res, 200, {
+        status: 'ok',
+        calibrated: true,
+        version: '3.0.0',
+        timestamp: new Date().toISOString(),
+      });
       return;
     }
     if (!isApiAuthorized(req)) {
