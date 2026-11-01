@@ -199,7 +199,7 @@ export const BenchmarkView: React.FC<BenchmarkViewProps> = ({ report, onClose })
       {/* Scope Subtitle & Telemetry Strip */}
       <div className="px-4 py-2 bg-[#DFDCD3] border-b border-[#B8B4A9] flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono">
         <span className="text-[#181816] font-semibold">
-          21 Canonical v1 Clips (18 Occluded, 3 Clean) Across All 4 Evaluators · 45-Clip Full Sweep for Instrument B + DOM
+          OVERALL CANONICAL BENCHMARK (21 V1 CLIPS · 18 OCCLUDED, 3 CLEAN)
         </span>
         <div className="flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-[#2E7D52]" />
@@ -443,6 +443,22 @@ export const BenchmarkView: React.FC<BenchmarkViewProps> = ({ report, onClose })
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Dynamic Filter Summary Strip (U7) */}
+          <div className="px-3 py-1.5 bg-[#EAE7DF] border border-[#B8B4A9] rounded-[3px] font-mono text-[11px] text-[#4A4843] flex items-center justify-between">
+            <span className="font-semibold text-[#181816]">
+              {envFilter === 'ALL'
+                ? 'OVERALL CANONICAL BENCHMARK (21 V1 CLIPS · 18 OCCLUDED, 3 CLEAN)'
+                : `Showing ${filteredClips.length} clips for filter [${envFilter}]`}
+            </span>
+            <span>
+              {(() => {
+                const passCount = filteredClips.filter((c: any) => c.spectraVerdict === 'pass' || c.spectra_referee?.verdict === 'pass').length;
+                const failCount = filteredClips.filter((c: any) => c.spectraVerdict === 'fail' || c.spectra_referee?.verdict === 'fail').length;
+                return `${passCount} Pass / ${failCount} Fail`;
+              })()}
+            </span>
           </div>
 
           <div className="rounded-[4px] border border-[#B8B4A9] overflow-x-auto bg-[#EAE7DF]">

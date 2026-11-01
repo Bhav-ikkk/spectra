@@ -16,6 +16,17 @@ function spectraApiPlugin(): Plugin {
         }
       });
     },
+    configurePreviewServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        try {
+          const mod = await server.ssrLoadModule('/src/server/api-middleware.ts');
+          const middleware = mod.spectraApiMiddleware();
+          middleware(req, res, next);
+        } catch (err) {
+          next(err);
+        }
+      });
+    },
   };
 }
 

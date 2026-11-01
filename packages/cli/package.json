@@ -12,7 +12,11 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "test": "vitest run --passWithNoTests",
-    "build": "tsc"
+    "build": "tsc",
+    "verify": "node dist/index.js verify",
+    "check": "node dist/index.js check",
+    "compile-invariant": "node dist/index.js compile-invariant",
+    "closed-loop-demo": "node dist/index.js closed-loop-demo"
   },
   "dependencies": {
     "@spectra/sdk": "workspace:*"

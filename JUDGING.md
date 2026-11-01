@@ -31,12 +31,12 @@ pnpm -r build
 pnpm -r test
 
 # 3. Run Zero-BBox Auto-Resolution Optical Verification via Production CLI
-pnpm --filter @spectra/cli verify \
+pnpm spectra verify \
   --video benchmark/clips/dom_catch_010_v1.mp4 \
   --target "Complete Checkout"
 
 # 4. Run the Complete 3-Scenario Autonomous Closed-Loop Demo
-pnpm --filter @spectra/cli closed-loop-demo --scenario all
+pnpm spectra closed-loop-demo --scenario all
 
 # 5. Launch the Swiss Industrial Grid Workbench
 pnpm start

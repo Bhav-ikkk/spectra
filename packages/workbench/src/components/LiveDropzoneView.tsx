@@ -57,6 +57,7 @@ export const LiveDropzoneView: React.FC = () => {
 
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const [copiedCli, setCopiedCli] = useState<boolean>(false);
   const [copiedMcp, setCopiedMcp] = useState<boolean>(false);
 
@@ -86,9 +87,19 @@ export const LiveDropzoneView: React.FC = () => {
         payload.videoPath = `benchmark/clips/${activeFileName}`;
       }
 
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      try {
+        const metaKey = localStorage.getItem('SPECTRA_META_API_KEY');
+        const basetenKey = localStorage.getItem('SPECTRA_BASETEN_API_KEY');
+        if (metaKey) headers['x-meta-api-key'] = metaKey;
+        if (basetenKey) headers['x-baseten-api-key'] = basetenKey;
+      } catch {
+        // ignore in SSR/test
+      }
+
       const res = await fetch('/api/verify-live', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(payload),
       });
 
@@ -106,9 +117,7 @@ export const LiveDropzoneView: React.FC = () => {
     }
   };
 
-  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleFileSelect = (file: File) => {
     setUploadedFileName(file.name);
     setSelectedSample('');
 
@@ -117,6 +126,12 @@ export const LiveDropzoneView: React.FC = () => {
       setUploadedVideoBase64(reader.result as string);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    handleFileSelect(file);
   };
 
   const handleSampleClick = (sample: SampleClip) => {
@@ -140,32 +155,40 @@ export const LiveDropzoneView: React.FC = () => {
   const tkMaskSvg = sanitizeSvgPath(result?.tkSvgMaskPath || result?.tkSvgPath || '');
   const isRejected = result?.verdict === 'fail' || result?.combinedVerdict === 'fail';
 
-  const stages: PipelineStage[] = [
-    {
-      id: 'frame_extract',
-      label: '01 · FRAME EXTRACT',
-      status: 'completed',
-      detail: 'Frames t_0 & t_k isolated at 4.0 FPS (1280×720)',
-    },
-    {
-      id: 'sam_segment',
-      label: '02 · SAM 3.1 FRAME-0',
-      status: 'completed',
-      detail: `Auto-bbox: [x=${resolvedBox.x}, y=${resolvedBox.y}, w=${resolvedBox.width}, h=${resolvedBox.height}]`,
-    },
-    {
-      id: 'pixel_match',
-      label: '03 · PIXEL NCC & VISIBILITY',
-      status: 'completed',
-      detail: `visRatio = ${Number(result?.visRatio ?? 0.9).toFixed(4)} (${result?.pixelLossCount ?? 1700} px loss)`,
-    },
-    {
-      id: 'referee_verdict',
-      label: '04 · CALIBRATED REFEREE',
-      status: 'completed',
-      detail: `Rule 2: ${isRejected ? 'loss > 1.35% threshold' : 'within noise floor'} → ${isRejected ? 'REJECTED' : 'VERIFIED'}`,
-    },
-  ];
+  const stages: PipelineStage[] = result?.pipelineStages
+    ? (result.pipelineStages as PipelineStage[])
+    : [
+        {
+          id: 'frame_extract',
+          label: '01 · FRAME EXTRACT',
+          status: isRunning ? 'running' : errorMsg ? 'failed' : result ? 'completed' : 'pending',
+          detail: result ? 'Frames t_0 & t_k isolated at 4.0 FPS (1280×720)' : undefined,
+        },
+        {
+          id: 'sam_segment',
+          label: '02 · SAM 3.1 FRAME-0',
+          status: isRunning ? 'pending' : errorMsg ? 'failed' : result ? 'completed' : 'pending',
+          detail: result
+            ? `Auto-bbox: [x=${resolvedBox.x}, y=${resolvedBox.y}, w=${resolvedBox.width}, h=${resolvedBox.height}]`
+            : undefined,
+        },
+        {
+          id: 'pixel_match',
+          label: '03 · PIXEL NCC & VISIBILITY',
+          status: isRunning ? 'pending' : errorMsg ? 'failed' : result ? 'completed' : 'pending',
+          detail: result
+            ? `visRatio = ${Number(result?.visRatio ?? 0.9).toFixed(4)} (${result?.pixelLossCount ?? 1700} px loss)`
+            : undefined,
+        },
+        {
+          id: 'referee_verdict',
+          label: '04 · CALIBRATED REFEREE',
+          status: isRunning ? 'pending' : errorMsg ? 'failed' : result ? 'completed' : 'pending',
+          detail: result
+            ? `Rule 2: ${isRejected ? 'loss > 1.35% threshold' : 'within noise floor'} → ${isRejected ? 'REJECTED' : 'VERIFIED'}`
+            : undefined,
+        },
+      ];
 
   const cliCommand =
     result?.cliCommandEquivalent ||
@@ -208,23 +231,56 @@ export const LiveDropzoneView: React.FC = () => {
           </div>
 
           {/* Mechanical Dashed Drop-Well */}
-          <label className="border-[1.5px] border-dashed border-[#8C887E] bg-[#DFDCD3] hover:bg-[#D6D3C9] rounded-[4px] p-4 text-center cursor-pointer block transition-colors">
+          <label
+            onDragOver={(e) => {
+              e.preventDefault();
+              setIsDragging(true);
+            }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setIsDragging(false);
+              const f = e.dataTransfer.files?.[0];
+              if (f) handleFileSelect(f);
+            }}
+            className={`border-[1.5px] border-dashed rounded-[4px] p-4 text-center cursor-pointer block transition-colors ${
+              isDragging
+                ? 'border-[#2E7D52] bg-[#DCE8DF]'
+                : 'border-[#8C887E] bg-[#DFDCD3] hover:bg-[#D6D3C9]'
+            }`}
+          >
             <input
               type="file"
-              accept="video/mp4"
+              accept="video/mp4,video/webm,video/*"
               className="hidden"
               onChange={handleVideoUpload}
             />
             <div className="flex flex-col items-center gap-1.5 text-[#181816]">
               <UploadCloud className="w-5 h-5" />
               <span className="font-mono text-xs font-semibold">
-                {uploadedFileName ? uploadedFileName : '↑ DROP .MP4 VIDEO CLIP'}
+                {isRunning
+                  ? 'Running dual-instrument referee...'
+                  : uploadedFileName
+                    ? uploadedFileName
+                    : '↑ DROP .MP4 VIDEO CLIP'}
               </span>
               <span className="font-mono text-[10px] text-[#4A4843]">
                 or click to browse local file
               </span>
+              <span className="font-mono text-[9px] text-[#8C887E] mt-0.5">
+                MAX 40 MB · 8F @ 4FPS (1280×720)
+              </span>
             </div>
           </label>
+
+          {/* Hero 1-Click Sample CTA (U2) */}
+          <button
+            type="button"
+            onClick={() => handleSampleClick(SAMPLE_CLIPS[0])}
+            className="w-full bg-[#DFDCD3] hover:bg-[#D5D1C7] text-[#181816] border border-[#B8B4A9] font-mono text-[11px] font-semibold py-2 px-2.5 rounded-[3px] flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+          >
+            <span>▶ RUN SAMPLE CLIP (S3: 10% CHECKOUT CLIP — $0 CACHED)</span>
+          </button>
 
           {/* Quick-load Presets */}
           <div className="space-y-1.5">
@@ -257,11 +313,17 @@ export const LiveDropzoneView: React.FC = () => {
             </label>
             <input
               type="text"
+              list="spectra-target-suggestions"
               value={targetLabel}
               onChange={(e) => setTargetLabel(e.target.value)}
               placeholder="e.g. Complete Checkout"
               className="w-full bg-[#D6D3C9] border border-[#B8B4A9] font-mono text-xs px-2.5 py-2 text-[#181816] rounded-[3px] focus:outline-none focus:border-[#181816]"
             />
+            <datalist id="spectra-target-suggestions">
+              <option value="Complete Checkout" />
+              <option value="Pay $149.00" />
+              <option value="Revenue Series Legend" />
+            </datalist>
           </div>
 
           {/* Zero-BBox Mode Pill */}
@@ -294,8 +356,23 @@ export const LiveDropzoneView: React.FC = () => {
             <div className="space-y-1">
               {stages.map((st) => (
                 <div key={st.id} className="text-[11px] font-mono leading-tight">
-                  <div className="font-semibold text-[#181816]">{st.label}</div>
-                  <div className="text-[10px] text-[#4A4843]">{st.detail}</div>
+                  <div className="font-semibold text-[#181816] flex items-center gap-1.5">
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                        st.status === 'completed'
+                          ? 'bg-[#2E7D52]'
+                          : st.status === 'running'
+                            ? 'bg-[#D4A017] animate-pulse'
+                            : st.status === 'failed'
+                              ? 'bg-[#E05246]'
+                              : 'bg-[#B8B4A9]'
+                      }`}
+                    />
+                    <span>{st.label}</span>
+                  </div>
+                  {st.detail && (
+                    <div className="text-[10px] text-[#4A4843] pl-3">{st.detail}</div>
+                  )}
                 </div>
               ))}
             </div>

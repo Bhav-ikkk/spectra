@@ -149,43 +149,59 @@ pnpm start
 # Open http://localhost:4173 in your browser
 ```
 
-- **Tab 1: Closed-Loop Arena**: Replay S1 (Canvas Chart), S2 (Mobile MP4), and S3 ("The Catch"). Toggle between Raw Render, Decoded SAM 3.1 SVG Mask, Naive DOM Crosshair, and Split-Curtain Slider.
-- **Tab 2: 45-Clip Benchmark Explorer**: Filter all 45 clips by environment and occlusion level ($0\%$ to $60\%$), with live metric toggling between False-Pass Rate and Detection Rate.
-- **Tab 3: Voice-to-Invariant Studio**: Click `"Hold / Click to Record Live Mic (Muse Voice 1.0)"` or test the zero-latency verified replay button.
+- **Tab 1: Upload & Verify Video**: Drop any `.mp4` into the dropzone (or run 1-click sample S3). Spectra extracts frames, runs SAM 3.1 Frame-0 auto-bbox, overlays SVG polygons, and displays dual-instrument telemetry.
+- **Tab 2: Closed-Loop Repair Arena**: Replay S1 (Canvas Chart), S2 (Mobile MP4), and S3 ("The Catch"). Toggle between Raw Render, Decoded SAM 3.1 SVG Mask, Naive DOM Crosshair, and Split-Curtain Slider.
+- **Tab 3: 45-Clip Benchmark Explorer**: Filter all 45 clips by environment and occlusion level ($0\%$ to $60\%$), with live metric toggling between False-Pass Rate and Detection Rate.
+- **Tab 4: Voice Invariants Studio**: Click `"Hold / Click to Record Live Mic (Muse Voice 1.0)"` or test the zero-latency verified replay button.
 - **Spectra Lens (HotKey `Ctrl+Shift+Space`)**: Press `Ctrl+Shift+Space` anywhere in the app to activate push-to-capture crosshair selection and view the on-screen verdict HUD.
 
 ### 3. Run Production CLI (`@spectra/cli`)
 
 ```bash
 # Verify a single clip offline using cached SAM masks
-pnpm --filter @spectra/cli verify \
+pnpm spectra verify \
   --t0 benchmark/clips/canvas_000_v1_t0.png \
   --tk benchmark/clips/canvas_000_v1_tk.png \
   --target "Monthly Revenue Chart Legend" \
   --bbox 820,240,220,48 \
   --cached-sam benchmark/responses/benchmark-sam/canvas_000_v1_sam.json
 
+# Zero-BBox auto-detection from raw MP4 video
+pnpm spectra verify \
+  --video benchmark/clips/dom_catch_010_v1.mp4 \
+  --target "Complete Checkout"
+
 # Execute the complete Closed-Loop Demo across all 3 scenarios (S1, S2, S3)
-pnpm --filter @spectra/cli closed-loop-demo --scenario all
+pnpm spectra closed-loop-demo --scenario all
 
 # Check visual invariants across the full benchmark manifest
-pnpm --filter @spectra/cli check \
+pnpm spectra check \
   --invariants .spectra/invariants.json \
   --manifest benchmark/manifest.json \
   --cached-sam-dir benchmark/responses/benchmark-sam
 ```
 
-### 4. Connect to Muse Code via MCP (`@spectra/mcp-server`)
+### 4. Connect to Muse Code, Claude Code, or Cursor via MCP (`@spectra/mcp-server`)
+
+Spectra includes root `.mcp.json` and `.cursor/mcp.json` config files for automatic discovery:
 
 ```json
 {
   "mcpServers": {
     "spectra": {
       "command": "node",
-      "args": ["packages/mcp-server/dist/index.js"]
+      "args": ["packages/mcp-server/dist/index.js"],
+      "env": {
+        "SPECTRA_OFFLINE_DEFAULT": "true"
+      }
     }
   }
 }
+```
+
+Or connect via 1-liner in Claude Code:
+```bash
+claude mcp add spectra -- node packages/mcp-server/dist/index.js
 ```
 
 Exposes 4 bounded tools:

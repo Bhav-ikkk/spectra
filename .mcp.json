@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "spectra": {
+      "command": "node",
+      "args": ["packages/mcp-server/dist/index.js"],
+      "env": {
+        "SPECTRA_OFFLINE_DEFAULT": "true"
+      }
+    }
+  }
+}
+

@@ -1,0 +1,16 @@
+{
+  "name": "spectra",
+  "description": "Dual-instrument visual referee for AI coding agents powered by Meta SAM 3.1 and deterministic pixel template matching",
+  "version": "3.0.0",
+  "server": {
+    "command": "node",
+    "args": ["packages/mcp-server/dist/index.js"]
+  },
+  "tools": [
+    "spectra_verify",
+    "spectra_check",
+    "spectra_compile_invariant",
+    "spectra_closed_loop"
+  ]
+}
+

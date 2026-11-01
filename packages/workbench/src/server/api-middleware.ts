@@ -1019,6 +1019,14 @@ export function spectraApiMiddleware(): Connect.NextHandleFunction {
       sendJson(res, 429, { error: 'Too many requests. Retry shortly.' });
       return;
     }
+    const metaHeader = (req.headers['x-meta-api-key'] || '').toString().trim();
+    if (metaHeader && !process.env.META_API_KEY) {
+      process.env.META_API_KEY = metaHeader;
+    }
+    const basetenHeader = (req.headers['x-baseten-api-key'] || '').toString().trim();
+    if (basetenHeader && !process.env.BASETEN_API_KEY) {
+      process.env.BASETEN_API_KEY = basetenHeader;
+    }
     if (url === '/api/status' && req.method === 'GET') {
       await handleApiStatus(req, res);
       return;

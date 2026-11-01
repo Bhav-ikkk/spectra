@@ -11,6 +11,7 @@ import {
   type MeasurementResult,
   type BoundingBox,
   getCalibration,
+  findProjectRoot,
 } from '@spectra/sdk';
 
 export { SpectraClient, type SpectraClientConfig } from '@spectra/sdk';
@@ -106,13 +107,24 @@ function formatClosedLoopOutput(result: ClosedLoopResult): string {
       result.allScenarios.s2.success &&
       result.allScenarios.s3.success;
 
+    const s1 = result.allScenarios.s1;
+    const s2 = result.allScenarios.s2;
+    const s3 = result.allScenarios.s3;
+
+    const s1Pass1Loss = ((1 - s1.pass1.instrumentB.score) * 100).toFixed(1);
+    const s1Pass2Loss = ((1 - s1.pass2.instrumentB.score) * 100).toFixed(1);
+    const s2Pass1Loss = ((1 - s2.pass1.instrumentB.score) * 100).toFixed(1);
+    const s2Pass2Loss = ((1 - s2.pass2.instrumentB.score) * 100).toFixed(1);
+    const s3Pass1Loss = ((1 - s3.pass1.instrumentB.score) * 100).toFixed(1);
+    const s3Pass2Loss = ((1 - s3.pass2.instrumentB.score) * 100).toFixed(1);
+
     const summaryBlock = [
       sep,
       ' SPECTRA CLOSED-LOOP ALL-SCENARIOS SUMMARY REPORT (S1, S2, S3)',
       sep,
-      ` [${result.allScenarios.s1.success ? 'SUCCESS' : 'FAILED'}] S1 (HTML5 Canvas Chart Collision):   Pass1=FAIL (15.0% loss) -> Repair -> Pass2=PASS (0.0% loss)`,
-      ` [${result.allScenarios.s2.success ? 'SUCCESS' : 'FAILED'}] S2 (Mobile Raw MP4 Screen Recording):  Pass1=FAIL (15.0% loss) -> Repair -> Pass2=PASS (0.0% loss)`,
-      ` [${result.allScenarios.s3.success ? 'SUCCESS' : 'FAILED'}] S3 (Sticky Drawer "The Catch" DOM):   Pass1=FAIL (9.6% loss)  -> Repair -> Pass2=PASS (0.0% loss)`,
+      ` [${s1.success ? 'SUCCESS' : 'FAILED'}] S1 (HTML5 Canvas Chart Collision):   Pass1=${s1.pass1.combinedVerdict.toUpperCase()} (${s1Pass1Loss}% loss) -> Repair -> Pass2=${s1.pass2.combinedVerdict.toUpperCase()} (${s1Pass2Loss}% loss)`,
+      ` [${s2.success ? 'SUCCESS' : 'FAILED'}] S2 (Mobile Raw MP4 Screen Recording):  Pass1=${s2.pass1.combinedVerdict.toUpperCase()} (${s2Pass1Loss}% loss) -> Repair -> Pass2=${s2.pass2.combinedVerdict.toUpperCase()} (${s2Pass2Loss}% loss)`,
+      ` [${s3.success ? 'SUCCESS' : 'FAILED'}] S3 (Sticky Drawer "The Catch" DOM):   Pass1=${s3.pass1.combinedVerdict.toUpperCase()} (${s3Pass1Loss}% loss) -> Repair -> Pass2=${s3.pass2.combinedVerdict.toUpperCase()} (${s3Pass2Loss}% loss)`,
       line,
       ` OVERALL STATUS:       ${allPassed ? 'ALL SCENARIOS VERIFIED (100% REPAIR-TO-PASS)' : 'ONE OR MORE SCENARIOS FAILED'}`,
       sep,
@@ -232,6 +244,11 @@ export async function runCli(
     stderr: (msg) => console.error(msg),
   },
 ): Promise<CliResult> {
+  if (args.includes('--version') || args.includes('-v')) {
+    io.stdout('Spectra CLI v3.0.0 (Rule 2 Calibrated: 3σ=1.35%, δ=4.10%)');
+    return { exitCode: 0 };
+  }
+
   if (args.length === 0 || args[0] === '--help' || args[0] === '-h' || args[0] === 'help') {
     io.stdout(formatHelp());
     return { exitCode: 0 };
@@ -239,6 +256,95 @@ export async function runCli(
 
   const subcommand = args[0];
   const subArgs = args.slice(1);
+
+  if (subArgs.includes('--help') || subArgs.includes('-h')) {
+    const subHelp: Record<string, string> = {
+      verify: [
+        'Spectra CLI — spectra verify',
+        '',
+        'USAGE:',
+        '  spectra verify --target <label> [--video <path> | --t0 <path> --tk <path>] [options]',
+        '',
+        'OPTIONS:',
+        '  --target <label>      (Required) Semantic label of the target UI element',
+        '  --video <path>        Path to video clip (.mp4)',
+        '  --t0 <path>           Path to baseline frame (t0)',
+        '  --tk <path>           Path to evaluation frame (tk)',
+        '  --bbox <x,y,w,h>      Target bounding box (optional — SAM Frame-0 auto-detects)',
+        '  --clip-id <id>        Override clip ID for caching/reporting',
+        '  --cached-sam <path>   Path to cached SAM 3.1 response JSON ($0 spend)',
+        '  --json                Output strict MeasurementResult JSON to stdout',
+        '',
+        'EXIT CODES:',
+        '  0 = PASS (retained within noise floor)',
+        '  1 = FAIL (occlusion detected beyond 3σ threshold)',
+        '  2 = INCONCLUSIVE (instruments disagree beyond δ limit)',
+        '',
+        'EXAMPLE:',
+        '  pnpm spectra verify --video benchmark/clips/dom_catch_010_v1.mp4 --target "Complete Checkout"',
+      ].join('\n'),
+      'compile-invariant': [
+        'Spectra CLI — spectra compile-invariant',
+        '',
+        'USAGE:',
+        '  spectra compile-invariant --out <path> [--audio <path> | --transcript <text>] [options]',
+        '',
+        'OPTIONS:',
+        '  --out <path>          (Required) Output path for invariants JSON (e.g. .spectra/invariants.json)',
+        '  --audio <path>        Path to audio WAV recording (uses muse-voice-transcribe-1.0)',
+        '  --transcript <text>   Raw transcript text (uses muse-spark-1.3 / Baseten)',
+        '  --cached-dir <path>   Directory with cached voice-smoke responses',
+        '  --json                Output InvariantsDocument JSON to stdout',
+        '',
+        'EXAMPLE:',
+        '  pnpm spectra compile-invariant --out .spectra/invariants.json --transcript "checkout must never be covered"',
+      ].join('\n'),
+      check: [
+        'Spectra CLI — spectra check',
+        '',
+        'USAGE:',
+        '  spectra check --invariants <path> --manifest <path> [options]',
+        '',
+        'OPTIONS:',
+        '  --invariants <path>    Path to .spectra/invariants.json',
+        '  --manifest <path>      Path to benchmark manifest JSON',
+        '  --cached-sam-dir <dir>  Directory containing cached SAM JSON responses',
+        '  --json                 Output BenchmarkReport JSON',
+        '',
+        'EXIT CODES:',
+        '  0 = ALL PASS',
+        '  1 = ANY FAIL',
+        '  2 = ANY INCONCLUSIVE',
+        '',
+        'EXAMPLE:',
+        '  pnpm spectra check --invariants .spectra/invariants.json --manifest benchmark/manifest.json --cached-sam-dir benchmark/responses/benchmark-sam',
+      ].join('\n'),
+      'closed-loop-demo': [
+        'Spectra CLI — spectra closed-loop-demo',
+        '',
+        'USAGE:',
+        '  spectra closed-loop-demo [--scenario <s1|s2|s3|all>] [options]',
+        '',
+        'OPTIONS:',
+        '  --scenario <id>       s1 (canvas), s2 (mobile_mp4), s3 (The Catch), or all (default: all)',
+        '  --cached-dir <path>   Directory containing saved closed-loop artifacts',
+        '  --json                Output complete ClosedLoopResult JSON',
+        '',
+        'EXIT CODES:',
+        '  0 = ALL VERIFIED',
+        '  1 = ANY FAILED',
+        '',
+        'EXAMPLE:',
+        '  pnpm spectra closed-loop-demo --scenario all',
+      ].join('\n'),
+    };
+
+    if (subHelp[subcommand]) {
+      io.stdout(subHelp[subcommand]);
+      return { exitCode: 0 };
+    }
+  }
+
   const client = new SpectraClient();
 
   try {
@@ -271,6 +377,35 @@ export async function runCli(
       if (!values.target) throw new Error('Missing required option: --target <label>');
 
       const bbox = values.bbox ? parseBoundingBox(values.bbox) : undefined;
+
+      const root = findProjectRoot();
+      const resolveCandidate = (p?: string) => {
+        if (!p) return undefined;
+        if (path.isAbsolute(p)) return p;
+        if (fs.existsSync(p)) return path.resolve(p);
+        const inRoot = path.join(root, p);
+        if (fs.existsSync(inRoot)) return inRoot;
+        return path.resolve(p);
+      };
+
+      const fileExists = (p?: string) => {
+        if (!p) return false;
+        if (path.isAbsolute(p)) return fs.existsSync(p);
+        return fs.existsSync(p) || fs.existsSync(path.resolve(p)) || fs.existsSync(path.join(root, p));
+      };
+
+      if (values.video && !fileExists(values.video)) {
+        throw new Error(
+          `Video file not found at "${values.video}". Try a bundled sample clip:\n  pnpm spectra verify --video benchmark/clips/dom_catch_010_v1.mp4 --target "Complete Checkout"`,
+        );
+      }
+      if (values.t0 && !fileExists(values.t0)) {
+        throw new Error(`Frame file not found at "${values.t0}". Check the path and try again.`);
+      }
+      if (values.tk && !fileExists(values.tk)) {
+        throw new Error(`Frame file not found at "${values.tk}". Check the path and try again.`);
+      }
+
       const clipId =
         values['clip-id'] ||
         (values.video
@@ -281,14 +416,12 @@ export async function runCli(
 
       const result = await client.verifyClip({
         clipId,
-        t0FramePath: values.t0 ? path.resolve(values.t0) : undefined,
-        tkFramePath: values.tk ? path.resolve(values.tk) : undefined,
+        t0FramePath: resolveCandidate(values.t0),
+        tkFramePath: resolveCandidate(values.tk),
         targetLabel: values.target,
         targetBBox: bbox,
-        videoPath: values.video ? path.resolve(values.video) : undefined,
-        cachedSamResponsePath: values['cached-sam']
-          ? path.resolve(values['cached-sam'])
-          : undefined,
+        videoPath: resolveCandidate(values.video),
+        cachedSamResponsePath: resolveCandidate(values['cached-sam']),
       });
 
       if (values.json) {
@@ -447,7 +580,14 @@ export async function runCli(
       return { exitCode: allSuccess ? 0 : 1, data: result };
     }
 
-    io.stderr(`Unknown subcommand: "${subcommand}". Run "spectra --help" for available commands.`);
+    const knownCommands = ['verify', 'compile-invariant', 'check', 'closed-loop-demo'];
+    const suggestion = knownCommands.find(
+      (cmd) => cmd.startsWith(subcommand.slice(0, 3)) || subcommand.startsWith(cmd.slice(0, 3)),
+    );
+    const hint = suggestion ? ` Did you mean "spectra ${suggestion}"?` : '';
+    io.stderr(
+      `Unknown subcommand: "${subcommand}".${hint}\nAvailable commands: ${knownCommands.join(', ')}\nRun "spectra --help" for available commands.`,
+    );
     return { exitCode: 1 };
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : String(err);

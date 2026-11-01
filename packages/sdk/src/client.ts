@@ -195,9 +195,19 @@ export class SpectraClient {
     }
 
     if (!t0FramePath || !fs.existsSync(t0FramePath)) {
+      if (resolvedVideoPath) {
+        throw new Error(
+          `Cannot extract frames from "${resolvedVideoPath}" — sidecar PNGs (_t0.png/_tk.png) were not found and ffmpeg is not installed on PATH. Install ffmpeg or pass --t0 and --tk frame paths directly.`,
+        );
+      }
       throw new Error(`t0 frame not found: ${t0FramePath ?? '(omitted)'}`);
     }
     if (!tkFramePath || !fs.existsSync(tkFramePath)) {
+      if (resolvedVideoPath) {
+        throw new Error(
+          `Cannot extract frames from "${resolvedVideoPath}" — sidecar PNGs (_t0.png/_tk.png) were not found and ffmpeg is not installed on PATH. Install ffmpeg or pass --t0 and --tk frame paths directly.`,
+        );
+      }
       throw new Error(`tk frame not found: ${tkFramePath ?? '(omitted)'}`);
     }
 

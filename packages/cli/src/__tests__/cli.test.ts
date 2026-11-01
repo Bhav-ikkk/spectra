@@ -72,6 +72,36 @@ describe('@spectra/cli - Production CLI Offline Tests ($0.00 Spend)', () => {
       expect(res.exitCode).toBe(1);
       expect(getStderr()).toContain('Unknown subcommand');
     });
+
+    it('prints version and exits 0 when invoked with --version or -v', async () => {
+      const { io, getStdout } = createTestIo();
+      const res = await runCli(['--version'], io);
+      expect(res.exitCode).toBe(0);
+      expect(getStdout()).toContain('v3.0.0');
+      expect(getStdout()).toContain('Rule 2 Calibrated');
+
+      const { io: io2, getStdout: getStdout2 } = createTestIo();
+      const res2 = await runCli(['-v'], io2);
+      expect(res2.exitCode).toBe(0);
+      expect(getStdout2()).toContain('v3.0.0');
+    });
+
+    it('prints targeted subcommand help and exits 0 for verify --help', async () => {
+      const { io, getStdout } = createTestIo();
+      const res = await runCli(['verify', '--help'], io);
+      expect(res.exitCode).toBe(0);
+      expect(getStdout()).toContain('spectra verify');
+      expect(getStdout()).toContain('--clip-id');
+      expect(getStdout()).toContain('EXIT CODES');
+      expect(getStdout()).not.toContain('Unknown option');
+    });
+
+    it('suggests did-you-mean for mistyped subcommands', async () => {
+      const { io, getStderr } = createTestIo();
+      const res = await runCli(['verif'], io);
+      expect(res.exitCode).toBe(1);
+      expect(getStderr()).toContain('Did you mean "spectra verify"?');
+    });
   });
 
   describe('spectra verify', () => {
@@ -264,6 +294,17 @@ describe('@spectra/cli - Production CLI Offline Tests ($0.00 Spend)', () => {
       expect(validated.instrumentB.score).toBe(0.9);
       expect(validated.instrumentA.passed).toBe(false);
       expect(validated.instrumentB.passed).toBe(false);
+    });
+
+    it('throws actionable error when --video path does not exist', async () => {
+      const { io, getStderr } = createTestIo();
+      const res = await runCli(
+        ['verify', '--video', 'non_existent_clip.mp4', '--target', 'Button'],
+        io,
+      );
+      expect(res.exitCode).toBe(1);
+      expect(getStderr()).toContain('Video file not found at "non_existent_clip.mp4"');
+      expect(getStderr()).toContain('Try a bundled sample clip');
     });
   });
 
