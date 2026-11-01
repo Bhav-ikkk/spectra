@@ -48,6 +48,23 @@ export function saveCustomInvariantLocal(inv: Record<string, unknown>): void {
 }
 
 /**
+ * Resolves the API endpoint URL, prioritizing Vercel runtime service bindings
+ * (SPECTRA_BACKEND_URL) if running in serverless/function context.
+ */
+export function getApiEndpoint(endpointPath: string): string {
+  try {
+    if (typeof process !== 'undefined' && process.env?.SPECTRA_BACKEND_URL) {
+      const base = process.env.SPECTRA_BACKEND_URL.replace(/\/+$/, '');
+      const clean = endpointPath.startsWith('/') ? endpointPath : `/${endpointPath}`;
+      return `${base}${clean}`;
+    }
+  } catch {
+    // Browser or static context
+  }
+  return endpointPath;
+}
+
+/**
  * Executes live video verification against /api/verify-live.
  * If server is unavailable (e.g. Vercel static CDN or lambda missing ffmpeg),
  * seamlessly falls back to precomputed canonical benchmark bundle data.
@@ -62,7 +79,7 @@ export async function callVerifyLive(
   };
 
   try {
-    const res = await fetch('/api/verify-live', {
+    const res = await fetch(getApiEndpoint('/api/verify-live'), {
       method: 'POST',
       headers,
       body: JSON.stringify(payload),
@@ -273,7 +290,7 @@ export async function callClosedLoopLive(
   bundle?: WorkbenchDataBundle,
 ): Promise<{ closedLoopSuccess: boolean; scenario?: WorkbenchScenarioBundle }> {
   try {
-    const res = await fetch('/api/closed-loop-live', {
+    const res = await fetch(getApiEndpoint('/api/closed-loop-live'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ scenario: scenarioId }),
@@ -316,7 +333,7 @@ export async function callCompileInvariant(
   };
 
   try {
-    const res = await fetch('/api/compile-voice', {
+    const res = await fetch(getApiEndpoint('/api/compile-voice'), {
       method: 'POST',
       headers,
       body: JSON.stringify(payload),
@@ -371,7 +388,7 @@ export async function callSaveInvariant(
   bundle?: WorkbenchDataBundle,
 ): Promise<{ success: boolean; invariant: Record<string, unknown>; totalInvariants: number }> {
   try {
-    const res = await fetch('/api/save-invariant', {
+    const res = await fetch(getApiEndpoint('/api/save-invariant'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),

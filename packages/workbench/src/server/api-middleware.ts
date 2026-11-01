@@ -269,6 +269,12 @@ export async function handleApiStatus(_req: IncomingMessage, res: ServerResponse
         model: 'meta-models/muse-spark-open-1026',
       },
     },
+    services: {
+      benchmarkGen: {
+        url: (typeof process !== 'undefined' && process.env?.BENCHMARK_GEN_URL) || null,
+        bound: Boolean(typeof process !== 'undefined' && process.env?.BENCHMARK_GEN_URL),
+      },
+    },
   });
 }
 

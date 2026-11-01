@@ -1,14 +1,56 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "pnpm --filter @spectra/core build && pnpm --filter @spectra/sam-client build && pnpm --filter @spectra/invariant-compiler build && pnpm --filter @spectra/sdk build && pnpm --filter @spectra/workbench build",
-  "installCommand": "pnpm install --frozen-lockfile",
-  "outputDirectory": "packages/workbench/dist",
-  "framework": null,
+  "services": {
+    "spectra-workbench": {
+      "root": ".",
+      "framework": "container",
+      "runtime": "container",
+      "bindings": [
+        {
+          "type": "service",
+          "service": "benchmark-gen",
+          "format": "url",
+          "env": "BENCHMARK_GEN_URL"
+        }
+      ]
+    },
+    "workbench": {
+      "root": "packages/workbench",
+      "framework": "vite",
+      "buildCommand": "pnpm --filter @spectra/core build && pnpm --filter @spectra/sam-client build && pnpm --filter @spectra/invariant-compiler build && pnpm --filter @spectra/sdk build && pnpm --filter @spectra/workbench build",
+      "outputDirectory": "dist",
+      "bindings": [
+        {
+          "type": "service",
+          "service": "spectra-workbench",
+          "format": "url",
+          "env": "SPECTRA_BACKEND_URL"
+        }
+      ]
+    },
+    "benchmark-gen": {
+      "root": "tools/benchmark-gen",
+      "runtime": "python"
+    }
+  },
   "rewrites": [
     {
-      "source": "/((?!assets/|clips/|frames/|favicon\\.svg|.*\\..*).*)",
-      "destination": "/index.html"
+      "source": "/api/(.*)",
+      "destination": {
+        "service": "spectra-workbench"
+      }
+    },
+    {
+      "source": "/health",
+      "destination": {
+        "service": "spectra-workbench"
+      }
+    },
+    {
+      "source": "/(.*)",
+      "destination": {
+        "service": "workbench"
+      }
     }
   ]
 }
-

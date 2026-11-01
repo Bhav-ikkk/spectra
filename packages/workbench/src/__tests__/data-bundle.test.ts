@@ -565,12 +565,16 @@ describe('@spectra/workbench - Local API Server Middleware Tests ($0.00 Spend)',
 describe('@spectra/workbench - Deployment Manifest & Architecture Tests', () => {
   const workspaceRoot = path.resolve(__dirname, '../../../../');
 
-  it('vercel.json exists, configures topological workspace build and workbench dist output', () => {
+  it('vercel.json exists and configures multi-service architecture with bindings and rewrites', () => {
     const vercelPath = path.join(workspaceRoot, 'vercel.json');
     expect(fs.existsSync(vercelPath)).toBe(true);
     const vercelConfig = JSON.parse(fs.readFileSync(vercelPath, 'utf-8'));
-    expect(vercelConfig.buildCommand).toContain('@spectra/workbench build');
-    expect(vercelConfig.outputDirectory).toBe('packages/workbench/dist');
+    expect(vercelConfig.services).toBeDefined();
+    expect(vercelConfig.services['spectra-workbench']).toBeDefined();
+    expect(vercelConfig.services['workbench']).toBeDefined();
+    expect(vercelConfig.services['benchmark-gen']).toBeDefined();
+    expect(Array.isArray(vercelConfig.services['spectra-workbench'].bindings)).toBe(true);
+    expect(Array.isArray(vercelConfig.services['workbench'].bindings)).toBe(true);
     expect(Array.isArray(vercelConfig.rewrites)).toBe(true);
   });
 
