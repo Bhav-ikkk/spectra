@@ -565,16 +565,22 @@ describe('@spectra/workbench - Local API Server Middleware Tests ($0.00 Spend)',
 describe('@spectra/workbench - Deployment Manifest & Architecture Tests', () => {
   const workspaceRoot = path.resolve(__dirname, '../../../../');
 
-  it('vercel.json exists and configures multi-service architecture with bindings and rewrites', () => {
+  it('.vercelignore exists and excludes offline python tools and container files', () => {
+    const vercelIgnorePath = path.join(workspaceRoot, '.vercelignore');
+    expect(fs.existsSync(vercelIgnorePath)).toBe(true);
+    const content = fs.readFileSync(vercelIgnorePath, 'utf-8');
+    expect(content).toContain('tools/');
+    expect(content).toContain('Dockerfile');
+    expect(content).toContain('*.py');
+  });
+
+  it('vercel.json locks framework to vite and configures workbench dist output with topological build', () => {
     const vercelPath = path.join(workspaceRoot, 'vercel.json');
     expect(fs.existsSync(vercelPath)).toBe(true);
     const vercelConfig = JSON.parse(fs.readFileSync(vercelPath, 'utf-8'));
-    expect(vercelConfig.services).toBeDefined();
-    expect(vercelConfig.services['spectra-workbench']).toBeDefined();
-    expect(vercelConfig.services['workbench']).toBeDefined();
-    expect(vercelConfig.services['benchmark-gen']).toBeDefined();
-    expect(Array.isArray(vercelConfig.services['spectra-workbench'].bindings)).toBe(true);
-    expect(Array.isArray(vercelConfig.services['workbench'].bindings)).toBe(true);
+    expect(vercelConfig.framework).toBe('vite');
+    expect(vercelConfig.outputDirectory).toBe('packages/workbench/dist');
+    expect(vercelConfig.buildCommand).toContain('@spectra/workbench build');
     expect(Array.isArray(vercelConfig.rewrites)).toBe(true);
   });
 

@@ -1,0 +1,13 @@
+# Prevent Vercel Services detector from scanning offline Python generator scripts or Dockerfiles
+tools/
+tools/**
+Dockerfile
+render.yaml
+smithery.yaml
+glama.json
+report/
+.agent/
+*.py
+pyproject.toml
+requirements.txt
+
