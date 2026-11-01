@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
   "installCommand": "pnpm install --frozen-lockfile",
-  "buildCommand": "pnpm --filter @spectra/core build && pnpm --filter @spectra/sam-client build && pnpm --filter @spectra/invariant-compiler build && pnpm --filter @spectra/sdk build && pnpm --filter @spectra/workbench build",
+  "buildCommand": "pnpm --filter @spectra/sam-client build && pnpm --filter @spectra/core build && pnpm --filter @spectra/invariant-compiler build && pnpm --filter @spectra/sdk build && pnpm --filter @spectra/workbench build",
   "outputDirectory": "packages/workbench/dist",
   "rewrites": [
     {
