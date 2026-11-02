@@ -736,28 +736,39 @@ export async function handleCompileVoice(req: IncomingMessage, res: ServerRespon
       } else {
         // Deterministic zero-spend offline fallback complying with Rule 6
         const invariantsPath = path.join(repoRoot, '.spectra', 'invariants.json');
+        let baseDoc: Record<string, unknown> = {
+          $schema: 'https://spectra.dev/schemas/invariants/v1.json',
+          version: '1.0',
+          invariants: [],
+        };
         if (fs.existsSync(invariantsPath)) {
-          compiled = JSON.parse(fs.readFileSync(invariantsPath, 'utf-8'));
-        } else {
-          compiled = {
-            $schema: 'https://spectra.dev/schemas/invariants/v1.json',
-            version: '1.0',
-            invariants: [
-              {
-                id: 'mobile-pay-button-visible',
-                description: 'Mobile pay button stays fully visible throughout checkout',
-                type: 'visual',
-                severity: 'error',
-                matcher: { strategy: 'semantic', target: 'Pay $149.00', expected: true },
-                source: {
-                  voice_transcript_id: sessionId,
-                  compiled_by: 'muse-spark-1.3',
-                  compiled_at: new Date().toISOString(),
-                },
-              },
-            ],
-          };
+          try {
+            baseDoc = JSON.parse(fs.readFileSync(invariantsPath, 'utf-8'));
+          } catch {
+            // fallback
+          }
         }
+
+        const isMobilePrompt = /mobile|pay|\$149/i.test(transcriptText);
+        const mobileInv = {
+          id: 'mobile-pay-button-visible',
+          description: 'Mobile pay button stays fully visible throughout checkout',
+          type: 'visual',
+          severity: 'error',
+          matcher: { strategy: 'semantic', target: 'Pay $149.00', expected: true },
+          source: {
+            voice_transcript_id: sessionId,
+            compiled_by: 'muse-spark-1.3',
+            compiled_at: new Date().toISOString(),
+          },
+        };
+
+        const existingList = Array.isArray(baseDoc.invariants) ? (baseDoc.invariants as Array<Record<string, unknown>>) : [];
+        const filteredList = existingList.filter((inv) => inv?.id !== 'mobile-pay-button-visible');
+        compiled = {
+          ...baseDoc,
+          invariants: isMobilePrompt ? [mobileInv, ...filteredList] : existingList,
+        };
       }
 
       if (payload.outPath) {

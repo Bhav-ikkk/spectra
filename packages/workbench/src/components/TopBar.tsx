@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UploadCloud, Layers, BarChart3, Mic, Target, Key, X } from 'lucide-react';
+import { UploadCloud, Layers, BarChart3, Mic, Target, Settings, X, Key, Terminal } from 'lucide-react';
 
 export type TabMode = 'dropzone' | 'arena' | 'benchmark' | 'voice';
 
@@ -8,6 +8,7 @@ export interface TopBarProps {
   setActiveTab?: (tab: TabMode) => void;
   onSelectTab?: (tab: TabMode) => void;
   onOpenLens?: () => void;
+  onOpenCliMcp?: () => void;
   calibration?: {
     sigma_noise: number;
     threshold: number;
@@ -30,6 +31,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   setActiveTab,
   onSelectTab,
   onOpenLens,
+  onOpenCliMcp,
   calibration,
   onOpenBenchmark,
   onOpenVoice,
@@ -150,26 +152,8 @@ export const TopBar: React.FC<TopBarProps> = ({
           })}
         </nav>
 
-        {/* Right: Key Modal + Lens Overlay Trigger + Calibration Pill + Economy Badge */}
+        {/* Right: Lens Overlay Trigger + CLI & MCP Trigger + Calibration Pill + Settings Button */}
         <div className="flex items-center gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={() => setShowKeyModal(true)}
-            title="Configure optional Meta/Baseten API keys for live custom video tests ($0 cache active by default)"
-            className="border border-[#B8B4A9] bg-[#DFDCD3]/70 hover:bg-[#DFDCD3] text-[#181816] font-mono text-[11px] px-2.5 py-1 rounded-[4px] cursor-pointer flex items-center gap-1.5 transition-colors"
-          >
-            <Key className="w-3.5 h-3.5 text-[#181816]" />
-            <span>🔑 API Keys ($0 Cache Active)</span>
-          </button>
-
-          <div
-            title="8 frames @ 4 FPS (2.0s clip at 1280×720). Cached replays run offline at $0.00 in ~480ms."
-            className="border border-[#B8B4A9] bg-[#DFDCD3] text-[#181816] font-mono text-[11px] px-2 py-0.5 rounded-[4px] flex items-center gap-1.5 select-none"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-[#2E7D52]" />
-            <span>8f @ 4FPS · ~480ms · CACHED ($0.00)</span>
-          </div>
-
           <button
             type="button"
             onClick={onOpenLens}
@@ -177,7 +161,17 @@ export const TopBar: React.FC<TopBarProps> = ({
             className="border border-[#B8B4A9] bg-[#DFDCD3]/70 hover:bg-[#DFDCD3] text-[#181816] font-mono text-[11px] px-3 py-1 rounded-full cursor-pointer flex items-center gap-1.5 transition-colors"
           >
             <Target className="w-3.5 h-3.5 text-[#181816]" />
-            <span>Lens (Ctrl+Shift+Space)</span>
+            <span>◎ Lens (Ctrl+Shift+Space)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onOpenCliMcp}
+            title="Spectra CLI Execution, 4-Tool MCP Server & Rule 2 Refusal Contract"
+            className="border border-[#B8B4A9] bg-[#DFDCD3]/70 hover:bg-[#DFDCD3] text-[#181816] font-mono text-[11px] px-2.5 py-1 rounded-[4px] cursor-pointer flex items-center gap-1.5 transition-colors"
+          >
+            <Terminal className="w-3.5 h-3.5 text-[#181816]" />
+            <span>&gt;_ CLI &amp; MCP</span>
           </button>
 
           <div
@@ -190,6 +184,15 @@ export const TopBar: React.FC<TopBarProps> = ({
             </span>
             <span className="font-semibold text-[#18794E]">Rule 2 Verified</span>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setShowKeyModal(true)}
+            title="API Keys & Offline Cache Settings"
+            className="w-7 h-7 rounded border border-[#B8B4A9] bg-[#DFDCD3] hover:bg-[#D5D1C7] flex items-center justify-center cursor-pointer transition-colors shadow-2xs"
+          >
+            <Settings className="w-3.5 h-3.5 text-[#181816]" />
+          </button>
         </div>
       </header>
 

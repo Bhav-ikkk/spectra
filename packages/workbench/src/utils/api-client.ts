@@ -357,25 +357,37 @@ export async function callCompileInvariant(
     payload.transcript ||
     'When the cart drawer opens, the complete checkout button must never be covered, and the revenue series legend must stay visible.';
 
+  const isMobile = /mobile|pay|\$149/i.test(fallbackTranscript);
+  const mobileInv = {
+    id: 'mobile-pay-button-visible',
+    description: 'Mobile pay button stays fully visible throughout checkout',
+    type: 'visual',
+    severity: 'error',
+    matcher: { strategy: 'semantic', target: 'Pay $149.00', expected: true },
+    source: {
+      voice_transcript_id: 'voyager/transcribe/6D0FEAC1E93944EB9F057C5DBE136055',
+      compiled_by: 'muse-spark-1.3',
+      compiled_at: new Date().toISOString(),
+    },
+  };
+
+  const baseDoc = (bundle?.invariants as Record<string, unknown>) || {
+    $schema: 'https://spectra.dev/schemas/invariants/v1.json',
+    version: '1.0',
+    invariants: [],
+  };
+  const existingList = Array.isArray(baseDoc.invariants) ? (baseDoc.invariants as Array<Record<string, unknown>>) : [];
+  const filteredList = existingList.filter((inv) => inv?.id !== 'mobile-pay-button-visible');
+  const compiledDoc = {
+    ...baseDoc,
+    invariants: isMobile ? [mobileInv, ...filteredList] : existingList,
+  };
+
   return {
     success: true,
     transcript: fallbackTranscript,
     sessionId: 'voyager/transcribe/6D0FEAC1E93944EB9F057C5DBE136055',
-    document: (bundle?.invariants as Record<string, unknown>) || {
-      version: '3.0.0',
-      invariants: [
-        {
-          id: 'complete-checkout-button-visible',
-          description:
-            'When sticky drawer opens, complete checkout button must remain unobstructed',
-          target: 'Complete Checkout',
-          targetLabel: 'Complete Checkout',
-          bbox: [910, 600, 340, 50],
-          type: 'visibility_unobstructed',
-          minVisibility: 0.9865,
-        },
-      ],
-    },
+    document: compiledDoc,
   };
 }
 

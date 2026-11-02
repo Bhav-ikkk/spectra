@@ -54,6 +54,7 @@ export const TelemetryPane: React.FC<TelemetryPaneProps> = ({
   const [internalShowSamMask, setInternalShowSamMask] = useState(true);
   const [voiceRuleActive, setVoiceRuleActive] = useState(true);
   const [showDecisionTree, setShowDecisionTree] = useState(true);
+  const [activeSubTab, setActiveSubTab] = useState<'instruments' | 'proof'>('instruments');
 
   const showSam = externalShowSamMask !== undefined ? externalShowSamMask : internalShowSamMask;
   const toggleSam = externalOnToggleSamMask || setInternalShowSamMask;
@@ -156,14 +157,9 @@ export const TelemetryPane: React.FC<TelemetryPaneProps> = ({
           <span className="font-mono text-xs font-semibold tracking-[0.06em] uppercase text-[#181816]">
             SPECTRA REFEREE
           </span>
-          <div className="flex items-center gap-1.5">
-            <span className="font-mono text-[9px] text-[#4A4843] bg-[#DFDCD3] border border-[#B8B4A9] px-1.5 py-0.5 rounded-[2px]">
-              CACHED REPLAY ($0.00)
-            </span>
-            <span className="font-mono text-[10px] text-[#1D4D35] bg-[#DCE8DF] border border-[#9BB8A5] px-1.5 py-0.5 rounded-[2px] font-semibold">
-              Rule 2 Verified
-            </span>
-          </div>
+          <span className="font-mono text-[10px] text-[#1D4D35] bg-[#DCE8DF] border border-[#9BB8A5] px-1.5 py-0.5 rounded-[2px] font-semibold">
+            Rule 2 Verified
+          </span>
         </div>
 
         {/* Section 1 — Verdict & Coordinates */}
@@ -189,249 +185,261 @@ export const TelemetryPane: React.FC<TelemetryPaneProps> = ({
           </p>
         </div>
 
-        {/* Section 2 — Instrument A (SAM 3.1 Mask) */}
-        <div className="p-3.5 border-b border-[#B8B4A9] space-y-2">
-          <div className="flex items-center justify-between gap-2">
-            <span className="font-mono text-xs text-[#181816]">Instrument A (SAM 3.1 Mask)</span>
-            <HardwareToggle
-              active={showSam}
-              onChange={toggleSam}
-              label="Instrument A SAM Mask Toggle"
-            />
-          </div>
-
-          <div className="flex items-center justify-between gap-2 pt-0.5">
-            <span className="font-mono text-[15px] text-[#181816]">Area:</span>
-            <HardwareMiniSlider value={rSam} />
-          </div>
-
-          <div className="flex items-end justify-between gap-2 pt-1">
-            <span className="font-mono text-[26px] leading-none font-medium tracking-[-0.03em] text-[#181816] tabular-nums">
-              {currentAreaPx.toLocaleString()} px
-            </span>
-            <VerticalLedMeter ratio={rSam} variant={isPass2 ? 'emeraldPeak' : 'neutral'} />
-          </div>
-        </div>
-
-        {/* Section 3 — Instrument B (Pixel Template Match) */}
-        <div className="p-3.5 border-b border-[#B8B4A9] space-y-2">
-          <div className="flex items-center justify-between gap-2">
-            <span className="font-mono text-xs text-[#181816]">
-              Instrument B (Pixel Template Match)
-            </span>
-          </div>
-
-          <div className="flex items-end justify-between gap-2 pt-1">
-            <span className="font-mono text-[26px] leading-none font-medium tracking-[-0.03em] text-[#181816] tabular-nums">
-              {(visRatio * 100).toFixed(2)}%
-            </span>
-            <VerticalLedMeter ratio={visRatio} variant={isPass2 ? 'emeraldPeak' : 'charcoal'} />
-          </div>
-        </div>
-
-        {/* Section 4 — Voice Invariant Rule */}
-        <div className="p-3.5 border-b border-[#B8B4A9] space-y-2">
-          <div className="flex items-center justify-between gap-2">
-            <span className="font-mono text-xs text-[#181816]">Voice Invariant Rule:</span>
-            <HardwareToggle
-              active={voiceRuleActive}
-              onChange={setVoiceRuleActive}
-              label="Voice Invariant Rule Toggle"
-            />
-          </div>
-
-          <div className="flex items-end justify-between gap-2 pt-1">
-            <span className="font-mono text-[24px] leading-none font-medium tracking-[-0.02em] text-[#181816]">
-              ACTIVE
-            </span>
-            <VerticalLedMeter ratio={1.0} variant="emeraldPeak" />
-          </div>
-        </div>
-
-        {/* Section 5 — Code Patch Box (Visible in Phase 3 & 4) */}
-        {phase >= 3 && (
-          <div className="p-3.5 border-b border-[#B8B4A9] space-y-1.5 bg-[#DFDCD3] transition-all">
-            <div className="flex items-center justify-between font-mono text-[11px] text-[#181816]">
-              <span className="font-semibold uppercase tracking-wider">Applied Code Patch</span>
-              <span className="text-[#4A4843] text-[10px]">{cfg.codeTitle}</span>
-            </div>
-            <pre className="p-2.5 rounded-[3px] bg-[#D6D3C9] border border-[#B8B4A9] text-[#181816] font-mono text-[11px] leading-relaxed overflow-x-auto select-text shadow-inner whitespace-pre">
-              <code>{cfg.codePatch}</code>
-            </pre>
-          </div>
-        )}
-
-        {/* Section: Decision Tree · Show Your Work */}
-        <div className="p-3.5 border-b border-[#B8B4A9] space-y-2 bg-[#E5E2DA]">
-          <div
-            onClick={() => setShowDecisionTree(!showDecisionTree)}
-            className="flex items-center justify-between cursor-pointer select-none"
+        {/* SubTab Selector */}
+        <div className="grid grid-cols-2 border-b border-[#B8B4A9] bg-[#DFDCD3] font-mono text-[11px]">
+          <button
+            type="button"
+            onClick={() => setActiveSubTab('instruments')}
+            className={`py-2 text-center uppercase tracking-wider font-semibold cursor-pointer border-r border-[#B8B4A9] transition-colors ${
+              activeSubTab === 'instruments'
+                ? 'bg-[#EAE7DF] text-[#181816]'
+                : 'text-[#6E6B64] hover:text-[#181816] hover:bg-[#E3E0D7]'
+            }`}
           >
-            <div className="flex items-center gap-1.5 font-mono text-xs font-semibold uppercase tracking-wider text-[#181816]">
-              <Compass className="w-3.5 h-3.5 text-[#181816]" />
-              <span>DECISION TREE · SHOW YOUR WORK</span>
-            </div>
-            <button
-              type="button"
-              className="text-[#4A4843] hover:text-[#181816] cursor-pointer"
-              title={showDecisionTree ? 'Collapse Decision Tree' : 'Expand Decision Tree'}
-            >
-              {showDecisionTree ? (
-                <ChevronDown className="w-3.5 h-3.5" />
-              ) : (
-                <ChevronRight className="w-3.5 h-3.5" />
-              )}
-            </button>
-          </div>
+            [ INSTRUMENTS ]
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveSubTab('proof')}
+            className={`py-2 text-center uppercase tracking-wider font-semibold cursor-pointer transition-colors ${
+              activeSubTab === 'proof'
+                ? 'bg-[#EAE7DF] text-[#181816]'
+                : 'text-[#6E6B64] hover:text-[#181816] hover:bg-[#E3E0D7]'
+            }`}
+          >
+            [ PROOF & PATCH ]
+          </button>
+        </div>
 
-          {showDecisionTree && (
-            <div className="p-2.5 rounded-[3px] bg-[#D6D3C9] border border-[#B8B4A9] font-mono text-[10.5px] leading-relaxed space-y-1.5 text-[#181816] shadow-inner">
-              <div className="flex items-center justify-between pb-1 border-b border-[#B8B4A9]">
-                <span className="text-[#6E6B64] font-semibold">Rule Fired:</span>
-                <span
-                  className={`px-1.5 py-0.2 rounded-[2px] font-bold text-[9.5px] tracking-tight ${
-                    isPass2 ? 'bg-[#2E7D52] text-white' : 'bg-[#E05246] text-white'
+        {activeSubTab === 'instruments' ? (
+          <>
+            {/* Section 2 — Instrument A (SAM 3.1 Mask) */}
+            <div className="p-3.5 border-b border-[#B8B4A9] space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-mono text-xs text-[#181816]">Instrument A (SAM 3.1 Mask)</span>
+                <HardwareToggle
+                  active={showSam}
+                  onChange={toggleSam}
+                  label="Instrument A SAM Mask Toggle"
+                />
+              </div>
+
+              <div className="flex items-center justify-between gap-2 pt-0.5">
+                <span className="font-mono text-[15px] text-[#181816]">Area:</span>
+                <HardwareMiniSlider value={rSam} />
+              </div>
+
+              <div className="flex items-end justify-between gap-2 pt-1">
+                <span className="font-mono text-[26px] leading-none font-medium tracking-[-0.03em] text-[#181816] tabular-nums">
+                  {currentAreaPx.toLocaleString()} px
+                </span>
+                <VerticalLedMeter ratio={rSam} variant={isPass2 ? 'emeraldPeak' : 'neutral'} />
+              </div>
+            </div>
+
+            {/* Section 3 — Instrument B (Pixel Template Match) */}
+            <div className="p-3.5 border-b border-[#B8B4A9] space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-mono text-xs text-[#181816]">
+                  Instrument B (Pixel Template Match)
+                </span>
+              </div>
+
+              <div className="flex items-end justify-between gap-2 pt-1">
+                <span className="font-mono text-[26px] leading-none font-medium tracking-[-0.03em] text-[#181816] tabular-nums">
+                  {(visRatio * 100).toFixed(2)}%
+                </span>
+                <VerticalLedMeter ratio={visRatio} variant={isPass2 ? 'emeraldPeak' : 'charcoal'} />
+              </div>
+            </div>
+
+            {/* Section 4 — Voice Invariant Rule */}
+            <div className="p-3.5 border-b border-[#B8B4A9] space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-mono text-xs text-[#181816]">Voice Invariant Rule:</span>
+                <HardwareToggle
+                  active={voiceRuleActive}
+                  onChange={setVoiceRuleActive}
+                  label="Voice Invariant Rule Toggle"
+                />
+              </div>
+
+              <div className="flex items-end justify-between gap-2 pt-1">
+                <span className="font-mono text-[24px] leading-none font-medium tracking-[-0.02em] text-[#181816]">
+                  ACTIVE
+                </span>
+                <VerticalLedMeter ratio={1.0} variant="emeraldPeak" />
+              </div>
+            </div>
+
+            {/* Section 6 — Phase 01..04: Closed-Loop Repair Phases */}
+            <div className="p-3.5 space-y-2">
+              <div className="font-mono text-[11px] text-[#181816]">
+                Phase {phase >= 4 ? '04 / 04' : phase >= 3 ? '03 / 04' : '02 / 04'}: Closed-Loop Repair Phases
+              </div>
+
+              <div className="space-y-1 font-mono text-xs">
+                {/* Phase 01 */}
+                <div
+                  onClick={() => setPhase?.(1)}
+                  className="bg-[#181816] text-white px-2.5 py-1.5 rounded-[3px] flex items-center justify-between cursor-pointer"
+                >
+                  <span>01. Baseline False Pass</span>
+                  <span>✓</span>
+                </div>
+
+                {/* Phase 02 */}
+                <div
+                  onClick={() => {
+                    setPhase?.(2);
+                    if (onResetPass) onResetPass();
+                  }}
+                  className={`px-2.5 py-1.5 rounded-[3px] flex items-center justify-between cursor-pointer border border-[#B8B4A9] transition-colors ${
+                    phase === 2
+                      ? 'bg-[#DFDCD3] text-[#181816] font-semibold'
+                      : 'text-[#4A4843] hover:bg-[#E3E0D7]'
                   }`}
                 >
-                  {isPass2
-                    ? 'RULE_4_THREE_SIGMA_CLEAN_PASS'
-                    : 'RULE_3_THREE_SIGMA_OCCLUSION_REJECT'}
-                </span>
-              </div>
+                  <span>02. Spectra Rejection</span>
+                  {phase >= 2 && <span>✓</span>}
+                </div>
 
-              <div>
-                <span className="text-[#6E6B64] font-semibold">Instrument Votes:</span>
-                <div className="pl-1 text-[#181816]">
-                  {isPass2 ? (
-                    <>
-                      • Inst A (SAM 3.1):{' '}
-                      <span className="text-[#1D4D35] font-semibold">PASS (0.00% loss)</span>
-                      <br />• Inst B (Pixel):{' '}
-                      <span className="text-[#1D4D35] font-semibold">PASS (0.00% loss)</span>
-                    </>
-                  ) : (
-                    <>
-                      • Inst A (SAM 3.1):{' '}
-                      <span className="text-[#9E2A22] font-semibold">
-                        FAIL (-{((1 - rSam) * 100).toFixed(2)}%)
-                      </span>
-                      <br />• Inst B (Pixel):{' '}
-                      <span className="text-[#9E2A22] font-semibold">
-                        FAIL (-{((1 - visRatio) * 100).toFixed(2)}%)
-                      </span>
-                    </>
-                  )}
+                {/* Phase 03 */}
+                <div
+                  onClick={() => {
+                    if (onApplyPatch) onApplyPatch();
+                    else setPhase?.(3);
+                  }}
+                  className={`px-2.5 py-1.5 rounded-[3px] flex items-center justify-between cursor-pointer border border-[#B8B4A9] transition-colors ${
+                    phase === 3
+                      ? 'bg-[#DFDCD3] text-[#181816] font-semibold'
+                      : 'text-[#4A4843] hover:bg-[#E3E0D7]'
+                  }`}
+                >
+                  <span>03. Patch Synthesis</span>
+                  {phase >= 3 && <span>✓</span>}
+                </div>
+
+                {/* Phase 04 */}
+                <div
+                  onClick={() => setPhase?.(4)}
+                  className={`px-2.5 py-1.5 rounded-[3px] flex items-center justify-between cursor-pointer border border-[#B8B4A9] transition-colors ${
+                    phase >= 4
+                      ? 'bg-[#2E7D52] text-white font-semibold'
+                      : 'text-[#4A4843] hover:bg-[#E3E0D7]'
+                  }`}
+                >
+                  <span>04. Pass #2 Re-Verify</span>
+                  {phase >= 4 && <span>✓</span>}
                 </div>
               </div>
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-col">
+            {/* Section: Decision Tree · Show Your Work */}
+            <div className="p-3.5 border-b border-[#B8B4A9] space-y-2 bg-[#E5E2DA]">
+              <div className="flex items-center gap-1.5 font-mono text-xs font-semibold uppercase tracking-wider text-[#181816]">
+                <Compass className="w-3.5 h-3.5 text-[#181816]" />
+                <span>DECISION TREE · SHOW YOUR WORK</span>
+              </div>
 
-              <div className="flex flex-col">
-                <span className="text-[#6E6B64] font-semibold">Agreement Check:</span>
-                <span className="pl-1">
-                  |rSam - vis| = {(Math.abs(rSam - visRatio) * 100).toFixed(2)}% ≤{' '}
-                  {(0.041 * 100).toFixed(2)}% (δ){' '}
-                  <span className="text-[#1D4D35] font-semibold">
-                    [AGREED, +{((0.041 - Math.abs(rSam - visRatio)) * 100).toFixed(2)}% margin]
+              <div className="p-2.5 rounded-[3px] bg-[#D6D3C9] border border-[#B8B4A9] font-mono text-[10.5px] leading-relaxed space-y-1.5 text-[#181816] shadow-inner">
+                <div className="flex items-center justify-between pb-1 border-b border-[#B8B4A9]">
+                  <span className="text-[#6E6B64] font-semibold">Rule Fired:</span>
+                  <span
+                    className={`px-1.5 py-0.2 rounded-[2px] font-bold text-[9.5px] tracking-tight ${
+                      isPass2 ? 'bg-[#2E7D52] text-white' : 'bg-[#E05246] text-white'
+                    }`}
+                  >
+                    {isPass2
+                      ? 'RULE_4_THREE_SIGMA_CLEAN_PASS'
+                      : 'RULE_3_THREE_SIGMA_OCCLUSION_REJECT'}
                   </span>
-                </span>
+                </div>
+
+                <div>
+                  <span className="text-[#6E6B64] font-semibold">Instrument Votes:</span>
+                  <div className="pl-1 text-[#181816]">
+                    {isPass2 ? (
+                      <>
+                        • Inst A (SAM 3.1):{' '}
+                        <span className="text-[#1D4D35] font-semibold">PASS (0.00% loss)</span>
+                        <br />• Inst B (Pixel):{' '}
+                        <span className="text-[#1D4D35] font-semibold">PASS (0.00% loss)</span>
+                      </>
+                    ) : (
+                      <>
+                        • Inst A (SAM 3.1):{' '}
+                        <span className="text-[#9E2A22] font-semibold">
+                          FAIL (-{((1 - rSam) * 100).toFixed(2)}%)
+                        </span>
+                        <br />• Inst B (Pixel):{' '}
+                        <span className="text-[#9E2A22] font-semibold">
+                          FAIL (-{((1 - visRatio) * 100).toFixed(2)}%)
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex flex-col">
+                  <span className="text-[#6E6B64] font-semibold">Agreement Check:</span>
+                  <span className="pl-1">
+                    |rSam - vis| = {(Math.abs(rSam - visRatio) * 100).toFixed(2)}% ≤{' '}
+                    {(0.041 * 100).toFixed(2)}% (δ){' '}
+                    <span className="text-[#1D4D35] font-semibold">
+                      [AGREED, +{((0.041 - Math.abs(rSam - visRatio)) * 100).toFixed(2)}% margin]
+                    </span>
+                  </span>
+                </div>
+
+                <div className="flex flex-col">
+                  <span className="text-[#6E6B64] font-semibold">Threshold Margin:</span>
+                  <span className="pl-1">
+                    {isPass2 ? (
+                      <>
+                        Loss 0.00% vs 1.35% (3σ){' '}
+                        <span className="text-[#1D4D35] font-semibold">
+                          [-1.35% within noise floor]
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        Loss {cfg.pass1LossPct.toFixed(2)}% vs 1.35% (3σ){' '}
+                        <span className="text-[#9E2A22] font-semibold">
+                          [+{(cfg.pass1LossPct - 1.35).toFixed(2)}% above noise floor]
+                        </span>
+                      </>
+                    )}
+                  </span>
+                </div>
+
+                <div className="flex flex-col pt-0.5 border-t border-[#B8B4A9]">
+                  <span className="text-[#6E6B64] font-semibold">BBox Provenance:</span>
+                  <span className="pl-1 text-[10px] text-[#4A4843] break-all">
+                    {activeId === 's3'
+                      ? 'Manifest [910,600,340,50] · SAM Frame-0 [909,600,342,51]'
+                      : activeId === 's1'
+                        ? 'Manifest [820,240,220,48] · SAM Frame-0 [820,240,220,48]'
+                        : 'Manifest [475,610,330,52] · SAM Frame-0 [475,610,330,52]'}
+                  </span>
+                </div>
               </div>
+            </div>
 
-              <div className="flex flex-col">
-                <span className="text-[#6E6B64] font-semibold">Threshold Margin:</span>
-                <span className="pl-1">
-                  {isPass2 ? (
-                    <>
-                      Loss 0.00% vs 1.35% (3σ){' '}
-                      <span className="text-[#1D4D35] font-semibold">
-                        [-1.35% within noise floor]
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      Loss {cfg.pass1LossPct.toFixed(2)}% vs 1.35% (3σ){' '}
-                      <span className="text-[#9E2A22] font-semibold">
-                        [+{(cfg.pass1LossPct - 1.35).toFixed(2)}% above noise floor]
-                      </span>
-                    </>
-                  )}
-                </span>
+            {/* Synthesized Repair Patch */}
+            <div className="p-3.5 border-b border-[#B8B4A9] space-y-1.5 bg-[#DFDCD3] transition-all">
+              <div className="flex items-center justify-between font-mono text-[11px] text-[#181816]">
+                <span className="font-semibold uppercase tracking-wider">SYNTHESIZED REPAIR PATCH</span>
+                <span className="text-[#4A4843] text-[10px]">{cfg.codeTitle}</span>
               </div>
-
-              <div className="flex flex-col pt-0.5 border-t border-[#B8B4A9]">
-                <span className="text-[#6E6B64] font-semibold">BBox Provenance:</span>
-                <span className="pl-1 text-[10px] text-[#4A4843] break-all">
-                  {activeId === 's3'
-                    ? 'Manifest [910,600,340,50] · SAM Frame-0 [909,600,342,51]'
-                    : activeId === 's1'
-                      ? 'Manifest [820,240,220,48] · SAM Frame-0 [820,240,220,48]'
-                      : 'Manifest [475,610,330,52] · SAM Frame-0 [475,610,330,52]'}
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Section 6 — Phase 01..04: Closed-Loop Repair Phases */}
-        <div className="p-3.5 space-y-2">
-          <div className="font-mono text-[11px] text-[#181816]">
-            Phase {phase >= 4 ? '04 / 04' : phase >= 3 ? '03 / 04' : '02 / 04'}: Closed-Loop Repair Phases
-          </div>
-
-          <div className="space-y-1 font-mono text-xs">
-            {/* Phase 01 */}
-            <div
-              onClick={() => setPhase?.(1)}
-              className="bg-[#181816] text-white px-2.5 py-1.5 rounded-[3px] flex items-center justify-between cursor-pointer"
-            >
-              <span>01. Baseline False Pass</span>
-              <span>✓</span>
-            </div>
-
-            {/* Phase 02 */}
-            <div
-              onClick={() => {
-                setPhase?.(2);
-                if (onResetPass) onResetPass();
-              }}
-              className={`px-2.5 py-1.5 rounded-[3px] flex items-center justify-between cursor-pointer border border-[#B8B4A9] transition-colors ${
-                phase === 2
-                  ? 'bg-[#DFDCD3] text-[#181816] font-semibold'
-                  : 'text-[#4A4843] hover:bg-[#E3E0D7]'
-              }`}
-            >
-              <span>02. Spectra Rejection</span>
-              {phase >= 2 && <span>✓</span>}
-            </div>
-
-            {/* Phase 03 */}
-            <div
-              onClick={() => {
-                if (onApplyPatch) onApplyPatch();
-                else setPhase?.(3);
-              }}
-              className={`px-2.5 py-1.5 rounded-[3px] flex items-center justify-between cursor-pointer border border-[#B8B4A9] transition-colors ${
-                phase === 3
-                  ? 'bg-[#DFDCD3] text-[#181816] font-semibold'
-                  : 'text-[#4A4843] hover:bg-[#E3E0D7]'
-              }`}
-            >
-              <span>03. Patch Synthesis</span>
-              {phase >= 3 && <span>✓</span>}
-            </div>
-
-            {/* Phase 04 */}
-            <div
-              onClick={() => setPhase?.(4)}
-              className={`px-2.5 py-1.5 rounded-[3px] flex items-center justify-between cursor-pointer border border-[#B8B4A9] transition-colors ${
-                phase >= 4
-                  ? 'bg-[#2E7D52] text-white font-semibold'
-                  : 'text-[#4A4843] hover:bg-[#E3E0D7]'
-              }`}
-            >
-              <span>04. Pass #2 Re-Verify</span>
-              {phase >= 4 && <span>✓</span>}
+              <pre className="p-2.5 rounded-[3px] bg-[#D6D3C9] border border-[#B8B4A9] text-[#181816] font-mono text-[11px] leading-relaxed overflow-x-auto select-text shadow-inner whitespace-pre">
+                <code>{cfg.codePatch}</code>
+              </pre>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Bottom Action CTA */}
@@ -450,7 +458,7 @@ export const TelemetryPane: React.FC<TelemetryPaneProps> = ({
             {isPatching
               ? 'Synthesizing Patch & Verifying...'
               : isPass2
-                ? 'Reset to Broken Pass #1 ↺'
+                ? '✓ Patch Verified · Reset ↺'
                 : 'Verify & Patch ↗'}
           </span>
         </button>

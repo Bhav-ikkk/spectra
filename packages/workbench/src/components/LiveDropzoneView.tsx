@@ -123,7 +123,24 @@ export const LiveDropzoneView: React.FC = () => {
     executeVerify(sample.fileName, sample.targetLabel);
   };
 
-  const resolvedBox = result?.resolvedBBox || { x: 909, y: 600, width: 342, height: 51 };
+  const parseBBox = (raw: any): { x: number; y: number; width: number; height: number } => {
+    if (Array.isArray(raw) && raw.length >= 4) {
+      const [x, y, w, h] = raw;
+      if (w > 0 && h > 0) return { x, y, width: w, height: h };
+    }
+    if (raw && typeof raw === 'object' && typeof raw.x === 'number' && typeof raw.y === 'number') {
+      const w = raw.width ?? raw.w ?? 0;
+      const h = raw.height ?? raw.h ?? 0;
+      if (w > 0 && h > 0) return { x: raw.x, y: raw.y, width: w, height: h };
+    }
+    // Per-scenario fallback
+    const active = selectedSample || uploadedFileName || '';
+    if (active.includes('canvas')) return { x: 820, y: 240, width: 220, height: 48 };
+    if (active.includes('mobile')) return { x: 475, y: 610, width: 330, height: 52 };
+    return { x: 909, y: 600, width: 342, height: 51 };
+  };
+
+  const resolvedBox = parseBBox(result?.resolvedBBox);
   const t0Img =
     result?.t0DataUrl ||
     result?.t0Base64 ||
@@ -260,7 +277,7 @@ export const LiveDropzoneView: React.FC = () => {
             onClick={() => handleSampleClick(SAMPLE_CLIPS[0])}
             className="w-full bg-[#DFDCD3] hover:bg-[#D5D1C7] text-[#181816] border border-[#B8B4A9] font-mono text-[11px] font-semibold py-2 px-2.5 rounded-[3px] flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
           >
-            <span>▶ RUN SAMPLE CLIP (S3: 10% CHECKOUT CLIP — $0 CACHED)</span>
+            <span>▶ RUN SAMPLE CLIP: 10% FLOATING OVERLAP (S3)</span>
           </button>
 
           {/* Quick-load Presets */}
@@ -402,8 +419,21 @@ export const LiveDropzoneView: React.FC = () => {
                 <span className="font-semibold text-[#181816]">BASELINE FRAME t_0</span>
                 <span className="text-[#4A4843]">Unobstructed</span>
               </div>
-              <div className="aspect-video bg-black rounded-[2px] overflow-hidden relative border border-[#181816]">
+              <div className="aspect-video bg-[#DFDCD3] rounded-[2px] overflow-hidden relative border border-[#181816]">
                 <img src={t0Img} alt="Baseline Frame t0" className="w-full h-full object-cover" />
+                <div
+                  className="absolute border-2 border-[#2E7D52] bg-[#2E7D52]/15 pointer-events-none rounded-[2px]"
+                  style={{
+                    left: `${(resolvedBox.x / 1280) * 100}%`,
+                    top: `${(resolvedBox.y / 720) * 100}%`,
+                    width: `${(resolvedBox.width / 1280) * 100}%`,
+                    height: `${(resolvedBox.height / 720) * 100}%`,
+                  }}
+                >
+                  <span className="absolute -top-5 left-0 px-1 py-0.5 bg-[#2E7D52] text-white font-mono text-[9px] font-bold rounded-[2px] shadow-sm whitespace-nowrap">
+                    Target [{resolvedBox.x}, {resolvedBox.y}, {resolvedBox.width}×{resolvedBox.height}]
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -415,7 +445,7 @@ export const LiveDropzoneView: React.FC = () => {
                   {isRejected ? 'Defect Detected' : 'Verified Pass'}
                 </span>
               </div>
-              <div className="aspect-video bg-black rounded-[2px] overflow-hidden relative border border-[#181816]">
+              <div className="aspect-video bg-[#DFDCD3] rounded-[2px] overflow-hidden relative border border-[#181816]">
                 <img src={tkImg} alt="Evaluated Frame tk" className="w-full h-full object-cover" />
 
                 {/* Vector SVG mask overlay */}
@@ -442,6 +472,30 @@ export const LiveDropzoneView: React.FC = () => {
                       strokeDasharray="4 2"
                     />
                   </svg>
+                )}
+
+                {/* Red diagonal occlusion hatch strip & pill placed over target */}
+                {isRejected && (
+                  <div
+                    className="absolute pointer-events-none z-20 flex flex-col items-center"
+                    style={{
+                      left: `${(resolvedBox.x / 1280) * 100}%`,
+                      top: `${(resolvedBox.y / 720) * 100}%`,
+                      width: `${(resolvedBox.width / 1280) * 100}%`,
+                      height: `${(resolvedBox.height / 720) * 100}%`,
+                    }}
+                  >
+                    <div className="w-full h-full fm-red-hatch border-2 border-[#E05246] rounded-[2px] shadow-sm flex items-center justify-center">
+                      <span className="font-sans font-bold text-[11px] text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] px-1 truncate">
+                        {targetLabel}
+                      </span>
+                    </div>
+                    <div className="mt-1">
+                      <span className="bg-[#E05246] text-white font-mono text-[9px] font-bold px-2 py-0.5 rounded-full shadow-md whitespace-nowrap">
+                        {selectedSample.includes('dom') ? '9.6% Occluded' : '15.0% Occluded'}
+                      </span>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>

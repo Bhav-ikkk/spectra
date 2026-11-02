@@ -35,4 +35,7 @@ tmp/
 # Private reports (for us only - never commit)
 report/
 
+# Demo walkthrough recording working artifacts
+demo-recordings/
+
 

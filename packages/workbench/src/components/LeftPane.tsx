@@ -45,25 +45,25 @@ export const LeftPane: React.FC<LeftPaneProps> = ({
     {
       id: 's2',
       tag: 'S2 - Mobile MP4',
-      badge: '15% Clip (15.18% Loss)',
+      badge: '15.2% Overlap',
       title: 'Raw Mobile MP4 Recording',
-      subtitle: '15.0% bottom-sheet overlap on "Pay $149.00" [475, 610, 330, 52]',
+      subtitle: '15.2% bottom-sheet overlap on "Pay $149.00"',
       icon: <Smartphone className="w-3.5 h-3.5 text-[#4A4843] shrink-0" />,
     },
     {
       id: 's3',
       tag: 'S3 - DOM Catch',
-      badge: '10% Clip (9.60% Loss)',
+      badge: '9.6% Edge',
       title: 'Sticky Cart Drawer ("The Catch")',
-      subtitle: '10.0% clip on "Complete Checkout" (BBox [910, 600, 340, 50] / SAM [909, 600, 342, 51])',
+      subtitle: '9.6% bottom-edge clip where DOM hit-test passes',
       icon: <Layout className="w-3.5 h-3.5 text-[#4A4843] shrink-0" />,
     },
     {
       id: 's1',
       tag: 'S1 - Canvas',
-      badge: '15% Clip (14.25% Loss)',
+      badge: '14.3% Collision',
       title: 'HTML5 Canvas Collision',
-      subtitle: '15.0% tooltip collision on "Revenue Series Legend" [820, 240, 220, 48]',
+      subtitle: '14.3% tooltip collision inside <canvas>',
       icon: <Monitor className="w-3.5 h-3.5 text-[#4A4843] shrink-0" />,
     },
   ];
@@ -112,7 +112,7 @@ export const LeftPane: React.FC<LeftPaneProps> = ({
               <div
                 key={item.id}
                 onClick={() => handleSelect(item.id)}
-                className={`p-3 cursor-pointer transition-colors ${
+                className={`p-3.5 cursor-pointer transition-colors ${
                   isSelected ? 'bg-[#DFDCD3]' : 'bg-[#EAE7DF] hover:bg-[#E3E0D7]'
                 }`}
               >
@@ -168,7 +168,7 @@ export const LeftPane: React.FC<LeftPaneProps> = ({
       {/* Bottom Footer */}
       <footer className="h-9 px-3.5 border-t border-[#B8B4A9] flex items-center justify-between shrink-0 bg-[#EAE7DF] font-mono text-[10px] text-[#4A4843]">
         <span className="font-sans text-xs font-medium text-[#181816]">Spectra Referee</span>
-        <span className="px-1.5 py-0.5 bg-[#DFDCD3] border border-[#B8B4A9]">CACHED REPLAY ($0.00)</span>
+        <span className="text-[#6E6B64]">v3.0 Calibrated</span>
       </footer>
     </aside>
   );

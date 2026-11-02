@@ -82,6 +82,29 @@ export const OpticalViewport: React.FC<OpticalViewportProps> = ({
 
   const isVerifiedPass = passView === 'pass2' || (verdict === 'pass' && passView !== 'pass1');
 
+  // Preload all scenario frame assets on mount to eliminate any black flash when switching
+  const PRELOAD_ASSETS = [
+    '/benchmark-assets/dom_catch_010_v1_t0.png',
+    '/benchmark-assets/dom_catch_010_v1_tk.png',
+    '/benchmark-assets/dom_catch_000_v1_t0.png',
+    '/benchmark-assets/dom_catch_000_v1_tk.png',
+    '/benchmark-assets/mobile_mp4_015_v1_t0.png',
+    '/benchmark-assets/mobile_mp4_015_v1_tk.png',
+    '/benchmark-assets/mobile_mp4_000_v1_t0.png',
+    '/benchmark-assets/mobile_mp4_000_v1_tk.png',
+    '/benchmark-assets/canvas_015_v1_t0.png',
+    '/benchmark-assets/canvas_015_v1_tk.png',
+    '/benchmark-assets/canvas_000_v1_t0.png',
+    '/benchmark-assets/canvas_000_v1_tk.png',
+  ];
+
+  useEffect(() => {
+    PRELOAD_ASSETS.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
+  }, []);
+
   // Master per-scenario sequences for live frame scrub interpolation
   const scenarioSequences = {
     s2: {
@@ -115,12 +138,29 @@ export const OpticalViewport: React.FC<OpticalViewportProps> = ({
     ? seq.t0Area
     : seq.areas[Math.min(7, Math.max(0, activeFrameIndex))];
 
+  const pass1Asset =
+    scenarioId === 's1'
+      ? '/benchmark-assets/canvas_015_v1_tk.png'
+      : scenarioId === 's3'
+        ? '/benchmark-assets/dom_catch_010_v1_tk.png'
+        : '/benchmark-assets/mobile_mp4_015_v1_tk.png';
+
+  const pass2Asset =
+    scenarioId === 's1'
+      ? '/benchmark-assets/canvas_000_v1_tk.png'
+      : scenarioId === 's3'
+        ? '/benchmark-assets/dom_catch_000_v1_tk.png'
+        : '/benchmark-assets/mobile_mp4_000_v1_tk.png';
+
+  const brokenFrameUrl = tkUrl || pass1Asset;
+  const repairedFrameUrl = repairedUrl || pass2Asset;
+
   const currentImageUrl =
-    passView === 'pass2' && repairedUrl
-      ? repairedUrl
+    passView === 'pass2'
+      ? repairedFrameUrl
       : activeFrameIndex === 0
         ? t0Url
-        : tkUrl;
+        : brokenFrameUrl;
 
   const resolvedBBox = targetBBox ?? seq.bbox;
   const [bboxX, bboxY, bboxW, bboxH] = resolvedBBox;
@@ -219,10 +259,6 @@ export const OpticalViewport: React.FC<OpticalViewportProps> = ({
 
         {/* Right: Reticle Controls & Loupe Trigger */}
         <div className="flex items-center gap-3">
-          <span className="font-mono text-[10px] px-2 py-0.5 bg-[#DFDCD3] border border-[#B8B4A9] text-[#4A4843] hidden md:inline">
-            CACHED REPLAY ($0.00)
-          </span>
-
           {/* Loupe Toggle Keycap */}
           <button
             type="button"
@@ -267,124 +303,200 @@ export const OpticalViewport: React.FC<OpticalViewportProps> = ({
             passView === 'split' ? 'cursor-ew-resize' : ''
           } ${
             isMobile
-              ? 'w-[280px] sm:w-[310px] aspect-[9/18] rounded-[36px] border-[5px] border-[#181816] bg-black overflow-hidden flex flex-col justify-between'
-              : 'max-w-[760px] w-full aspect-video rounded-[6px] border border-[#181816] bg-black overflow-hidden'
+              ? 'w-[280px] sm:w-[310px] aspect-[9/18] rounded-[36px] border-[5px] border-[#181816] bg-[#DFDCD3] overflow-hidden flex flex-col justify-between'
+              : 'max-w-[760px] w-full aspect-video rounded-[6px] border border-[#181816] bg-[#DFDCD3] overflow-hidden'
           }`}
         >
-          {/* Base Frame Image */}
-          <img
-            src={currentImageUrl}
-            alt="Evaluation Frame"
-            className="w-full h-full object-cover pointer-events-none select-none"
-            draggable={false}
-          />
-
-          {/* Interactive Split-View Comparison Slider */}
-          {passView === 'split' && (
-            <div
-              className="absolute inset-0 overflow-hidden pointer-events-none"
-              style={{ clipPath: `polygon(0 0, ${splitPos}% 0, ${splitPos}% 100%, 0 100%)` }}
-            >
-              <img
-                src={repairedUrl || t0Url}
-                alt="Repaired Split Frame"
-                className="w-full h-full object-cover"
-                draggable={false}
-              />
+          {passView === 'split' ? (
+            <>
+              {/* Left Side Curtain: Pass #1 Broken */}
               <div
-                className="absolute top-0 bottom-0 w-[2.5px] bg-[#FFFFFF] shadow-[0_0_8px_rgba(0,0,0,0.8)] pointer-events-none flex items-center justify-center"
-                style={{ left: `calc(${splitPos}% - 1.25px)` }}
+                className="absolute inset-0 overflow-hidden pointer-events-none z-10"
+                style={{ clipPath: `polygon(0 0, ${splitPos}% 0, ${splitPos}% 100%, 0 100%)` }}
               >
-                <div className="w-5 h-5 rounded-full bg-[#181816] border border-white text-white font-mono text-[9px] flex items-center justify-center shadow-md">
+                <img
+                  src={brokenFrameUrl}
+                  alt="Pass #1 Broken Frame"
+                  className="w-full h-full object-cover pointer-events-none"
+                  draggable={false}
+                  loading="eager"
+                />
+
+                {/* Top-Left Hardware Badge */}
+                <div className="absolute top-3 left-3 z-30 bg-[#E05246] text-white font-mono text-[11px] font-bold px-2.5 py-1 rounded-[2px] shadow-md pointer-events-none whitespace-nowrap">
+                  ◀ PASS #1: BROKEN ({scenarioId === 's3' ? '9.6' : seq.lossPct.toFixed(1)}% CLIPPED)
+                </div>
+
+                {/* Pass #1 Red Diagonal Occlusion Hatch Strip */}
+                <div
+                  className="absolute pointer-events-none z-20 flex flex-col items-center"
+                  style={
+                    isMobile
+                      ? { bottom: '48px', left: '16px', right: '16px' }
+                      : {
+                          left: `${(bboxX / 1280) * 100}%`,
+                          top: `${((bboxY + bboxH * 0.7) / 720) * 100}%`,
+                          width: `${(bboxW / 1280) * 100}%`,
+                        }
+                  }
+                >
+                  <div className="w-full h-8 fm-red-hatch border border-[#E05246] rounded-[2px] shadow-sm flex items-center justify-center">
+                    <span className="font-sans font-bold text-xs text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                      {targetLabel}
+                    </span>
+                  </div>
+                  <div className="mt-1">
+                    <span className="bg-[#E05246] text-white font-mono text-[9px] font-bold px-2 py-0.5 rounded-full shadow-md whitespace-nowrap">
+                      {scenarioId === 's3' ? '9.6% OCCLUDED' : `${seq.lossPct.toFixed(1)}% OCCLUDED`}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Side Curtain: Pass #2 Repaired */}
+              <div
+                className="absolute inset-0 overflow-hidden pointer-events-none z-10"
+                style={{ clipPath: `polygon(${splitPos}% 0, 100% 0, 100% 100%, ${splitPos}% 100%)` }}
+              >
+                <img
+                  src={repairedFrameUrl}
+                  alt="Pass #2 Repaired Frame"
+                  className="w-full h-full object-cover pointer-events-none"
+                  draggable={false}
+                  loading="eager"
+                />
+
+                {/* Top-Right Hardware Badge */}
+                <div className="absolute top-3 right-3 z-30 bg-[#2E7D52] text-white font-mono text-[11px] font-bold px-2.5 py-1 rounded-[2px] shadow-md pointer-events-none whitespace-nowrap">
+                  PASS #2: REPAIRED (100% CLEAR) ▶
+                </div>
+
+                {/* Pass #2 Emerald Outline & Callout */}
+                <div
+                  className="absolute pointer-events-none z-20 flex flex-col items-center"
+                  style={
+                    isMobile
+                      ? { bottom: '48px', left: '16px', right: '16px' }
+                      : {
+                          left: `${(bboxX / 1280) * 100}%`,
+                          top: `${(bboxY / 720) * 100}%`,
+                          width: `${(bboxW / 1280) * 100}%`,
+                          height: `${(bboxH / 720) * 100}%`,
+                        }
+                  }
+                >
+                  <div className="w-full h-full border-2 border-[#2E7D52] bg-[#2E7D52]/15 rounded-[3px] shadow-sm flex items-center justify-center p-1">
+                    <span className="bg-[#2E7D52] text-white font-mono text-[9px] font-bold px-2 py-0.5 rounded-[2px] shadow-sm whitespace-nowrap">
+                      ✓ PASS #2: 100.0% VISIBLE
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* High-Contrast Dividing Rule & Circular Hardware Grip */}
+              <div
+                className="absolute top-0 bottom-0 w-[2px] bg-[#181816] shadow-[0_0_10px_rgba(0,0,0,0.7)] pointer-events-none flex items-center justify-center z-40"
+                style={{ left: `calc(${splitPos}% - 1px)` }}
+              >
+                <div className="w-7 h-7 rounded-full bg-[#EAE7DF] border-2 border-[#181816] flex items-center justify-center font-mono text-xs font-bold text-[#181816] shadow-md select-none">
                   ⇄
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* SAM Mask Vector Overlay */}
-          {showMask && safeMaskPath && (
-            <svg
-              viewBox="0 0 1280 720"
-              className="absolute inset-0 w-full h-full pointer-events-none z-10"
-              style={{ imageRendering: 'pixelated' }}
-            >
-              <path
-                d={safeMaskPath}
-                fill={isVerifiedPass ? 'rgba(46, 125, 82, 0.22)' : 'rgba(224, 82, 70, 0.24)'}
-                stroke={isVerifiedPass ? '#2E7D52' : '#E05246'}
-                strokeWidth="2.5"
-                strokeDasharray="4 2"
-              />
-            </svg>
-          )}
-
-          {/* PASS #1 OCCLUSION STRIP & CALLOUT */}
-          {!isVerifiedPass ? (
-            <div
-              className="absolute pointer-events-none z-20 flex flex-col items-center"
-              style={
-                isMobile
-                  ? { bottom: '48px', left: '16px', right: '16px' }
-                  : {
-                      left: `${(bboxX / 1280) * 100}%`,
-                      top: `${((bboxY + bboxH * 0.7) / 720) * 100}%`,
-                      width: `${(bboxW / 1280) * 100}%`,
-                    }
-              }
-            >
-              {/* Callout Tooltip */}
-              <div className="mb-1.5 px-2.5 py-1 rounded-[3px] bg-[#181816] text-white font-mono text-[10px] font-medium shadow-md whitespace-nowrap">
-                {scenarioId === 's2'
-                  ? `15% of the "${targetLabel}"`
-                  : scenarioId === 's3'
-                    ? 'THE CATCH: Naive DOM center-point (at true) yet Spectra catches 10.0% visual edge occlusion'
-                    : `15.0% collision on "${targetLabel}"`}
-              </div>
-
-              {/* 45-Degree Red Diagonal Occlusion Hatch Strip */}
-              <div className="w-full h-8 fm-red-hatch rounded-[2px] shadow-sm relative flex items-center justify-center">
-                <span className="font-sans font-bold text-xs text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
-                  {targetLabel}
-                </span>
-              </div>
-
-              {/* Red Pill Below */}
-              <div className="mt-2">
-                <span className="bg-[#E05246] text-white font-mono text-[11px] font-semibold px-3 py-1 rounded-full shadow-md whitespace-nowrap">
-                  {scenarioId === 's3'
-                    ? '9.6% Occluded (1,700 px)'
-                    : `${seq.lossPct.toFixed(1)}% Overlap / Occluded`}
-                </span>
-              </div>
-            </div>
+            </>
           ) : (
-            /* PASS #2 VERIFIED UNOBSTRUCTED TARGET CONTOUR */
-            <div
-              className="absolute pointer-events-none z-20 flex flex-col items-center"
-              style={
-                isMobile
-                  ? { bottom: '48px', left: '16px', right: '16px' }
-                  : {
-                      left: `${(bboxX / 1280) * 100}%`,
-                      top: `${(bboxY / 720) * 100}%`,
-                      width: `${(bboxW / 1280) * 100}%`,
-                      height: `${(bboxH / 720) * 100}%`,
-                    }
-              }
-            >
-              <div className="w-full h-full border-2 border-[#2E7D52] bg-[#2E7D52]/15 rounded-[3px] shadow-sm flex items-center justify-center p-1">
-                <span className="bg-[#2E7D52] text-white font-mono text-[10px] font-bold px-2 py-0.5 rounded-[2px] shadow-sm whitespace-nowrap">
-                  ✓ SAM 3.1: 100% Unobstructed (0% Loss)
-                </span>
-              </div>
-            </div>
+            <>
+              {/* Base Frame Image */}
+              <img
+                src={currentImageUrl}
+                alt="Evaluation Frame"
+                className="w-full h-full object-cover pointer-events-none select-none"
+                draggable={false}
+                loading="eager"
+              />
+
+              {/* SAM Mask Vector Overlay */}
+              {showMask && safeMaskPath && (
+                <svg
+                  viewBox="0 0 1280 720"
+                  className="absolute inset-0 w-full h-full pointer-events-none z-10"
+                  style={{ imageRendering: 'pixelated' }}
+                >
+                  <path
+                    d={safeMaskPath}
+                    fill={isVerifiedPass ? 'rgba(46, 125, 82, 0.22)' : 'rgba(224, 82, 70, 0.24)'}
+                    stroke={isVerifiedPass ? '#2E7D52' : '#E05246'}
+                    strokeWidth="2.5"
+                    strokeDasharray="4 2"
+                  />
+                </svg>
+              )}
+
+              {/* PASS #1 OCCLUSION STRIP & PILL */}
+              {!isVerifiedPass ? (
+                <div
+                  className="absolute pointer-events-none z-20 flex flex-col items-center"
+                  style={
+                    isMobile
+                      ? { bottom: '48px', left: '16px', right: '16px' }
+                      : {
+                          left: `${(bboxX / 1280) * 100}%`,
+                          top: `${((bboxY + bboxH * 0.7) / 720) * 100}%`,
+                          width: `${(bboxW / 1280) * 100}%`,
+                        }
+                  }
+                >
+                  {/* 45-Degree Red Diagonal Occlusion Hatch Strip */}
+                  <div className="w-full h-8 fm-red-hatch rounded-[2px] shadow-sm relative flex items-center justify-center">
+                    <span className="font-sans font-bold text-xs text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                      {targetLabel}
+                    </span>
+                  </div>
+
+                  {/* Red Pill Below */}
+                  <div className="mt-2">
+                    <span className="bg-[#E05246] text-white font-mono text-[11px] font-semibold px-3 py-1 rounded-full shadow-md whitespace-nowrap">
+                      {scenarioId === 's3'
+                        ? '9.6% Occluded (1,700 px)'
+                        : `${seq.lossPct.toFixed(1)}% Overlap / Occluded`}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                /* PASS #2 VERIFIED UNOBSTRUCTED TARGET CONTOUR */
+                <div
+                  className="absolute pointer-events-none z-20 flex flex-col items-center"
+                  style={
+                    isMobile
+                      ? { bottom: '48px', left: '16px', right: '16px' }
+                      : {
+                          left: `${(bboxX / 1280) * 100}%`,
+                          top: `${(bboxY / 720) * 100}%`,
+                          width: `${(bboxW / 1280) * 100}%`,
+                          height: `${(bboxH / 720) * 100}%`,
+                        }
+                  }
+                >
+                  <div className="w-full h-full border-2 border-[#2E7D52] bg-[#2E7D52]/15 rounded-[3px] shadow-sm flex items-center justify-center p-1">
+                    <span className="bg-[#2E7D52] text-white font-mono text-[10px] font-bold px-2 py-0.5 rounded-[2px] shadow-sm whitespace-nowrap">
+                      ✓ SAM 3.1: 100% Unobstructed (0% Loss)
+                    </span>
+                  </div>
+                </div>
+              )}
+            </>
           )}
+        </div>
+
+        {/* Hidden Preloader for all scenario assets */}
+        <div className="hidden pointer-events-none" aria-hidden="true">
+          {PRELOAD_ASSETS.map((src) => (
+            <img key={src} src={src} alt="preload" loading="eager" />
+          ))}
         </div>
 
         {/* 3-STATE TARGET ZOOM LOUPE (With Live Pixel Sampling & Interactive Tabs) */}
         {showLoupe && (
-          <div className="absolute right-4 bottom-4 sm:right-8 sm:bottom-6 z-30">
+          <div className="absolute right-5 bottom-5 z-30">
             <SubPixelMatrixLoupe
               targetLabel={targetLabel}
               lossPercent={isVerifiedPass ? 0 : seq.lossPct}

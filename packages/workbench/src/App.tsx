@@ -9,6 +9,7 @@ import { BenchmarkView } from './components/BenchmarkView.js';
 import { VoiceStudioView } from './components/VoiceStudioView.js';
 import { LiveDropzoneView } from './components/LiveDropzoneView.js';
 import { SpectraLensOverlay } from './components/SpectraLensOverlay.js';
+import { CliMcpModal } from './components/CliMcpModal.js';
 import { callClosedLoopLive } from './utils/api-client.js';
 
 export const App: React.FC = () => {
@@ -26,6 +27,7 @@ export const App: React.FC = () => {
   const [isPatching, setIsPatching] = useState(false);
   const [showSamMask, setShowSamMask] = useState(true);
   const [isLensOpen, setIsLensOpen] = useState(false);
+  const [isCliMcpOpen, setIsCliMcpOpen] = useState(false);
   const [providerStatus, setProviderStatus] = useState<{ meta: boolean; baseten: boolean }>({
     meta: false,
     baseten: false,
@@ -39,6 +41,7 @@ export const App: React.FC = () => {
         setIsLensOpen((prev) => !prev);
       } else if (e.key === 'Escape') {
         setIsLensOpen(false);
+        setIsCliMcpOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -98,6 +101,7 @@ export const App: React.FC = () => {
         setActiveTab={setActiveTab}
         onSelectTab={setActiveTab}
         onOpenLens={() => setIsLensOpen(true)}
+        onOpenCliMcp={() => setIsCliMcpOpen(true)}
         calibration={data.calibration}
         providerStatus={providerStatus}
       />
@@ -245,6 +249,9 @@ export const App: React.FC = () => {
           }));
         }}
       />
+
+      {/* Spectra CLI, 4-Tool MCP Server & Rule 2 Calibration Control Modal */}
+      <CliMcpModal isOpen={isCliMcpOpen} onClose={() => setIsCliMcpOpen(false)} />
     </div>
   );
 };
