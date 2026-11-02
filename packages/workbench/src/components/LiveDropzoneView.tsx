@@ -448,34 +448,25 @@ export const LiveDropzoneView: React.FC = () => {
               <div className="aspect-video bg-[#DFDCD3] rounded-[2px] overflow-hidden relative border border-[#181816]">
                 <img src={tkImg} alt="Evaluated Frame tk" className="w-full h-full object-cover" />
 
-                {/* Vector SVG mask overlay */}
-                {tkMaskSvg && (
-                  <svg
-                    viewBox="0 0 1280 720"
-                    className="absolute inset-0 w-full h-full pointer-events-none"
-                    style={{ imageRendering: 'pixelated' }}
-                  >
-                    <path
-                      d={tkMaskSvg}
-                      fill={isRejected ? 'rgba(224, 82, 70, 0.25)' : 'rgba(46, 125, 82, 0.25)'}
-                      stroke={isRejected ? '#E05246' : '#2E7D52'}
-                      strokeWidth="2.5"
-                    />
-                    <rect
-                      x={resolvedBox.x}
-                      y={resolvedBox.y}
-                      width={resolvedBox.width}
-                      height={resolvedBox.height}
-                      fill="none"
-                      stroke="#38BDF8"
-                      strokeWidth="2"
-                      strokeDasharray="4 2"
-                    />
-                  </svg>
-                )}
+                {/* Cyan dashed SAM 3.1 Frame-0 auto-detected bounding box */}
+                <svg
+                  viewBox="0 0 1280 720"
+                  className="absolute inset-0 w-full h-full pointer-events-none z-10"
+                >
+                  <rect
+                    x={resolvedBox.x}
+                    y={resolvedBox.y}
+                    width={resolvedBox.width}
+                    height={resolvedBox.height}
+                    fill="none"
+                    stroke="#38BDF8"
+                    strokeWidth="2"
+                    strokeDasharray="4 2"
+                  />
+                </svg>
 
-                {/* Red diagonal occlusion hatch strip & pill placed over target */}
-                {isRejected && (
+                {/* Target bounding-box overlay at [resolvedBox] */}
+                {isRejected ? (
                   <div
                     className="absolute pointer-events-none z-20 flex flex-col items-center"
                     style={{
@@ -495,6 +486,20 @@ export const LiveDropzoneView: React.FC = () => {
                         {selectedSample.includes('dom') ? '9.6% Occluded' : '15.0% Occluded'}
                       </span>
                     </div>
+                  </div>
+                ) : (
+                  <div
+                    className="absolute border-2 border-[#2E7D52] bg-[#2E7D52]/15 pointer-events-none rounded-[2px] z-20"
+                    style={{
+                      left: `${(resolvedBox.x / 1280) * 100}%`,
+                      top: `${(resolvedBox.y / 720) * 100}%`,
+                      width: `${(resolvedBox.width / 1280) * 100}%`,
+                      height: `${(resolvedBox.height / 720) * 100}%`,
+                    }}
+                  >
+                    <span className="absolute -top-5 left-0 px-1 py-0.5 bg-[#2E7D52] text-white font-mono text-[9px] font-bold rounded-[2px] shadow-sm whitespace-nowrap">
+                      ✓ Verified [100%]
+                    </span>
                   </div>
                 )}
               </div>

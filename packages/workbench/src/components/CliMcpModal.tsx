@@ -377,3 +377,4 @@ export const CliMcpModal: React.FC<CliMcpModalProps> = ({ isOpen, onClose }) => 
     </div>
   );
 };
+
