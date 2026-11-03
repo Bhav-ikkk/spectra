@@ -5,1201 +5,1241 @@ import { spawnSync } from 'node:child_process';
 import { chromium } from 'playwright';
 import ffmpegPath from 'ffmpeg-static';
 import ffprobeStatic from 'ffprobe-static';
+import { synthesizeTactileAudio } from './synth-tactile-audio.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
-const outputMp4Path = path.join(rootDir, 'spectra-x-teaser.mp4');
-const tmpDir = path.join(rootDir, '.x-teaser-tmp');
+const demoRecordingsDir = path.join(rootDir, 'demo-recordings');
+const audioWavPath = path.join(demoRecordingsDir, 'tactile-soundtrack.wav');
+const outputTeaserPath = path.join(rootDir, 'spectra-x-teaser.mp4');
+const outputViralPath = path.join(rootDir, 'spectra-x-viral.mp4');
+const tmpDir = path.join(rootDir, '.x-viral-tmp');
 
-// Ensure working temp directory exists
 if (!fs.existsSync(tmpDir)) {
   fs.mkdirSync(tmpDir, { recursive: true });
 }
 
 // -------------------------------------------------------------
-// Step 1: Synthesize High-Impact Hardware Audio Track (48kHz Stereo)
+// Step 1: Build 100% Vector Live HTML5/CSS3 Macro Choreography
+// (Zero static screenshots! 2.5x macro scale for mobile X readability)
 // -------------------------------------------------------------
-function generateHardwareSoundtrack(outputPath, durationSeconds = 15.0, sampleRate = 48000) {
-  console.log(`[Audio Synth] Synthesizing ${durationSeconds}s stereo hardware audio track at ${sampleRate}Hz...`);
-  const numFrames = Math.floor(sampleRate * durationSeconds);
-  const left = new Float32Array(numFrames);
-  const right = new Float32Array(numFrames);
-
-  const add = (channel, idx, val) => {
-    if (idx >= 0 && idx < numFrames) {
-      channel[idx] += val;
-    }
-  };
-
-  // 1. Subtle hardware drone / air floor (0.0s - 15.0s)
-  for (let i = 0; i < numFrames; i++) {
-    const t = i / sampleRate;
-    const drone = Math.sin(2 * Math.PI * 55 * t) * 0.022;
-    const sub = Math.sin(2 * Math.PI * 110 * t) * 0.012;
-    const noise = (Math.random() * 2 - 1) * 0.004;
-    left[i] += drone + sub + noise;
-    right[i] += drone * 0.9 + sub * 1.1 + noise * 0.9;
-  }
-
-  // 2. 0.20s: Deep sub-bass impact (60Hz exponential decay) + crisp mechanical shutter click
-  const tImpact = 0.20;
-  const impactFrames = Math.floor(1.4 * sampleRate);
-  for (let n = 0; n < impactFrames; n++) {
-    const tau = n / sampleRate;
-    const idx = Math.floor(tImpact * sampleRate) + n;
-    const freq = 45 + 30 * Math.exp(-6 * tau);
-    const subBass = Math.sin(2 * Math.PI * freq * tau) * Math.exp(-4.5 * tau) * 0.78;
-    const punch = Math.sin(2 * Math.PI * (freq * 2) * tau) * Math.exp(-9 * tau) * 0.35;
-    add(left, idx, subBass + punch);
-    add(right, idx, subBass + punch);
-  }
-
-  // Crisp mechanical shutter click (dual metallic click transient)
-  const click1Idx = Math.floor(0.200 * sampleRate);
-  for (let n = 0; n < 800; n++) {
-    const tau = n / sampleRate;
-    const click = (Math.random() * 2 - 1) * Math.exp(-220 * tau) * 0.48;
-    const ring = Math.sin(2 * Math.PI * 2800 * tau) * Math.exp(-180 * tau) * 0.32;
-    add(left, click1Idx + n, click + ring);
-    add(right, click1Idx + n, click * 0.8 + ring * 1.2);
-  }
-  const click2Idx = Math.floor(0.235 * sampleRate);
-  for (let n = 0; n < 1200; n++) {
-    const tau = n / sampleRate;
-    const click = (Math.random() * 2 - 1) * Math.exp(-140 * tau) * 0.42;
-    const body = Math.sin(2 * Math.PI * 1650 * tau) * Math.exp(-120 * tau) * 0.26;
-    add(left, click2Idx + n, click + body);
-    add(right, click2Idx + n, click + body);
-  }
-
-  // 3. 1.80s: Warning telemetry double-beep (880Hz / 440Hz short pulse) + heavy thud
-  const tStamp = 1.80;
-  const thudFrames = Math.floor(0.6 * sampleRate);
-  for (let n = 0; n < thudFrames; n++) {
-    const tau = n / sampleRate;
-    const idx = Math.floor(tStamp * sampleRate) + n;
-    const thud = Math.sin(2 * Math.PI * (110 - 60 * tau) * tau) * Math.exp(-8 * tau) * 0.58;
-    add(left, idx, thud);
-    add(right, idx, thud);
-  }
-
-  // Pulse 1: 880Hz (75ms)
-  const beep1Start = Math.floor(1.80 * sampleRate);
-  const beep1Len = Math.floor(0.075 * sampleRate);
-  for (let n = 0; n < beep1Len; n++) {
-    const tau = n / sampleRate;
-    const env = Math.sin(Math.PI * (n / beep1Len));
-    const tone = Math.sin(2 * Math.PI * 880 * tau) * env * 0.38;
-    add(left, beep1Start + n, tone);
-    add(right, beep1Start + n, tone);
-  }
-
-  // Pulse 2: 440Hz (95ms) at 1.91s
-  const beep2Start = Math.floor(1.91 * sampleRate);
-  const beep2Len = Math.floor(0.095 * sampleRate);
-  for (let n = 0; n < beep2Len; n++) {
-    const tau = n / sampleRate;
-    const env = Math.sin(Math.PI * (n / beep2Len));
-    const tone = Math.sin(2 * Math.PI * 440 * tau) * env * 0.42;
-    add(left, beep2Start + n, tone);
-    add(right, beep2Start + n, tone);
-  }
-
-  // 4. 3.60s: Warm analog synth chord swell (220Hz + 330Hz + 440Hz low-pass filtered pad)
-  const tSwell = 3.60;
-  const swellDur = 3.5;
-  const swellFrames = Math.floor(swellDur * sampleRate);
-  for (let n = 0; n < swellFrames; n++) {
-    const tau = n / sampleRate;
-    const idx = Math.floor(tSwell * sampleRate) + n;
-    let env = 0;
-    if (tau < 0.7) {
-      env = 0.5 * (1 - Math.cos((Math.PI * tau) / 0.7));
-    } else if (tau < 2.5) {
-      env = 1.0;
-    } else {
-      const rel = (tau - 2.5) / 1.0;
-      env = 0.5 * (1 + Math.cos(Math.PI * rel));
-    }
-
-    const f1L = 220.0 + 0.5, f1R = 220.0 - 0.5;
-    const f2L = 329.63 + 0.4, f2R = 329.63 - 0.4;
-    const f3L = 440.0 + 0.6, f3R = 440.0 - 0.6;
-    const f4 = 554.37;
-
-    const waveL = (
-      Math.sin(2 * Math.PI * f1L * tau) * 0.45 +
-      Math.sin(2 * Math.PI * f2L * tau) * 0.35 +
-      Math.sin(2 * Math.PI * f3L * tau) * 0.30 +
-      Math.sin(2 * Math.PI * f4 * tau) * 0.15 +
-      Math.sin(4 * Math.PI * f1L * tau) * 0.12
-    );
-    const waveR = (
-      Math.sin(2 * Math.PI * f1R * tau) * 0.45 +
-      Math.sin(2 * Math.PI * f2R * tau) * 0.35 +
-      Math.sin(2 * Math.PI * f3R * tau) * 0.30 +
-      Math.sin(2 * Math.PI * f4 * tau) * 0.15 +
-      Math.sin(4 * Math.PI * f1R * tau) * 0.12
-    );
-
-    add(left, idx, waveL * env * 0.38);
-    add(right, idx, waveR * env * 0.38);
-  }
-
-  // 5. 7.60s: Optical laser sweep sound as Split-Curtain wipes across Checkout button
-  const tLaser = 7.60;
-  const laserDur = 0.85;
-  const laserFrames = Math.floor(laserDur * sampleRate);
-  for (let n = 0; n < laserFrames; n++) {
-    const tau = n / sampleRate;
-    const idx = Math.floor(tLaser * sampleRate) + n;
-    const p = tau / laserDur;
-    const freq = 380 + 2020 * Math.pow(1 - p, 2.2);
-    const phase = 2 * Math.PI * (380 * tau + 2020 * (1 - Math.pow(1 - p, 3.2)) / (3.2 / laserDur));
-    const tone = Math.sin(phase) * Math.sin(Math.PI * p) * 0.34;
-    const panL = 1 - 0.7 * p;
-    const panR = 0.3 + 0.7 * p;
-    const sizzle = (Math.random() * 2 - 1) * Math.sin(Math.PI * p) * 0.08;
-    add(left, idx, (tone + sizzle) * panL);
-    add(right, idx, (tone + sizzle) * panR);
-  }
-
-  // 6. 11.50s: Emerald verification chime (523.25Hz -> 659.25Hz -> 783.99Hz C-major triad ping)
-  const tLock = 11.50;
-  const lockFrames = Math.floor(0.4 * sampleRate);
-  for (let n = 0; n < lockFrames; n++) {
-    const tau = n / sampleRate;
-    const idx = Math.floor(tLock * sampleRate) + n;
-    const lock = Math.sin(2 * Math.PI * 85 * tau) * Math.exp(-9 * tau) * 0.48;
-    add(left, idx, lock);
-    add(right, idx, lock);
-  }
-
-  const pings = [
-    { time: 11.50, freq: 523.25, amp: 0.46 }, // C5
-    { time: 11.64, freq: 659.25, amp: 0.46 }, // E5
-    { time: 11.78, freq: 783.99, amp: 0.52 }, // G5
-    { time: 11.92, freq: 1046.50, amp: 0.40 } // C6
-  ];
-
-  for (const ping of pings) {
-    const startIdx = Math.floor(ping.time * sampleRate);
-    const pingFrames = Math.floor(2.2 * sampleRate);
-    for (let n = 0; n < pingFrames; n++) {
-      const tau = n / sampleRate;
-      const idx = startIdx + n;
-      const primary = Math.sin(2 * Math.PI * ping.freq * tau) * Math.exp(-3.2 * tau);
-      const harmonic1 = Math.sin(2 * Math.PI * (ping.freq * 2.01) * tau) * Math.exp(-4.5 * tau) * 0.35;
-      const harmonic2 = Math.sin(2 * Math.PI * (ping.freq * 3.0) * tau) * Math.exp(-6.0 * tau) * 0.18;
-      const sample = (primary + harmonic1 + harmonic2) * ping.amp;
-      add(left, idx, sample);
-      add(right, idx, sample);
-    }
-  }
-
-  // Encode 16-bit PCM WAV
-  const byteRate = sampleRate * 2 * 2;
-  const blockAlign = 4;
-  const dataSize = numFrames * blockAlign;
-  const header = Buffer.alloc(44);
-  header.write('RIFF', 0);
-  header.writeUInt32LE(36 + dataSize, 4);
-  header.write('WAVE', 8);
-  header.write('fmt ', 12);
-  header.writeUInt32LE(16, 16);
-  header.writeUInt16LE(1, 20); // PCM
-  header.writeUInt16LE(2, 22); // Stereo
-  header.writeUInt32LE(sampleRate, 24);
-  header.writeUInt32LE(byteRate, 28);
-  header.writeUInt16LE(blockAlign, 32);
-  header.writeUInt16LE(16, 34); // 16-bit
-  header.write('data', 36);
-  header.writeUInt32LE(dataSize, 40);
-
-  const pcm = Buffer.alloc(dataSize);
-  for (let i = 0; i < numFrames; i++) {
-    const sampleL = Math.tanh(left[i] * 1.05) * 0.95;
-    const sampleR = Math.tanh(right[i] * 1.05) * 0.95;
-
-    const intL = Math.max(-32768, Math.min(32767, Math.floor(sampleL * 32767)));
-    const intR = Math.max(-32768, Math.min(32767, Math.floor(sampleR * 32767)));
-
-    pcm.writeInt16LE(intL, i * 4);
-    pcm.writeInt16LE(intR, i * 4 + 2);
-  }
-
-  fs.writeFileSync(outputPath, Buffer.concat([header, pcm]));
-  console.log(`[Audio Synth] Generated soundtrack at: ${outputPath} (${(fs.statSync(outputPath).size / 1024 / 1024).toFixed(2)} MB)`);
-}
-
-// -------------------------------------------------------------
-// Step 2: Build Self-Contained HTML5/CSS3 Motion Graphics Document
-// -------------------------------------------------------------
-function buildMotionGraphicsHtml(arenaImgBase64, curtainImgBase64) {
+function buildMacroVectorHtml() {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Spectra X Teaser</title>
+<title>Spectra Macro Launch Video</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     width: 1920px;
     height: 1080px;
     overflow: hidden;
-    background-color: #181816;
-    color: #F5F3EF;
-    font-family: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
+    background-color: #EAE7DF;
+    color: #181816;
+    font-family: 'JetBrains Mono', 'SF Mono', Consolas, Menlo, monospace;
     user-select: none;
     position: relative;
   }
 
-  /* Global Stage */
+  /* Dot Grid Surface */
   .stage {
     position: absolute;
     inset: 0;
     width: 1920px;
     height: 1080px;
-    background-color: #181816;
-    background-image: 
-      radial-gradient(rgba(234, 231, 223, 0.12) 1px, transparent 1px),
-      linear-gradient(to right, rgba(234, 231, 223, 0.04) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(234, 231, 223, 0.04) 1px, transparent 1px);
-    background-size: 24px 24px, 120px 120px, 120px 120px;
+    background-color: #EAE7DF;
+    background-image: radial-gradient(#B5B1A6 1.2px, transparent 1.2px);
+    background-size: 16px 16px;
     overflow: hidden;
   }
 
-  /* Swiss Technical HUD Overlay */
-  .hud-overlay {
+  /* Global Top Swiss Header Bar (Visible across all scenes) */
+  .global-top-bar {
     position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 100;
-  }
-  .hud-label {
-    position: absolute;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    color: rgba(234, 231, 223, 0.45);
-    text-transform: uppercase;
-  }
-  .hud-tl { top: 32px; left: 48px; }
-  .hud-tr { top: 32px; right: 48px; text-align: right; }
-  .hud-bl { bottom: 32px; left: 48px; }
-  .hud-br { bottom: 32px; right: 48px; text-align: right; }
-
-  .reticle {
-    position: absolute;
-    width: 16px;
-    height: 16px;
-    border-color: rgba(234, 231, 223, 0.35);
-  }
-  .reticle-tl { top: 24px; left: 40px; border-top: 1.5px solid; border-left: 1.5px solid; }
-  .reticle-tr { top: 24px; right: 40px; border-top: 1.5px solid; border-right: 1.5px solid; }
-  .reticle-bl { bottom: 24px; left: 40px; border-bottom: 1.5px solid; border-left: 1.5px solid; }
-  .reticle-br { bottom: 24px; right: 40px; border-bottom: 1.5px solid; border-right: 1.5px solid; }
-
-  /* Scene Base */
-  .scene {
-    position: absolute;
-    inset: 0;
-    width: 1920px;
-    height: 1080px;
-    opacity: 0;
-    pointer-events: none;
-  }
-
-  /* ========================================================
-     SCENE 1: Kinetic Hook (0.0s – 3.5s)
-     ======================================================== */
-  body.playing .scene-1 {
-    animation: scene1Master 3.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  }
-
-  @keyframes scene1Master {
-    0% { opacity: 0; }
-    4% { opacity: 1; }
-    92% { opacity: 1; transform: scale(1); filter: blur(0px); }
-    100% { opacity: 0; transform: scale(1.06); filter: blur(6px); }
-  }
-
-  .scene-1-container {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding-bottom: 30px;
-  }
-
-  .hook-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 14px;
-    background: rgba(234, 231, 223, 0.08);
-    border: 1px solid rgba(234, 231, 223, 0.2);
-    border-radius: 4px;
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    color: #EAE7DF;
-    margin-bottom: 24px;
-    opacity: 0;
-  }
-  body.playing .hook-badge {
-    animation: fadeIn 0.4s ease-out 0.1s forwards;
-  }
-
-  .hook-title {
-    font-size: 70px;
-    font-weight: 900;
-    letter-spacing: -0.025em;
-    text-transform: uppercase;
-    text-align: center;
-    line-height: 1.05;
-    color: #FFFFFF;
-    text-shadow: 0 10px 40px rgba(0,0,0,0.8);
-    opacity: 0;
-    transform: scale(1.4);
-  }
-  body.playing .hook-title {
-    animation: slamTitle 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.25) 0.2s forwards;
-  }
-
-  @keyframes slamTitle {
-    0% { opacity: 0; transform: scale(1.4); }
-    100% { opacity: 1; transform: scale(1); }
-  }
-
-  .hook-title .accent-quote {
-    color: #38BDF8;
-    text-shadow: 0 0 30px rgba(56, 189, 248, 0.6);
-  }
-
-  /* Red Warning Stamp (1.8s) */
-  .warning-stamp-box {
-    margin-top: 36px;
-    padding: 16px 28px;
-    background: rgba(224, 82, 70, 0.16);
-    border: 2px solid #E05246;
-    border-radius: 6px;
-    box-shadow: 0 0 35px rgba(224, 82, 70, 0.45), inset 0 0 20px rgba(224, 82, 70, 0.2);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    opacity: 0;
-    transform: scale(2.2) rotate(-2deg);
-  }
-  body.playing .warning-stamp-box {
-    animation: stampSlam 0.3s cubic-bezier(0.12, 0.9, 0.2, 1.25) 1.8s forwards;
-  }
-
-  @keyframes stampSlam {
-    0% { opacity: 0; transform: scale(2.2) rotate(-2deg); }
-    100% { opacity: 1; transform: scale(1) rotate(0deg); }
-  }
-
-  .stamp-tag {
-    font-size: 13px;
-    font-weight: 800;
-    letter-spacing: 0.16em;
-    color: #FF8F85;
-    text-transform: uppercase;
-  }
-  .stamp-text {
-    font-size: 26px;
-    font-weight: 800;
-    letter-spacing: -0.01em;
-    color: #FFFFFF;
-  }
-  .stamp-text .highlight-red {
-    color: #FF5A4D;
-    font-weight: 900;
-  }
-
-  /* Zoomed-in 9.6% clipped checkout button with scanning laser */
-  .clipped-button-card {
-    margin-top: 36px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  body.playing .clipped-button-card {
-    animation: fadeUp 0.35s ease-out 2.15s forwards;
-  }
-
-  @keyframes fadeUp {
-    0% { opacity: 0; transform: translateY(20px); }
-    100% { opacity: 1; transform: translateY(0); }
-  }
-
-  .button-viewport {
-    position: relative;
-    width: 580px;
-    height: 90px;
-    background: #EAE7DF;
-    border-radius: 6px;
-    border: 2px solid #181816;
-    overflow: hidden;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.6);
-  }
-  .mock-checkout-btn {
-    position: absolute;
-    left: 40px;
-    top: 18px;
-    width: 480px;
-    height: 52px;
-    background: #181816;
-    color: #FFFFFF;
-    font-size: 19px;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    border-radius: 4px;
-    letter-spacing: 0.02em;
-  }
-
-  /* Cart Drawer 9.6% overlap at right */
-  .mock-cart-drawer {
-    position: absolute;
+    top: 0;
+    left: 0;
     right: 0;
-    top: 0;
-    width: 95px; /* ~9.6% */
-    height: 100%;
-    background: rgba(224, 82, 70, 0.45);
-    border-left: 2px dashed #E05246;
-    background-image: repeating-linear-gradient(
-      45deg,
-      rgba(224, 82, 70, 0.6),
-      rgba(224, 82, 70, 0.6) 8px,
-      rgba(224, 82, 70, 0.2) 8px,
-      rgba(224, 82, 70, 0.2) 16px
-    );
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .drawer-label {
-    position: absolute;
-    top: 6px;
-    right: 8px;
-    font-size: 10px;
-    font-weight: 800;
-    color: #FFFFFF;
-    background: #E05246;
-    padding: 2px 5px;
-    border-radius: 2px;
-  }
-
-  /* Laser scanner line */
-  .laser-scanner-line {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    background: #38BDF8;
-    box-shadow: 0 0 12px #38BDF8, 0 0 24px rgba(56, 189, 248, 0.9);
-    opacity: 0;
-  }
-  body.playing .laser-scanner-line {
-    animation: laserScan 1.0s cubic-bezier(0.4, 0, 0.2, 1) 2.2s infinite alternate;
-  }
-
-  @keyframes laserScan {
-    0% { left: 40px; opacity: 1; }
-    100% { left: 520px; opacity: 1; }
-  }
-
-  .button-telemetry-row {
-    display: flex;
-    gap: 20px;
-    font-size: 13px;
-    font-weight: 700;
-  }
-  .tel-chip-fail {
-    color: #FF7B70;
-    background: rgba(224, 82, 70, 0.15);
-    border: 1px solid rgba(224, 82, 70, 0.4);
-    padding: 4px 10px;
-    border-radius: 4px;
-  }
-  .tel-chip-pass {
-    color: #38BDF8;
-    background: rgba(56, 189, 248, 0.15);
-    border: 1px solid rgba(56, 189, 248, 0.4);
-    padding: 4px 10px;
-    border-radius: 4px;
-  }
-
-  /* ========================================================
-     SCENE 2: 3D Isometric Field Monitor Reveal (3.5s – 7.5s)
-     ======================================================== */
-  body.playing .scene-2 {
-    animation: scene2Master 4.0s cubic-bezier(0.16, 1, 0.3, 1) 3.5s forwards;
-  }
-
-  @keyframes scene2Master {
-    0% { opacity: 0; }
-    5% { opacity: 1; }
-    90% { opacity: 1; transform: scale(1); filter: blur(0px); }
-    100% { opacity: 0; transform: scale(1.08); filter: blur(8px); }
-  }
-
-  .scene-2-wrap {
-    position: absolute;
-    inset: 0;
-    perspective: 1300px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .chassis-3d {
-    width: 1720px;
-    height: 968px;
-    background: #0D0D0C;
-    border-radius: 12px;
-    border: 2px solid #33322E;
-    box-shadow: 0 40px 100px rgba(0,0,0,0.95), 0 0 0 1px rgba(255,255,255,0.08);
-    position: relative;
-    overflow: hidden;
-    transform: rotateX(14deg) rotateY(-12deg) scale(0.93) translateZ(-40px);
-  }
-  body.playing .chassis-3d {
-    animation: camera3DMove 2.2s cubic-bezier(0.2, 0.8, 0.25, 1) 3.6s forwards;
-  }
-
-  @keyframes camera3DMove {
-    0% { transform: rotateX(14deg) rotateY(-12deg) scale(0.93) translateZ(-40px); }
-    100% { transform: rotateX(0deg) rotateY(0deg) scale(1) translateZ(0); }
-  }
-
-  .chassis-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-
-  /* Animated HUD Reticle Callout (4.8s) */
-  .scene-2-callout {
-    position: absolute;
-    right: 120px;
-    bottom: 110px;
-    width: 580px;
-    background: rgba(24, 24, 22, 0.92);
-    backdrop-filter: blur(12px);
-    border: 2px solid #38BDF8;
-    border-radius: 8px;
-    padding: 20px 24px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 30px rgba(56, 189, 248, 0.35);
-    opacity: 0;
-    transform: scale(0.7) translateY(40px);
-  }
-  body.playing .scene-2-callout {
-    animation: popCallout 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.25) 4.8s forwards;
-  }
-
-  @keyframes popCallout {
-    0% { opacity: 0; transform: scale(0.7) translateY(40px); }
-    100% { opacity: 1; transform: scale(1) translateY(0); }
-  }
-
-  .callout-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid rgba(234, 231, 223, 0.15);
-    padding-bottom: 10px;
-    margin-bottom: 14px;
-  }
-  .callout-title {
-    font-size: 13px;
-    font-weight: 800;
-    letter-spacing: 0.1em;
-    color: #38BDF8;
-  }
-  .callout-tag {
-    font-size: 11px;
-    font-weight: 800;
-    background: #E05246;
-    color: #FFFFFF;
-    padding: 3px 8px;
-    border-radius: 3px;
-  }
-
-  .callout-metric-row {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    margin-bottom: 10px;
-  }
-  .metric-large {
-    font-size: 28px;
-    font-weight: 900;
-    color: #FFFFFF;
-    letter-spacing: -0.02em;
-  }
-  .metric-diff {
-    font-size: 18px;
-    font-weight: 900;
-    color: #FF5A4D;
-  }
-
-  .callout-footer {
-    font-size: 12px;
-    font-weight: 600;
-    color: #B5B1A6;
-    line-height: 1.4;
-  }
-
-  /* Reticle box over actual button in screenshot */
-  .viewport-reticle {
-    position: absolute;
-    right: 48px;
-    bottom: 40px;
-    width: 280px;
-    height: 80px;
-    border: 2px dashed #38BDF8;
-    background: rgba(224, 82, 70, 0.25);
-    opacity: 0;
-  }
-  body.playing .viewport-reticle {
-    animation: fadeInReticle 0.3s ease-out 4.8s forwards;
-  }
-  @keyframes fadeInReticle {
-    0% { opacity: 0; transform: scale(1.15); }
-    100% { opacity: 1; transform: scale(1); }
-  }
-
-  /* ========================================================
-     SCENE 3: High-Speed Split-Curtain Optical Wipe (7.5s – 11.5s)
-     ======================================================== */
-  body.playing .scene-3 {
-    animation: scene3Master 4.0s cubic-bezier(0.16, 1, 0.3, 1) 7.5s forwards;
-  }
-
-  @keyframes scene3Master {
-    0% { opacity: 0; }
-    5% { opacity: 1; }
-    90% { opacity: 1; transform: scale(1); filter: blur(0px); }
-    100% { opacity: 0; transform: scale(1.08); filter: blur(8px); }
-  }
-
-  .scene-3-wrap {
-    position: absolute;
-    inset: 0;
-    width: 1920px;
-    height: 1080px;
-  }
-  .split-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-
-  /* Animated Optical Curtain Overlay */
-  .optical-curtain-strip {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    background: #38BDF8;
-    box-shadow: 0 0 15px #38BDF8, 0 0 35px rgba(56, 189, 248, 0.9);
-    left: 20%;
-  }
-  body.playing .optical-curtain-strip {
-    animation: curtainSweep 3.2s cubic-bezier(0.4, 0, 0.2, 1) 7.6s forwards;
-  }
-
-  @keyframes curtainSweep {
-    0% { left: 20%; }
-    50% { left: 82%; }
-    100% { left: 82%; }
-  }
-
-  .curtain-rangefinder-knob {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    height: 64px;
     background: #181816;
-    border: 2px solid #38BDF8;
-    color: #38BDF8;
-    padding: 8px 16px;
-    border-radius: 4px;
-    font-size: 13px;
-    font-weight: 800;
-    letter-spacing: 0.1em;
-    white-space: nowrap;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-  }
-
-  /* Dual Badges */
-  .curtain-badge {
-    position: absolute;
-    padding: 14px 20px;
-    border-radius: 6px;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.8);
-    backdrop-filter: blur(8px);
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    opacity: 0;
-  }
-  .badge-before {
-    left: 60px;
-    top: 100px;
-    background: rgba(24, 24, 22, 0.9);
-    border: 2px solid #E05246;
-  }
-  .badge-after {
-    right: 60px;
-    top: 100px;
-    background: rgba(24, 24, 22, 0.9);
-    border: 2px solid #2E7D52;
-  }
-
-  body.playing .badge-before {
-    animation: fadeBadge 0.35s ease-out 7.7s forwards;
-  }
-  body.playing .badge-after {
-    animation: fadeBadge 0.35s ease-out 8.4s forwards;
-  }
-
-  @keyframes fadeBadge {
-    0% { opacity: 0; transform: translateY(-20px); }
-    100% { opacity: 1; transform: translateY(0); }
-  }
-
-  .curtain-tag-fail {
-    font-size: 15px;
-    font-weight: 900;
-    color: #FF6B5E;
-  }
-  .curtain-tag-pass {
-    font-size: 15px;
-    font-weight: 900;
-    color: #4ADE80;
-  }
-  .curtain-sub {
-    font-size: 12px;
-    font-weight: 600;
-    color: #DFDCD3;
-  }
-
-  .curtain-top-banner {
-    position: absolute;
-    top: 48px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #181816;
-    border: 1px solid rgba(234, 231, 223, 0.3);
-    padding: 8px 24px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 800;
-    letter-spacing: 0.12em;
-    color: #FFFFFF;
+    color: #F5F3EF;
     display: flex;
     align-items: center;
-    gap: 10px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    justify-content: space-between;
+    padding: 0 40px;
+    z-index: 200;
+    border-bottom: 2px solid #33322E;
   }
-  .led-live {
-    width: 8px;
-    height: 8px;
+  .brand-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .brand-led {
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
     background: #2E7D52;
     box-shadow: 0 0 10px #2E7D52;
   }
-
-  /* ========================================================
-     SCENE 4: Final Scoreboard & CTA Card (11.5s – 15.0s)
-     ======================================================== */
-  body.playing .scene-4 {
-    animation: scene4Master 3.5s cubic-bezier(0.16, 1, 0.3, 1) 11.5s forwards;
+  .brand-name {
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+  }
+  .brand-sub {
+    font-size: 11px;
+    color: #B5B1A6;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+  }
+  .global-title {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    color: #FFFFFF;
+  }
+  .global-meta {
+    font-size: 12px;
+    font-weight: 700;
+    color: #38BDF8;
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    padding: 4px 12px;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
   }
 
+  /* Scene Management */
+  .scene {
+    position: absolute;
+    top: 64px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* ========================================================
+     SCENE 1 (0.0s – 3.8s): The Lie vs. Reality (Frame 0 Visible!)
+     ======================================================== */
+  .scene-1 {
+    opacity: 1; /* Instant Frame 0 visibility! No blank flash! */
+    display: flex;
+    padding: 30px 40px;
+    gap: 32px;
+  }
+  body.playing .scene-1 {
+    animation: scene1Exit 0.4s cubic-bezier(0.4, 0, 0.2, 1) 3.5s forwards;
+  }
+  @keyframes scene1Exit {
+    0% { opacity: 1; transform: scale(1); filter: blur(0px); }
+    100% { opacity: 0; transform: scale(0.96); filter: blur(6px); }
+  }
+
+  .panel-half {
+    flex: 1;
+    background: #DFDCD3;
+    border: 2px solid #181816;
+    border-radius: 8px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.12);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .panel-header-tab {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #181816;
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+  }
+  .panel-tab-title {
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    color: #181816;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .panel-badge-soft {
+    font-size: 12px;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 4px;
+  }
+  .badge-lie {
+    background: #F2C6BE;
+    color: #9E2A22;
+    border: 1px solid #DF9B90;
+  }
+  .badge-reality {
+    background: #DCE8DF;
+    color: #1D4D35;
+    border: 1px solid #9BB8A5;
+  }
+
+  /* Left Panel: Terminal & False Pass */
+  .terminal-box {
+    background: #181816;
+    color: #F5F3EF;
+    border-radius: 6px;
+    padding: 18px 20px;
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 24px;
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.6);
+  }
+  .term-cmd { color: #38BDF8; font-weight: 700; }
+  .term-pass { color: #4ADE80; font-weight: 700; }
+  .term-info { color: #B5B1A6; }
+
+  /* Macro Button Preview Viewport */
+  .macro-viewport-card {
+    background: #EAE7DF;
+    border: 2px solid #B8B4A9;
+    border-radius: 6px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* 250% Macro Checkout Button */
+  .macro-checkout-btn {
+    width: 660px;
+    height: 84px;
+    background: #181816;
+    color: #FFFFFF;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    position: relative;
+  }
+  .macro-btn-price {
+    background: #2E7D52;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 22px;
+  }
+
+  /* Crosshair on left panel */
+  .crosshair-point {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    pointer-events: none;
+  }
+  .crosshair-reticle {
+    width: 28px;
+    height: 28px;
+    border: 2px solid #4ADE80;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: reticlePulse 1s ease-in-out infinite alternate;
+  }
+  @keyframes reticlePulse {
+    0% { transform: scale(1); opacity: 0.8; }
+    100% { transform: scale(1.3); opacity: 1; }
+  }
+  .crosshair-dot {
+    width: 6px;
+    height: 6px;
+    background: #4ADE80;
+    border-radius: 50%;
+  }
+  .crosshair-label {
+    background: #181816;
+    color: #4ADE80;
+    border: 1px solid #4ADE80;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  /* Giant Red Hardware Stamp Slam at 1.2s */
+  .red-stamp-overlay {
+    position: absolute;
+    inset: 40px;
+    background: rgba(224, 82, 70, 0.94);
+    border: 6px solid #FFFFFF;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 30px;
+    color: #FFFFFF;
+    box-shadow: 0 25px 80px rgba(0,0,0,0.6);
+    opacity: 0;
+    transform: scale(2.2) rotate(-3deg);
+    z-index: 100;
+  }
+  body.playing .red-stamp-overlay {
+    animation: stampSlam 0.28s cubic-bezier(0.12, 0.9, 0.2, 1.25) 1.2s forwards;
+  }
+  @keyframes stampSlam {
+    0% { opacity: 0; transform: scale(2.2) rotate(-3deg); }
+    100% { opacity: 1; transform: scale(1) rotate(-1deg); }
+  }
+  .stamp-super {
+    font-size: 16px;
+    font-weight: 900;
+    letter-spacing: 0.2em;
+    background: #FFFFFF;
+    color: #E05246;
+    padding: 4px 16px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+  }
+  .stamp-main-metric {
+    font-size: 44px;
+    font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 12px;
+  }
+  .stamp-sub-msg {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    opacity: 0.95;
+  }
+
+  /* Right Panel: Sticky Cart Drawer & SAM 3.1 Pixel loss */
+  .cart-drawer-slider {
+    position: absolute;
+    left: 40px;
+    right: 40px;
+    bottom: -160px; /* starts hidden */
+    height: 240px;
+    background: #181816;
+    border-top: 3px solid #33322E;
+    border-radius: 8px 8px 0 0;
+    box-shadow: 0 -15px 40px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    padding: 16px 24px;
+  }
+  body.playing .cart-drawer-slider {
+    animation: drawerSlideUp 1.2s cubic-bezier(0.2, 0.8, 0.25, 1) 0.2s forwards;
+  }
+  @keyframes drawerSlideUp {
+    0% { bottom: -160px; }
+    100% { bottom: 0px; } /* Slices 9.6% off the bottom of checkout button */
+  }
+
+  .drawer-bar-title {
+    color: #F5F3EF;
+    font-size: 16px;
+    font-weight: 800;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .drawer-subtotal { color: #38BDF8; }
+
+  /* Red Diagonal Occlusion Hatch over Clipped Area */
+  .occlusion-hatch-strip {
+    position: absolute;
+    width: 660px;
+    height: 26px; /* Exact 9.6% slice */
+    top: 50%;
+    margin-top: 16px;
+    background: rgba(224, 82, 70, 0.4);
+    border: 2px dashed #E05246;
+    border-radius: 0 0 8px 8px;
+    background-image: repeating-linear-gradient(
+      45deg,
+      rgba(224, 82, 70, 0.8),
+      rgba(224, 82, 70, 0.8) 8px,
+      rgba(224, 82, 70, 0.2) 8px,
+      rgba(224, 82, 70, 0.2) 16px
+    );
+    opacity: 0;
+  }
+  body.playing .occlusion-hatch-strip {
+    animation: fadeIn 0.2s ease-out 1.4s forwards;
+  }
+
+  /* Live Pixel Counter Readout Card */
+  .pixel-loss-counter-card {
+    margin-top: 20px;
+    background: #EAE7DF;
+    border: 2px solid #E05246;
+    border-radius: 6px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .pixel-readout {
+    font-size: 34px;
+    font-weight: 900;
+    color: #E05246;
+    letter-spacing: -0.03em;
+  }
+  .loss-pill {
+    background: #E05246;
+    color: #FFFFFF;
+    font-size: 15px;
+    font-weight: 800;
+    padding: 6px 14px;
+    border-radius: 4px;
+  }
+
+  /* ========================================================
+     SCENE 2 (3.8s – 7.8s): Dual-Instrument 3D Telemetry
+     ======================================================== */
+  body.playing .scene-2 {
+    animation: scene2Master 4.0s cubic-bezier(0.16, 1, 0.3, 1) 3.8s forwards;
+  }
+  @keyframes scene2Master {
+    0% { opacity: 0; transform: perspective(1200px) rotateX(8deg) scale(1.05); }
+    10% { opacity: 1; transform: perspective(1200px) rotateX(0deg) scale(1.0); }
+    92% { opacity: 1; transform: scale(1.0); filter: blur(0px); }
+    100% { opacity: 0; transform: scale(0.96); filter: blur(6px); }
+  }
+
+  .scene-2-container {
+    position: absolute;
+    inset: 0;
+    padding: 30px 40px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 28px;
+  }
+  .bento-macro-card {
+    background: #DFDCD3;
+    border: 2px solid #181816;
+    border-radius: 8px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.12);
+  }
+  .card-top-title {
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    color: #4A4843;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+  .card-hero-num {
+    font-size: 46px;
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    color: #181816;
+    margin-bottom: 16px;
+    line-height: 1;
+  }
+
+  /* 8-Frame Bar Chart */
+  .frame-bars-wrap {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    height: 180px;
+    background: #D6D3C9;
+    padding: 16px 12px;
+    border-radius: 6px;
+    border: 1px solid #B8B4A9;
+    margin-bottom: 16px;
+  }
+  .bar-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    height: 100%;
+    justify-content: flex-end;
+  }
+  .bar-rect {
+    width: 100%;
+    border-radius: 3px;
+    background: #2E7D52;
+    transition: height 0.3s ease;
+  }
+  .bar-rect.drop { background: #E05246; }
+  .bar-label { font-size: 11px; font-weight: 700; color: #4A4843; }
+
+  /* Instrument B 14-Segment LED Meter */
+  .led-meter-box {
+    display: grid;
+    grid-template-columns: repeat(14, 1fr);
+    gap: 4px;
+    background: #181816;
+    padding: 14px 10px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+  }
+  .led-segment {
+    height: 48px;
+    background: #33322E;
+    border-radius: 2px;
+  }
+  .led-segment.lit-green { background: #2E7D52; box-shadow: 0 0 8px #2E7D52; }
+  .led-segment.lit-orange { background: #F59E0B; box-shadow: 0 0 8px #F59E0B; }
+  .led-segment.lit-red { background: #E05246; box-shadow: 0 0 8px #E05246; }
+
+  /* Decision Tree Rows */
+  .decision-step-row {
+    background: #EAE7DF;
+    border: 1px solid #B8B4A9;
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .decision-step-row.ok { border-left: 4px solid #2E7D52; }
+  .decision-step-row.reject { border-left: 4px solid #E05246; }
+
+  .reject-stamp-badge {
+    margin-top: auto;
+    background: #E05246;
+    color: #FFFFFF;
+    font-size: 16px;
+    font-weight: 900;
+    text-align: center;
+    padding: 14px;
+    border-radius: 6px;
+    letter-spacing: 0.05em;
+    box-shadow: 0 8px 25px rgba(224, 82, 70, 0.4);
+  }
+
+  /* ========================================================
+     SCENE 3 (7.8s – 12.2s): Autonomous Repair & Split Curtain
+     ======================================================== */
+  body.playing .scene-3 {
+    animation: scene3Master 4.4s cubic-bezier(0.16, 1, 0.3, 1) 7.8s forwards;
+  }
+  @keyframes scene3Master {
+    0% { opacity: 0; transform: translateY(20px); }
+    8% { opacity: 1; transform: translateY(0); }
+    92% { opacity: 1; transform: scale(1.0); filter: blur(0px); }
+    100% { opacity: 0; transform: scale(0.96); filter: blur(6px); }
+  }
+
+  .scene-3-container {
+    position: absolute;
+    inset: 0;
+    padding: 24px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* Code Diff Editor */
+  .code-diff-card {
+    background: #181816;
+    color: #F5F3EF;
+    border-radius: 8px;
+    border: 2px solid #33322E;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    overflow: hidden;
+  }
+  .code-editor-top {
+    background: #252422;
+    padding: 10px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #33322E;
+  }
+  .code-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #38BDF8;
+    letter-spacing: 0.05em;
+  }
+  .code-dots {
+    display: flex;
+    gap: 6px;
+  }
+  .code-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot-red { background: #EF4444; }
+  .dot-yellow { background: #F59E0B; }
+  .dot-green { background: #10B981; }
+
+  .code-lines-body {
+    padding: 16px 20px;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+  .diff-del {
+    color: #FF7B70;
+    background: rgba(224, 82, 70, 0.15);
+    padding: 2px 8px;
+    border-radius: 3px;
+    display: block;
+    margin-bottom: 4px;
+  }
+  .diff-add {
+    color: #4ADE80;
+    background: rgba(46, 125, 82, 0.25);
+    padding: 2px 8px;
+    border-radius: 3px;
+    display: block;
+    font-weight: 700;
+  }
+
+  /* 300% Zoomed Macro Split Curtain Viewport */
+  .macro-split-canvas {
+    flex: 1;
+    background: #DFDCD3;
+    border: 2px solid #181816;
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+  }
+
+  /* Full Button Container in Macro View */
+  .macro-button-container {
+    position: relative;
+    width: 1400px;
+    height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Layer 1: Left Broken Button (Occluded) */
+  .layer-broken-btn {
+    position: absolute;
+    width: 1320px;
+    height: 130px;
+    background: #181816;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    color: #FFFFFF;
+    font-size: 38px;
+    font-weight: 900;
+    overflow: hidden;
+  }
+  .broken-hatch-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 38px; /* 9.6% */
+    background: repeating-linear-gradient(
+      45deg,
+      rgba(224, 82, 70, 0.85),
+      rgba(224, 82, 70, 0.85) 12px,
+      rgba(224, 82, 70, 0.3) 12px,
+      rgba(224, 82, 70, 0.3) 24px
+    );
+    border-top: 2px dashed #E05246;
+  }
+
+  /* Layer 2: Right Repaired Button (100% Restored) */
+  .layer-repaired-clip {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    clip-path: inset(0 0 0 50%); /* Dynamic wipe */
+  }
+  body.playing .layer-repaired-clip {
+    animation: splitWipeClip 3.4s cubic-bezier(0.4, 0, 0.2, 1) 8.2s forwards;
+  }
+  @keyframes splitWipeClip {
+    0% { clip-path: inset(0 0 0 15%); }
+    55% { clip-path: inset(0 0 0 85%); }
+    100% { clip-path: inset(0 0 0 50%); }
+  }
+
+  .layer-repaired-btn {
+    width: 1320px;
+    height: 130px;
+    background: #181816;
+    border: 3px solid #2E7D52;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    color: #FFFFFF;
+    font-size: 38px;
+    font-weight: 900;
+    box-shadow: 0 0 40px rgba(46, 125, 82, 0.3);
+  }
+
+  /* Animated Optical Curtain Divider Line */
+  .curtain-divider-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 4px;
+    background: #38BDF8;
+    box-shadow: 0 0 15px #38BDF8, 0 0 35px rgba(56, 189, 248, 0.9);
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  body.playing .curtain-divider-line {
+    animation: splitWipeLine 3.4s cubic-bezier(0.4, 0, 0.2, 1) 8.2s forwards;
+  }
+  @keyframes splitWipeLine {
+    0% { left: 15%; }
+    55% { left: 85%; }
+    100% { left: 50%; }
+  }
+
+  .curtain-handle-knob {
+    position: absolute;
+    background: #181816;
+    border: 2px solid #38BDF8;
+    color: #38BDF8;
+    padding: 8px 18px;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: 900;
+    white-space: nowrap;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+  }
+
+  /* Dynamic Badges on Curtain */
+  .badge-curtain-left {
+    position: absolute;
+    top: 24px;
+    left: 40px;
+    background: rgba(24, 24, 22, 0.94);
+    border: 2px solid #E05246;
+    color: #FF7B70;
+    padding: 10px 18px;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 900;
+  }
+  .badge-curtain-right {
+    position: absolute;
+    top: 24px;
+    right: 40px;
+    background: rgba(24, 24, 22, 0.94);
+    border: 2px solid #2E7D52;
+    color: #4ADE80;
+    padding: 10px 18px;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 900;
+  }
+
+  /* ========================================================
+     SCENE 4 (12.2s – 16.0s): Flagship Bento Scoreboard
+     ======================================================== */
+  body.playing .scene-4 {
+    animation: scene4Master 3.8s cubic-bezier(0.16, 1, 0.3, 1) 12.2s forwards;
+  }
   @keyframes scene4Master {
-    0% { opacity: 0; transform: scale(1.08); }
-    6% { opacity: 1; transform: scale(1); }
+    0% { opacity: 0; transform: scale(1.06); }
+    8% { opacity: 1; transform: scale(1); }
     100% { opacity: 1; transform: scale(1); }
   }
 
   .scene-4-container {
     position: absolute;
     inset: 0;
+    padding: 30px 40px;
     display: flex;
     align-items: center;
     justify-content: center;
   }
 
-  .bento-card {
-    width: 1480px;
+  .bento-flagship-card {
+    width: 1600px;
     background: #EAE7DF;
-    color: #181816;
-    border-radius: 12px;
     border: 2px solid #181816;
-    box-shadow: 0 30px 90px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.1);
-    padding: 44px 56px;
+    border-radius: 12px;
+    padding: 40px 50px;
     display: flex;
     flex-direction: column;
-    gap: 32px;
+    gap: 28px;
+    box-shadow: 0 30px 90px rgba(0,0,0,0.25);
   }
 
-  /* Bento Header */
-  .bento-header-row {
+  .bento-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     border-bottom: 2px solid #181816;
-    padding-bottom: 24px;
+    padding-bottom: 20px;
   }
-  .bento-brand {
+  .bento-logo-title {
+    font-size: 36px;
+    font-weight: 900;
+    letter-spacing: -0.02em;
     display: flex;
     align-items: baseline;
-    gap: 16px;
+    gap: 14px;
   }
-  .bento-logo {
-    font-size: 38px;
-    font-weight: 900;
-    letter-spacing: -0.03em;
-    color: #181816;
-  }
-  .bento-ver {
-    font-size: 18px;
+  .bento-tag {
+    font-size: 15px;
     font-weight: 800;
     background: #181816;
     color: #EAE7DF;
-    padding: 3px 8px;
-    border-radius: 3px;
+    padding: 4px 10px;
+    border-radius: 4px;
   }
-  .bento-subtitle {
+  .bento-system-status {
+    background: #DCE8DF;
+    border: 1.5px solid #2E7D52;
+    color: #1D4D35;
+    padding: 8px 16px;
+    border-radius: 6px;
     font-size: 14px;
-    font-weight: 600;
-    color: #4A4843;
-    letter-spacing: 0.04em;
-  }
-  .bento-status-pill {
+    font-weight: 800;
+    letter-spacing: 0.05em;
     display: flex;
     align-items: center;
     gap: 8px;
-    background: #DCE8DF;
-    border: 1px solid #9BB8A5;
-    color: #1D4D35;
-    font-size: 12px;
-    font-weight: 800;
-    letter-spacing: 0.1em;
-    padding: 6px 14px;
-    border-radius: 4px;
   }
 
-  /* 3 Stat Pillars */
-  .bento-pillars-grid {
+  /* 3 Hero Stat Pillars */
+  .hero-pillars-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 24px;
   }
-  .bento-pillar {
+  .hero-stat-card {
     background: #DFDCD3;
-    border: 1.5px solid #B8B4A9;
+    border: 2px solid #B8B4A9;
     border-radius: 8px;
     padding: 24px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
   }
-  .bento-pillar.emerald-pillar {
+  .hero-stat-card.emerald-highlight {
     background: #DCE8DF;
     border: 2px solid #2E7D52;
-    box-shadow: 0 10px 25px rgba(46, 125, 82, 0.15);
+    box-shadow: 0 10px 30px rgba(46, 125, 82, 0.2);
   }
-  .pillar-label {
-    font-size: 12px;
+  .stat-card-label {
+    font-size: 13px;
     font-weight: 800;
     letter-spacing: 0.1em;
     color: #4A4843;
     text-transform: uppercase;
   }
-  .pillar-value {
-    font-size: 58px;
+  .stat-card-val {
+    font-size: 68px;
     font-weight: 900;
     letter-spacing: -0.04em;
     line-height: 1;
     color: #181816;
   }
-  .pillar-value.emerald-val {
-    color: #2E7D52;
-  }
-  .pillar-desc {
-    font-size: 13px;
-    font-weight: 600;
+  .stat-card-val.green { color: #2E7D52; }
+  .stat-card-sub {
+    font-size: 14px;
+    font-weight: 700;
     color: #78756E;
   }
 
-  /* Triple Engine Row */
-  .bento-engine-row {
+  /* Engine Bar */
+  .engine-models-bar {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 20px;
   }
-  .engine-item {
+  .model-pill {
     background: #D6D3C9;
     border: 1px solid #B8B4A9;
     border-radius: 6px;
     padding: 14px 18px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
   }
-  .engine-name {
-    font-size: 13px;
-    font-weight: 800;
+  .model-name {
+    font-size: 15px;
+    font-weight: 900;
     color: #181816;
-    letter-spacing: 0.05em;
+    margin-bottom: 4px;
   }
-  .engine-detail {
-    font-size: 11px;
+  .model-role {
+    font-size: 12px;
     font-weight: 600;
     color: #4A4843;
   }
 
-  /* Integration Bar & URL */
-  .bento-tools-bar {
+  /* Bottom Launch Banner */
+  .bottom-launch-bar {
+    background: #181816;
+    color: #EAE7DF;
+    border-radius: 8px;
+    padding: 16px 24px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: #181816;
-    color: #EAE7DF;
-    border-radius: 6px;
-    padding: 12px 20px;
   }
-  .tools-chips {
+  .tools-row {
     display: flex;
-    gap: 12px;
-    font-size: 12px;
+    gap: 16px;
+    font-size: 13px;
     font-weight: 800;
   }
-  .tool-badge {
-    color: #B5B1A6;
-  }
-  .tool-badge.active {
+  .tool-item.highlight { color: #38BDF8; }
+  .live-cta-url {
+    font-size: 16px;
+    font-weight: 900;
     color: #38BDF8;
-  }
-  .live-url {
-    font-size: 14px;
-    font-weight: 800;
-    color: #38BDF8;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.05em;
   }
 
-  /* Climax Tagline Slam (12.8s) */
-  .bento-tagline {
+  /* Final Tagline Slam at 13.8s */
+  .final-tagline-slam {
     background: #181816;
     color: #FFFFFF;
-    font-size: 30px;
+    font-size: 34px;
     font-weight: 900;
-    letter-spacing: 0.02em;
     text-align: center;
-    padding: 16px;
-    border-radius: 6px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    padding: 18px;
+    border-radius: 8px;
+    letter-spacing: 0.02em;
     opacity: 0;
     transform: scale(0.92);
   }
-  body.playing .bento-tagline {
-    animation: slamTagline 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.25) 12.8s forwards;
+  body.playing .final-tagline-slam {
+    animation: slamFinalTagline 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.25) 13.8s forwards;
   }
-
-  @keyframes slamTagline {
+  @keyframes slamFinalTagline {
     0% { opacity: 0; transform: scale(0.92); }
     100% { opacity: 1; transform: scale(1); }
   }
-  .tagline-accent {
-    color: #E05246;
-  }
+  .tagline-dot { color: #E05246; }
 </style>
 </head>
 <body>
   <div class="stage">
-    <!-- Swiss Technical HUD -->
-    <div class="hud-overlay">
-      <div class="hud-label hud-tl">SPECTRA V3.0 // DUAL-INSTRUMENT VERIFIER</div>
-      <div class="hud-label hud-tr">1080P60 // SWISS INDUSTRIAL TELEMETRY</div>
-      <div class="hud-label hud-bl">LAT 47.3769° N · LNG 8.5417° E · CH-8001</div>
-      <div class="hud-label hud-br">BENCHMARK: 45-CLIP CALIBRATED SWEEP</div>
-      <div class="reticle reticle-tl"></div>
-      <div class="reticle reticle-tr"></div>
-      <div class="reticle reticle-bl"></div>
-      <div class="reticle reticle-br"></div>
+    <!-- Global Swiss Top Header Bar -->
+    <div class="global-top-bar">
+      <div class="brand-group">
+        <span class="brand-led"></span>
+        <span class="brand-name">SPECTRA V3.0</span>
+        <span class="brand-sub">// SWISS INDUSTRIAL REFEREE</span>
+      </div>
+      <div class="global-title">WHY AI CODING AGENTS BREAK YOUR UI</div>
+      <div class="global-meta">60FPS DETERMINISTIC MACRO EVAL</div>
     </div>
 
-    <!-- SCENE 1: Kinetic Hook (0.0s – 3.5s) -->
+    <!-- ========================================================
+         SCENE 1: The Lie vs. Reality (Frame 0 Visible!)
+         ======================================================== -->
     <div class="scene scene-1">
-      <div class="scene-1-container">
-        <div class="hook-badge">
-          <span>●</span> OPTICAL ANOMALY BENCHMARK REPORT
-        </div>
-        <div class="hook-title">
-          AI AGENTS SAY YOUR UI IS <span class="accent-quote">"DONE."</span>
-        </div>
-
-        <div class="warning-stamp-box">
-          <div class="stamp-tag">CRITICAL REALITY GAP DETECTED</div>
-          <div class="stamp-text">
-            PLAYWRIGHT FALSE-PASSES <span class="highlight-red">94.4%</span> · VLMs FALSE-PASS <span class="highlight-red">61.1%</span>
+      <!-- Left Panel: What Playwright & VLMs See -->
+      <div class="panel-half">
+        <div class="panel-header-tab">
+          <div class="panel-tab-title">
+            <span>●</span> WHAT PLAYWRIGHT & VLMs SEE
           </div>
+          <span class="panel-badge-soft badge-lie">THE LIE</span>
         </div>
 
-        <div class="clipped-button-card">
-          <div class="button-viewport">
-            <div class="mock-checkout-btn">
-              <span>🔒</span> Complete Checkout — $149.00
-            </div>
-            <div class="mock-cart-drawer">
-              <span class="drawer-label">DRAWER</span>
-            </div>
-            <div class="laser-scanner-line"></div>
+        <div class="terminal-box">
+          <div><span class="term-cmd">$</span> agent-eval checkout-flow --strict</div>
+          <div><span class="term-pass">✓</span> document.querySelector("#checkout-btn") !== null</div>
+          <div><span class="term-pass">✓</span> elementFromPoint(1080, 625) → #checkout-btn (PASS)</div>
+          <div><span class="term-pass">✓</span> VLM Judge: "Button is fully visible on screen"</div>
+          <div class="term-info">STATUS: ALL 3 TESTS PASSED (100%)</div>
+        </div>
+
+        <div class="macro-viewport-card">
+          <div class="macro-checkout-btn">
+            <span>🛒 Complete Checkout</span>
+            <span class="macro-btn-price">$149.00</span>
           </div>
-          <div class="button-telemetry-row">
-            <div class="tel-chip-fail">DOM document.contains() === TRUE [FALSE PASS]</div>
-            <div class="tel-chip-pass">SAM 3.1: -9.60% PIXEL LOSS [REALITY CAUGHT]</div>
+
+          <!-- Pulsing green center dot -->
+          <div class="crosshair-point">
+            <div class="crosshair-reticle">
+              <div class="crosshair-dot"></div>
+            </div>
+            <div class="crosshair-label">elementFromPoint(1080, 625) [PASS]</div>
           </div>
+        </div>
+
+        <!-- Giant Red Stamp Slam at 1.2s -->
+        <div class="red-stamp-overlay">
+          <div class="stamp-super">CRITICAL REALITY GAP DETECTED</div>
+          <div class="stamp-main-metric">94.4% DOM FALSE-PASS<br>61.1% VLM FALSE-PASS</div>
+          <div class="stamp-sub-msg">UNCLICKABLE & INVISIBLE TO USERS</div>
+        </div>
+      </div>
+
+      <!-- Right Panel: What Users Actually See -->
+      <div class="panel-half">
+        <div class="panel-header-tab">
+          <div class="panel-tab-title">
+            <span>●</span> WHAT USERS ACTUALLY SEE
+          </div>
+          <span class="panel-badge-soft badge-reality">SPECTRA REFEREE</span>
+        </div>
+
+        <div class="macro-viewport-card">
+          <div class="macro-checkout-btn">
+            <span>🛒 Complete Checkout</span>
+            <span class="macro-btn-price">$149.00</span>
+          </div>
+
+          <!-- Animated Red Hatch Strip on the bottom 9.6% -->
+          <div class="occlusion-hatch-strip"></div>
+
+          <!-- Sticky Cart Drawer Sliding Up at 0.2s -->
+          <div class="cart-drawer-slider">
+            <div class="drawer-bar-title">
+              <span>▲ YOUR CART (3 ITEMS)</span>
+              <span class="drawer-subtotal">SUBTOTAL: $149.00</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="pixel-loss-counter-card">
+          <div>
+            <div style="font-size: 11px; font-weight: 800; color: #78756E; text-transform: uppercase;">SAM 3.1 OPTICAL LOSS DETECTED</div>
+            <div class="pixel-readout">17,299 px → 15,708 px</div>
+          </div>
+          <div class="loss-pill">-9.60% LOSS CAUGHT</div>
         </div>
       </div>
     </div>
 
-    <!-- SCENE 2: 3D Isometric Field Monitor Reveal (3.5s – 7.5s) -->
+    <!-- ========================================================
+         SCENE 2: Dual-Instrument 3D Hardware Telemetry
+         ======================================================== -->
     <div class="scene scene-2">
-      <div class="scene-2-wrap">
-        <div class="chassis-3d">
-          <img src="${arenaImgBase64}" class="chassis-image" alt="Spectra Field Monitor" />
-          
-          <div class="viewport-reticle"></div>
+      <div class="scene-2-container">
+        <!-- Instrument A: SAM 3.1 Bar Chart -->
+        <div class="bento-macro-card">
+          <div class="card-top-title">INSTRUMENT A — META SAM 3.1</div>
+          <div class="card-hero-num">R_SAM = 90.80%</div>
 
-          <div class="scene-2-callout">
-            <div class="callout-header">
-              <div class="callout-title">SAM 3.1 TELEMETRY // SCENARIO S3</div>
-              <div class="callout-tag">REJECTED</div>
-            </div>
-            <div class="callout-metric-row">
-              <div class="metric-large">17,299 px → 15,708 px</div>
-              <div class="metric-diff">-9.60% LOSS CAUGHT</div>
-            </div>
-            <div class="callout-footer">
-              STATUS: THRESHOLD δ = 4.10% EXCEEDED · NOISE-FLOOR 3σ = 1.35%<br>
-              RESULT: ZERO FALSE-PASS REFEREE VERIFIED
-            </div>
+          <div class="frame-bars-wrap">
+            <div class="bar-col"><div class="bar-rect" style="height: 100%;"></div><span class="bar-label">t_0</span></div>
+            <div class="bar-col"><div class="bar-rect" style="height: 100%;"></div><span class="bar-label">t_1</span></div>
+            <div class="bar-col"><div class="bar-rect" style="height: 100%;"></div><span class="bar-label">t_2</span></div>
+            <div class="bar-col"><div class="bar-rect" style="height: 98%;"></div><span class="bar-label">t_3</span></div>
+            <div class="bar-col"><div class="bar-rect" style="height: 94%;"></div><span class="bar-label">t_4</span></div>
+            <div class="bar-col"><div class="bar-rect drop" style="height: 90.8%;"></div><span class="bar-label">t_5</span></div>
+            <div class="bar-col"><div class="bar-rect drop" style="height: 90.8%;"></div><span class="bar-label">t_6</span></div>
+            <div class="bar-col"><div class="bar-rect drop" style="height: 90.8%;"></div><span class="bar-label">t_7</span></div>
+          </div>
+
+          <div style="font-size: 13px; font-weight: 700; color: #4A4843;">
+            8-FRAME TEMPORAL VIDEO TRACKING<br>
+            <span style="color: #E05246; font-weight: 800;">-9.20% PIXEL LOSS ON CLIP tk</span>
+          </div>
+        </div>
+
+        <!-- Instrument B: NCC Template Match -->
+        <div class="bento-macro-card">
+          <div class="card-top-title">INSTRUMENT B — TEMPLATE NCC</div>
+          <div class="card-hero-num">visRatio = 90.00%</div>
+
+          <div class="led-meter-box">
+            <div class="led-segment lit-green"></div>
+            <div class="led-segment lit-green"></div>
+            <div class="led-segment lit-green"></div>
+            <div class="led-segment lit-green"></div>
+            <div class="led-segment lit-green"></div>
+            <div class="led-segment lit-green"></div>
+            <div class="led-segment lit-green"></div>
+            <div class="led-segment lit-green"></div>
+            <div class="led-segment lit-green"></div>
+            <div class="led-segment lit-green"></div>
+            <div class="led-segment lit-green"></div>
+            <div class="led-segment lit-orange"></div>
+            <div class="led-segment lit-red"></div>
+            <div class="led-segment"></div>
+          </div>
+
+          <div style="font-size: 13px; font-weight: 700; color: #4A4843; line-height: 1.5;">
+            NCC MATCH COEFFICIENT: 0.941<br>
+            ZERO-API SPEND / OFFLINE RUNTIME<br>
+            <span style="color: #2E7D52; font-weight: 800;">INDEPENDENT INSTRUMENT CONFIRMATION</span>
+          </div>
+        </div>
+
+        <!-- Rule 2 Decision Tree -->
+        <div class="bento-macro-card">
+          <div class="card-top-title">RULE 2 CALIBRATED DECISION TREE</div>
+          <div class="card-hero-num" style="color: #E05246;">VERDICT: FAIL</div>
+
+          <div class="decision-step-row ok">
+            <span>Agreement |90.8% - 90.0%| = 0.8%</span>
+            <span style="color: #2E7D52;">≤ 4.10% (δ) ✓</span>
+          </div>
+          <div class="decision-step-row reject">
+            <span>Noise-Floor Loss: 9.60%</span>
+            <span style="color: #E05246;">> 1.35% (3σ) ✗</span>
+          </div>
+          <div class="decision-step-row ok">
+            <span>Safety Refusal Contract</span>
+            <span style="color: #2E7D52;">Active ✓</span>
+          </div>
+
+          <div class="reject-stamp-badge">
+            RULE_3_THREE_SIGMA_OCCLUSION_REJECT
           </div>
         </div>
       </div>
     </div>
 
-    <!-- SCENE 3: High-Speed Split-Curtain Optical Wipe (7.5s – 11.5s) -->
+    <!-- ========================================================
+         SCENE 3: Autonomous Repair & Split Curtain
+         ======================================================== -->
     <div class="scene scene-3">
-      <div class="scene-3-wrap">
-        <img src="${curtainImgBase64}" class="split-image" alt="Split Comparator" />
-        
-        <div class="curtain-top-banner">
-          <span class="led-live"></span>
-          <span>OPTICAL COMPARATOR: ZERO DELTA RESTORATION CONFIRMED</span>
-        </div>
-
-        <div class="optical-curtain-strip">
-          <div class="curtain-rangefinder-knob">
-            <span>◆</span> 82.4% SPLIT
+      <div class="scene-3-container">
+        <!-- Top Half: Code Diff -->
+        <div class="code-diff-card">
+          <div class="code-editor-top">
+            <span class="code-title">MUSE SPARK OPEN 1026 (BASETEN) — CLOSED-LOOP CSS REPAIR</span>
+            <div class="code-dots">
+              <span class="code-dot dot-red"></span>
+              <span class="code-dot dot-yellow"></span>
+              <span class="code-dot dot-green"></span>
+            </div>
+          </div>
+          <div class="code-lines-body">
+            <span class="diff-del">- .cart-drawer-footer { margin-top: -14px; height: 124px; }</span>
+            <span class="diff-add">+ .cart-drawer-footer { margin-top: 0px;   height: 110px; } /* Restores 1,591 occluded px */</span>
           </div>
         </div>
 
-        <div class="curtain-badge badge-before">
-          <div class="curtain-tag-fail">PASS #1: 9.6% CLIPPED</div>
-          <div class="curtain-sub">FAIL — REJECTED BY SPECTRA REFEREE</div>
-        </div>
+        <!-- Bottom Half: Giant 300% Macro Split Viewport -->
+        <div class="macro-split-canvas">
+          <div class="badge-curtain-left">◀ PASS #1: BROKEN (9.6% CLIPPED) · FAIL</div>
+          <div class="badge-curtain-right">PASS #2: REPAIRED (0.00% LOSS · 17,299 PX) ▶ · PASS</div>
 
-        <div class="curtain-badge badge-after">
-          <div class="curtain-tag-pass">PASS #2: 100.0% RESTORED</div>
-          <div class="curtain-sub">via Muse Spark Open 1026 — 0.00% PIXEL LOSS</div>
+          <div class="macro-button-container">
+            <!-- Left Broken Button -->
+            <div class="layer-broken-btn">
+              <span>🛒 Complete Checkout</span>
+              <span style="background: #2E7D52; padding: 6px 16px; border-radius: 6px; font-size: 32px;">$149.00</span>
+              <div class="broken-hatch-overlay"></div>
+            </div>
+
+            <!-- Right Repaired Button -->
+            <div class="layer-repaired-clip">
+              <div class="layer-repaired-btn">
+                <span>🛒 Complete Checkout</span>
+                <span style="background: #2E7D52; padding: 6px 16px; border-radius: 6px; font-size: 32px;">$149.00</span>
+              </div>
+            </div>
+
+            <!-- Optical Curtain Divider Line -->
+            <div class="curtain-divider-line">
+              <div class="curtain-handle-knob">⇄ 82.4% SPLIT</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- SCENE 4: Final Scoreboard & CTA Card (11.5s – 15.0s) -->
+    <!-- ========================================================
+         SCENE 4: Flagship Bento Scoreboard & Launch Card
+         ======================================================== -->
     <div class="scene scene-4">
       <div class="scene-4-container">
-        <div class="bento-card">
-          <div class="bento-header-row">
-            <div class="bento-brand">
-              <div class="bento-logo">SPECTRA</div>
-              <div class="bento-ver">V3.0</div>
-              <div class="bento-subtitle">AUTONOMOUS VISUAL INVARIANT REFEREE</div>
+        <div class="bento-flagship-card">
+          <div class="bento-header">
+            <div class="bento-logo-title">
+              <span>SPECTRA</span>
+              <span class="bento-tag">V3.0</span>
+              <span style="font-size: 18px; color: #4A4843; font-weight: 700;">AUTONOMOUS VISUAL INVARIANT REFEREE</span>
             </div>
-            <div class="bento-status-pill">
-              <span>●</span> CLOSED-LOOP VERIFIED
-            </div>
-          </div>
-
-          <div class="bento-pillars-grid">
-            <div class="bento-pillar emerald-pillar">
-              <div class="pillar-label">FALSE-PASS RATE</div>
-              <div class="pillar-value emerald-val">0.0%</div>
-              <div class="pillar-desc">0 of 18 occluded clips missed</div>
-            </div>
-            <div class="bento-pillar">
-              <div class="pillar-label">ACCURACY</div>
-              <div class="pillar-value">1.11%</div>
-              <div class="pillar-desc">Mean Absolute Error (MAE)</div>
-            </div>
-            <div class="bento-pillar">
-              <div class="pillar-label">REFEREE LATENCY</div>
-              <div class="pillar-value">~480ms</div>
-              <div class="pillar-desc">8 frames @ 4FPS · $0.00 Cached</div>
+            <div class="bento-system-status">
+              <span>●</span> CLOSED-LOOP SYSTEM VERIFIED
             </div>
           </div>
 
-          <div class="bento-engine-row">
-            <div class="engine-item">
-              <div class="engine-name">META SAM 3.1</div>
-              <div class="engine-detail">Pixel-Perfect Zero-Shot Segmentation</div>
+          <div class="hero-pillars-grid">
+            <div class="hero-stat-card emerald-highlight">
+              <div class="stat-card-label">FALSE-PASS RATE</div>
+              <div class="stat-card-val green">0.0%</div>
+              <div class="stat-card-sub">18 / 18 Occluded Clips Caught vs 94.4% DOM</div>
             </div>
-            <div class="engine-item">
-              <div class="engine-name">MUSE SPARK 1.3</div>
-              <div class="engine-detail">Visual Invariant Compiler & Referee</div>
+            <div class="hero-stat-card">
+              <div class="stat-card-label">ACCURACY (MAE)</div>
+              <div class="stat-card-val">1.11%</div>
+              <div class="stat-card-sub">Empirical Noise-Floor 3σ = 1.35% · δ = 4.10%</div>
             </div>
-            <div class="engine-item">
-              <div class="engine-name">MUSE VOICE 1.0</div>
-              <div class="engine-detail">Natural Voice Directive Ingest</div>
+            <div class="hero-stat-card">
+              <div class="stat-card-label">REFEREE LATENCY</div>
+              <div class="stat-card-val">~480ms</div>
+              <div class="stat-card-sub">8 frames @ 4FPS · Zero API Spend Cached</div>
             </div>
           </div>
 
-          <div class="bento-tools-bar">
-            <div class="tools-chips">
-              <span class="tool-badge active">CLI</span>
-              <span>·</span>
-              <span class="tool-badge active">4-TOOL MCP SERVER</span>
-              <span>·</span>
-              <span class="tool-badge">CLAUDE CODE</span>
-              <span>·</span>
-              <span class="tool-badge">CURSOR</span>
-              <span>·</span>
-              <span class="tool-badge">CODEX</span>
+          <div class="engine-models-bar">
+            <div class="model-pill">
+              <div class="model-name">META SAM 3.1</div>
+              <div class="model-role">Zero-Shot Video Mask Segmentation</div>
             </div>
-            <div class="live-url">spectra-lyart.vercel.app</div>
+            <div class="model-pill">
+              <div class="model-name">MUSE SPARK 1.3</div>
+              <div class="model-role">Visual Invariant Compiler & Referee</div>
+            </div>
+            <div class="model-pill">
+              <div class="model-name">MUSE VOICE 1.0</div>
+              <div class="model-role">Natural Voice Directive Ingest</div>
+            </div>
           </div>
 
-          <div class="bento-tagline">
-            "DON'T TRUST 'DONE.' MEASURE IT<span class="tagline-accent">.</span>"
+          <div class="bottom-launch-bar">
+            <div class="tools-row">
+              <span class="tool-item highlight">CLI</span>
+              <span>·</span>
+              <span class="tool-item highlight">4-TOOL MCP SERVER</span>
+              <span>·</span>
+              <span class="tool-item">CLAUDE CODE</span>
+              <span>·</span>
+              <span class="tool-item">CURSOR</span>
+              <span>·</span>
+              <span class="tool-item">MUSE CODE</span>
+            </div>
+            <div class="live-cta-url">spectra-lyart.vercel.app</div>
+          </div>
+
+          <div class="final-tagline-slam">
+            "DON'T TRUST 'DONE.' MEASURE IT<span class="tagline-dot">.</span>"
           </div>
         </div>
       </div>
@@ -1210,33 +1250,22 @@ function buildMotionGraphicsHtml(arenaImgBase64, curtainImgBase64) {
 }
 
 // -------------------------------------------------------------
-// Step 3: Main Orchestration
+// Step 2: Main Execution Orchestrator
 // -------------------------------------------------------------
 async function main() {
-  console.log('=== SPECTRA V3.0 MOTION-GRAPHICS LAUNCH TEASER GENERATOR ===');
+  console.log('=== SPECTRA V3.0 MACRO LAUNCH VIDEO GENERATOR (60FPS) ===');
 
-  // Verify prerequisites
-  const screenshot1Path = path.join(rootDir, 'assets', 'screenshots', '01-arena-the-catch.png');
-  const screenshot2Path = path.join(rootDir, 'assets', 'screenshots', '02-arena-split-curtain.png');
+  // 1. Synthesize tactile audio soundtrack first
+  synthesizeTactileAudio(audioWavPath, 16.0);
 
-  if (!fs.existsSync(screenshot1Path) || !fs.existsSync(screenshot2Path)) {
-    throw new Error('Required screenshots in assets/screenshots/ do not exist!');
-  }
-
-  // 1. Synthesize audio track
-  const audioWavPath = path.join(tmpDir, 'soundtrack.wav');
-  generateHardwareSoundtrack(audioWavPath, 15.0);
-
-  // 2. Prepare HTML motion graphics
-  console.log('[Motion Graphics] Loading screenshot assets and building motion-graphics HTML...');
-  const arenaBase64 = `data:image/png;base64,${fs.readFileSync(screenshot1Path).toString('base64')}`;
-  const curtainBase64 = `data:image/png;base64,${fs.readFileSync(screenshot2Path).toString('base64')}`;
-  const htmlContent = buildMotionGraphicsHtml(arenaBase64, curtainBase64);
-  const htmlFilePath = path.join(tmpDir, 'teaser.html');
+  // 2. Prepare HTML macro choreography
+  console.log('[Motion Graphics] Building 100% vector macro HTML components (zero screenshots)...');
+  const htmlContent = buildMacroVectorHtml();
+  const htmlFilePath = path.join(tmpDir, 'viral-teaser.html');
   fs.writeFileSync(htmlFilePath, htmlContent);
 
-  // 3. Launch Playwright to record 15.0s video
-  console.log('[Recorder] Launching Playwright Chromium (1920x1080) for 15s motion-graphics capture...');
+  // 3. Launch Playwright Chromium at 1920x1080
+  console.log('[Recorder] Launching Playwright Chromium (1920x1080) for 16.0s deterministic capture...');
   const browser = await chromium.launch({
     channel: 'chrome',
     headless: true,
@@ -1254,11 +1283,11 @@ async function main() {
   const page = await context.newPage();
   const fileUrl = 'file:///' + htmlFilePath.replace(/\\/g, '/');
   await page.goto(fileUrl, { waitUntil: 'load' });
-  await page.waitForTimeout(600); // browser compositor warm up
+  await page.waitForTimeout(500); // browser compositor warm up
 
-  console.log('[Recorder] Triggering animation playback (.playing) for 15.0 seconds...');
+  console.log('[Recorder] Starting animation (.playing) for 16.0 seconds...');
   await page.evaluate(() => document.body.classList.add('playing'));
-  await page.waitForTimeout(15000); // record for 15.0 seconds
+  await page.waitForTimeout(16000); // capture 16.0 seconds
 
   const video = page.video();
   await page.close();
@@ -1273,11 +1302,11 @@ async function main() {
   console.log(`[Recorder] Raw Playwright capture saved to: ${rawWebmPath}`);
 
   // 4. Mux and Encode into 1080p MP4 with AAC Stereo Audio via ffmpeg
-  console.log('[Muxer] Muxing video and synthesized audio via ffmpeg into spectra-x-teaser.mp4...');
+  console.log('[Muxer] Muxing video and tactile audio via ffmpeg...');
   const ffmpegCmd = ffmpegPath;
   const ffmpegArgs = [
     '-y',
-    '-ss', '0.6', // seek video past initial 600ms compositor warmup
+    '-ss', '0.5', // seek video past initial 500ms warm-up
     '-i', rawWebmPath,
     '-i', audioWavPath,
     '-map', '0:v:0',
@@ -1286,11 +1315,12 @@ async function main() {
     '-pix_fmt', 'yuv420p',
     '-preset', 'medium',
     '-crf', '18',
+    '-r', '60', // 60 FPS output
     '-c:a', 'aac',
     '-b:a', '192k',
-    '-t', '15.0', // guarantee exact 15.0s output duration
+    '-t', '16.0', // guarantee exact 16.0s duration
     '-shortest',
-    outputMp4Path,
+    outputTeaserPath,
   ];
 
   const convResult = spawnSync(ffmpegCmd, ffmpegArgs, { stdio: 'inherit' });
@@ -1298,14 +1328,18 @@ async function main() {
     throw new Error(`ffmpeg muxing failed with status: ${convResult.status}`);
   }
 
+  // Also create spectra-x-viral.mp4 copy so both files exist at repo root
+  fs.copyFileSync(outputTeaserPath, outputViralPath);
+  console.log(`[Muxer] Copied output to: ${outputViralPath}`);
+
   // 5. Verify output file with ffprobe
   console.log('[Verification] Probing output video via ffprobe...');
   const ffprobePath = ffprobeStatic.path;
   const probeResult = spawnSync(ffprobePath, [
     '-v', 'error',
-    '-show_entries', 'format=duration,size:stream=index,codec_type,codec_name,width,height,channels',
+    '-show_entries', 'format=duration,size:stream=index,codec_type,codec_name,width,height,channels,r_frame_rate',
     '-of', 'json',
-    outputMp4Path,
+    outputTeaserPath,
   ]);
 
   if (probeResult.status !== 0) {
@@ -1328,17 +1362,18 @@ async function main() {
     throw new Error(`Invalid audio stream: ${JSON.stringify(audioStream)}`);
   }
 
-  if (duration < 14.0 || duration > 16.0) {
-    throw new Error(`Duration outside target [14s, 16s]: ${duration}s`);
+  if (duration < 15.0 || duration > 17.0) {
+    throw new Error(`Duration outside target [15s, 17s]: ${duration}s`);
   }
 
   console.log('\n======================================================');
-  console.log('🎉 SUCCESS: SPECTRA X TEASER READY FOR IMMEDIATE POSTING!');
-  console.log(`Path:     ${outputMp4Path}`);
+  console.log('🎉 SUCCESS: SPECTRA 60FPS MACRO VIDEO READY!');
+  console.log(`Paths:    ${outputTeaserPath}`);
+  console.log(`          ${outputViralPath}`);
   console.log(`Duration: ${duration.toFixed(2)}s`);
   console.log(`Size:     ${(size / 1024 / 1024).toFixed(2)} MB`);
-  console.log(`Video:    ${videoStream.codec_name} 1920x1080 (1080p)`);
-  console.log(`Audio:    ${audioStream.codec_name} Stereo 48kHz (Synthesized hardware sound design)`);
+  console.log(`Video:    ${videoStream.codec_name} 1920x1080 @ ${videoStream.r_frame_rate} (1080p60)`);
+  console.log(`Audio:    ${audioStream.codec_name} Stereo 44.1kHz (Tactile mechanical foley & sub-drops)`);
   console.log('======================================================\n');
 
   // Clean up temporary files
@@ -1351,6 +1386,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error('[Teaser Generator Error]', err);
+  console.error('[Macro Video Generator Error]', err);
   process.exit(1);
 });
